@@ -1,0 +1,119 @@
+%------------------------------------------------------------------------------------
+%	                  PACKAGES
+%------------------------------------------------------------------------------------
+%\NeedsTeXFormat{LaTeX2e}
+%\usepackage[dvips]{epsfig}
+%\usepackage[latin1]{inputenc}
+\usepackage[english]{babel} 
+\usepackage{amsmath,amsfonts,amsthm}
+\usepackage{a4wide}
+%\usepackage{psfig}
+\usepackage{fancyhdr}
+\usepackage{latexsym}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{enumerate}
+\usepackage{paralist}
+\usepackage[bibstyle=numeric,style=authoryear, citestyle=authoryear,autocite=footnote,backend=biber]{biblatex}
+% \usepackage[bibstyle=numeric,style=authoryear, citestyle=authoryear-comp,autocite=footnote,backend=biber, hyperref=true]{biblatex}
+% Customiye the citation style
+% \DeclareCiteCommand{\textcite}
+%   {\usebibmacro{prenote}}
+%   {\usebibmacro{citeindex}%
+%    \printnames{labelname}%
+%    \setunit{\nameyeardelim}%
+%    \printfield{year}}
+%   {\multicitedelim}
+%   {\usebibmacro{postnote}}
+%\usepackage[backend=biber,style=authoryear,refsection=section]{biblatex}
+\usepackage{hyperref}
+% Customize the appearance of hyperlinks with the folowing lines
+% \hypersetup{
+%     colorlinks=true,
+%     linkcolor=blue,
+%     citecolor=blue,
+%     urlcolor=blue
+% }
+\usepackage{xcolor}
+\definecolor{customgreen}{HTML}{9b0a7d} % Example hex color
+\hypersetup{
+    % colorlinks=true,
+    citebordercolor=customgreen, % Use the custom color for citations
+    linkbordercolor={0 0 1},     % Default blue for footnotes
+    urlbordercolor={0 0 1}       % Default blue for URLs
+}
+\usepackage{float}
+\usepackage{verbatim}
+\usepackage{longtable}
+\usepackage{tabularx}       
+\usepackage{multicol}
+\usepackage{caption}
+\usepackage{floatflt}
+\usepackage{afterpage}
+\usepackage{graphicx}
+\usepackage{csquotes}
+\usepackage{moreverb}     
+%\usepackage[]{mcode}
+\usepackage{bbm}
+\usepackage{booktabs}
+\usepackage{import}
+\usepackage{titlesec}
+%------------------------------------------------------------------------------------
+%	                  PAGE DEFINITIONS
+%------------------------------------------------------------------------------------
+\setlength{\topmargin}{1.5cm}
+\setlength{\headheight}{15pt}
+\setlength{\headsep}{20pt}
+\setlength{\topskip}{12pt}
+\setlength{\evensidemargin}{0pt}
+\setlength{\oddsidemargin}{0pt}
+\setlength{\textheight}{240mm}
+\setlength{\textwidth}{160mm}
+\setlength{\voffset}{-2cm}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\sloppy
+\frenchspacing
+\allowdisplaybreaks
+%------------------------------------------------------------------------------------
+%	                  CHAPTER HEADINGS MANIPULATION
+%------------------------------------------------------------------------------------
+\titleformat{\chapter}[hang]
+{\normalfont\huge\bfseries}{\thechapter.}{1em}{}
+\titlespacing*{\chapter}{0pt}{-20pt}{20pt}
+%------------------------------------------------------------------------------------
+%	                  COMMANDS
+%------------------------------------------------------------------------------------
+\newenvironment{rcases}
+  {\left.\begin{aligned}}
+  {\end{aligned}\right\rbrace}
+\renewcommand{\baselinestretch}{1.25}                % Zeilenabstand
+\AtBeginDocument{\renewcommand{\figurename}{Figure}}   % Bezeichnung fuer Abbildungen
+\renewcommand{\textfraction}{0}
+\newcommand{\clearemptydoublepage}{%                 % neue Kapitel auf ungerade Seite
+  \newpage{\pagestyle{empty}%
+  \cleardoublepage}}
+\newcounter{saveeqn}                                 % equation numbering (2.10 a)
+\newcommand{\alpheqn}{%
+  \stepcounter{equation}%
+  \setcounter{saveeqn}{\value{equation}}%
+  \setcounter{equation}{0}%
+  \renewcommand{\theequation}{\arabic{chapter}.\arabic{saveeqn} \alph{equation}}}
+\newcommand{\reseteqn}{%
+  \setcounter{equation}{\value{saveeqn}}%
+  \renewcommand{\theequation}{\arabic{chapter}.\arabic{equation}}}
+\newcommand{\sgn}[1]{\rm sgn\left(#1\right)}         % sign-function
+\newcommand{\vektor}[1]{\left(\begin{array}{c}#1\end{array}\right)} % Vektoren
+\newcommand{\bm}[1]{{\mbox{{\boldmath$#1$}}}}        % Fettdruck in Formeln
+\newcommand{\mat}[1]{\boldsymbol{#1}}
+%------------------------------------------------------------------------------------
+%	                  THEOREMS
+%------------------------------------------------------------------------------------
+\theoremstyle{definition}
+\newtheorem{assumption}{Assumption} 
+\renewcommand*{\theassumption}{\Alph{assumption}}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma} 
+\newtheorem{corollary}{Corollary}
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
