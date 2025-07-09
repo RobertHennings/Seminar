@@ -13,13 +13,13 @@
 ### Abstract
 
 ## Repository Structure
-**thesis** subfolder:
+**seminar** subfolder:
 <br>
-The ($ \LaTeX $) Thesis project can be found in the subfolder called "thesis".
+The ($ \LaTeX $) Thesis project can be found in the subfolder called "seminar".
 </br>
 **reports** subfolder:
 <br>
-The "reports" subfolder contains everything related to the final thesis presentation ($ \LaTeX $).
+The "reports" subfolder contains everything related to the final seminar presentation ($ \LaTeX $).
 </br>
 **src** subfolder:
 <br>
