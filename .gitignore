@@ -1,0 +1,39 @@
+# ################## Project related stuff
+# config.py
+credentials.json
+**/idea
+**/info
+data/raw/
+# ################## Project related stuff - LaTex Main document
+seminar/*.toc
+seminar/*.aux
+seminar/*.log
+seminar/*.fdb_latexmk
+seminar/*.run.xml
+seminar/*.bbl
+seminar/*.bcf
+seminar/*.out
+seminar/*.lot
+seminar/*.synctex.gz
+seminar/*.lof
+seminar/*.fls
+# ################## Project related stuff - LaTex Main document beamer presentation
+reports/presentation_latex_version/*.toc
+reports/presentation_latex_version/*.aux
+reports/presentation_latex_version/*.log
+reports/presentation_latex_version/*.fdb_latexmk
+reports/presentation_latex_version/*.run.xml
+reports/presentation_latex_version/*.bbl
+reports/presentation_latex_version/*.bcf
+reports/presentation_latex_version/*.out
+reports/presentation_latex_version/*.lot
+reports/presentation_latex_version/*.synctex.gz
+reports/presentation_latex_version/*.lof
+reports/presentation_latex_version/*.fls
+reports/presentation_latex_version/*.nav
+reports/presentation_latex_version/*.vrb
+reports/presentation_latex_version/*.snm
+# ################## Python related stuff
+__pycache__
+# ################## Mac related stuff
+.DS_Store
