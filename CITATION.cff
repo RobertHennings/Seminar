@@ -1,10 +1,10 @@
-title: "Seminar_Empirical_Finance"
+title: "Seminar"
 keywords:
   - Seminar Paper
   - LaTeX
   - Research
 abstract: >
-  This repository contains the materials and source code for Robert Hennings' Seminar Paper in Empirical Finance.
+  This repository contains the materials and source code for Robert Hennings' Seminar Paper.
   It includes the LaTeX seminar paper project, reports, and source code for related research.
 authors:
   - family-names: "Hennings"
@@ -15,11 +15,11 @@ message: "If you use this work, please cite it as below."
 date-released: 2026-MM-DD
 identifiers:
   - type: url
-    value: "https://github.com/RobertHennings/Seminar_Empirical_Finance" # Replace with actual repository URL
+    value: "https://github.com/RobertHennings/Seminar" # Replace with actual repository URL
     description: Latest version
 version: "1.0.0"
 doi: "10.1234/example-doi" # Replace with actual DOI if available
-url: "https://github.com/RobertHennings/Seminar_Empirical_Finance" # Replace with actual repository URL
+url: "https://github.com/RobertHennings/Seminar" # Replace with actual repository URL
 license: "MIT" # Replace with the actual license
-repository-code: "https://github.com/RobertHennings/Seminar_Empirical_Finance"
+repository-code: "https://github.com/RobertHennings/Seminar"
 

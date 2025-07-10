@@ -1,4 +1,4 @@
-# Seminar_Empirical_Finance
+# Seminar
 ## The seminar paper
 ### To DO
 - [ ] Data
@@ -33,21 +33,21 @@ The "src" subfolder contains everything related to the .
 ```bibtex
 @software{Hennings_Seminar_Empirical_Finance,
   author = {Hennings, Robert},
-  title = {Seminar_Empirical_Finance},
+  title = {Seminar},
   year = {2025},
   version = {1.0.0},
   url = {
 author = {Hennings, Robert},
 doi = {10.1234/example-doi},
 license = {MIT},
-title = {{Seminar_Empirical_Finance}},
-url = {https://github.com/RobertHennings/Seminar_Empirical_Finance},
+title = {{Seminar}},
+url = {https://github.com/RobertHennings/Seminar},
 version = {1.0.0}
 }
 ```
 ### APA
 ```apa
-Hennings, R. MasterThesis (Version 1.0.0) [Computer software]. https://doi.org/10.1234/example-doi
+Hennings, R. Seminar (Version 1.0.0) [Computer software]. https://doi.org/10.1234/example-doi
 ```
 ## Contributing
 ### Commit Style
