@@ -33,6 +33,7 @@ reports/presentation_latex_version/*.fls
 reports/presentation_latex_version/*.nav
 reports/presentation_latex_version/*.vrb
 reports/presentation_latex_version/*.snm
+*~
 # ################## Python related stuff
 __pycache__
 # ################## Mac related stuff
