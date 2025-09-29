@@ -1,4 +1,4 @@
-from typing import List, Any 
+from typing import List, Any, Dict
 import sklearn
 import pandas as pd
 import numpy as np
@@ -26,11 +26,28 @@ class ModelObject:
         self.score = None
         self.model_saving_info = None
 
-
+    # The idea of the two following class methods is that we cant place them in the __init__
+    # because we want to be able to create an empty model object and then set the model
+    # and the data later because we also want to use the class to load already fitted models
+    # from a file and then use the class methods to predict and evaluate
+    # and extract the metadata
+    # So we need to be able to set the model and the data after the object is created
+    # and not only at the time of creation
     def set_classifier_model_object(
         self,
         classifier_model_object: sklearn.base.BaseEstimator,
         ) -> None:
+        """Setting the classifier model object.
+
+        Args:
+            classifier_model_object (sklearn.base.BaseEstimator): The classifier model object to set.
+        Examples:
+            from sklearn.cluster import KMeans
+            from model import ModelObject
+            kmeans = KMeans(n_clusters=3, random_state=42)
+            model_object_instance = ModelObject()
+            model_object_instance.set_classifier_model_object(classifier_model_object=kmeans)
+        """
         self.classifier_model_object = classifier_model_object
 
 
@@ -38,12 +55,30 @@ class ModelObject:
         self,
         data: pd.DataFrame
         ) -> None:
+        """Setting the data for the model.
+
+        Args:
+            data (pd.DataFrame): The data to set.
+        Examples:
+            import pandas as pd
+            from model import ModelObject
+            data = pd.DataFrame(index=pd.date_range(start="2000-01-01", end="2023-01-01", freq="M"),
+                                data={
+                                    "feature1": range(276),
+                                    "feature2": range(276, 0, -1),
+                                    "feature3": [x % 5 for x in range(276)],
+                                })
+            model_object_instance = ModelObject()
+            model_object_instance.set_data(data=data)
+        """
         self.data = data
 
 
     def fit(
         self
         ):
+        """Fit the model to the data.
+        """
         logging.info(f"Fitting model: {self.classifier_model_object.__class__.__name__}")
         self.fitted_model = self.classifier_model_object.fit(self.data)
         self.time_last_fitted = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -53,6 +88,33 @@ class ModelObject:
         self,
         new_data: pd.DataFrame = None
         ) -> List[Any]:
+        """Predict the labels for the data.
+
+        Args:
+            new_data (pd.DataFrame, optional): The new data to predict. Defaults to None.
+
+        Examples:
+            import pandas as pd
+            from model import ModelObject
+            data = pd.DataFrame(index=pd.date_range(start="2000-01-01", end="2023-01-01", freq="M"),
+                                data={
+                                    "feature1": range(276),
+                                    "feature2": range(276, 0, -1),
+                                    "feature3": [x % 5 for x in range(276)],
+                                })
+            from sklearn.cluster import KMeans
+            kmeans = KMeans(n_clusters=3, random_state=42)
+            model_object_instance = ModelObject()
+            model_object_instance.set_classifier_model_object(classifier_model_object=kmeans)
+            model_object_instance.set_data(data=data)
+            model_object_instance.fit()
+
+        Raises:
+            ValueError: If the model is not fitted.
+
+        Returns:
+            List[Any]: The predicted labels.
+        """
         if self.fitted_model is None:
             raise ValueError("Model must be fitted before prediction.")
         logging.info(f"Predicting with model: {self.classifier_model_object.__class__.__name__}")
@@ -72,7 +134,36 @@ class ModelObject:
     def evaluate(
         self,
         metric_function: callable
-        ):
+        ) -> float:
+        """Evaluate the model using a metric function.
+
+        Args:
+            metric_function (callable): The metric function to use for evaluation.
+
+        Examples:
+            from sklearn.metrics import silhouette_score
+            from model import ModelObject
+            data = pd.DataFrame(index=pd.date_range(start="2000-01-01", end="2023-01-01", freq="M"),
+                                data={
+                                    "feature1": range(276),
+                                    "feature2": range(276, 0, -1),
+                                    "feature3": [x % 5 for x in range(276)],
+                                })
+            from sklearn.cluster import KMeans
+            kmeans = KMeans(n_clusters=3, random_state=42)
+            model_object_instance = ModelObject()
+            model_object_instance.set_classifier_model_object(classifier_model_object=kmeans)
+            model_object_instance.set_data(data=data)
+            model_object_instance.fit()
+            model_object_instance.predict()
+            evaluation_score = model_object_instance.evaluate(metric_function=silhouette_score)
+
+        Raises:
+            ValueError: If the model is not fitted.
+
+        Returns:
+            float: The evaluation score.
+        """
         if self.labels is None:
             raise ValueError("Model must be fitted before evaluation.")
         try:
@@ -90,8 +181,21 @@ class ModelObject:
         file_path: str=None,
         model_file_name: str=None
         ):
-        # Problem here is the reading back in from a saved model, fro initializing we still need
-        # the model object and the data, that has to be changed
+        """Save the model to a file.
+
+        Args:
+            file_format (str, optional): The file format to use for saving. Defaults to ".pkl".
+            file_path (str, optional): The file path to save the model. Defaults to None.
+            model_file_name (str, optional): The model file name. Defaults to None.
+
+        Examples:
+            from model import ModelObject
+            model_object_instance = ModelObject()
+            model_object_instance.set_classifier_model_object(classifier_model_object=kmeans)
+            model_object_instance.set_data(data=data)
+            model_object_instance.fit()
+            model_object_instance.save_model(file_format=".pkl", file_path="/path/to/save", model_file_name="kmeans_model")
+        """
         logging.info(f"Saving model to {file_path}/{model_file_name} in format {file_format}")
         joblib.dump(
             value=self.fitted_model,
@@ -113,6 +217,22 @@ class ModelObject:
         file_path: str=None,
         model_file_name: str=None
         ):
+        """Load a model from a file.
+
+        Args:
+            file_format (str, optional): The file format to use for loading. Defaults to ".pkl".
+            file_path (str, optional): The file path to load the model from. Defaults to None.
+            model_file_name (str, optional): The pure model file name,
+            without the file extension, that is added by the parameter file_format. Defaults to None.
+
+        Examples:
+            from model import ModelObject
+            model_object_instance = ModelObject()
+            model_object_instance.load_model(file_format=".pkl", file_path="/path/to/save", model_file_name="kmeans_model")
+
+        Returns:
+            _type_: _description_
+        """
         logging.info(f"Loading model from {file_path}/{model_file_name} in format {file_format}")
         self.fitted_model = joblib.load(filename=fr"{file_path}/{model_file_name}{file_format}")
         self.classifier_model_object = self.fitted_model
@@ -122,7 +242,21 @@ class ModelObject:
 
     def _flatten_model_info(
         self,
-        info):
+        info: Dict[str, Any]
+        ) -> pd.DataFrame:
+        """Flatten the model information into a DataFrame.
+
+        Args:
+            info (Dict[str, Any]): The model information to flatten.
+
+        Examples:
+            from model import ModelObject
+            model_object_instance = ModelObject()
+            flat_info_df = model_object_instance._flatten_model_info(info=model_info)
+
+        Returns:
+            pd.DataFrame: The flattened model information.
+        """
         flat_info = {}
         for k, v in info.items():
             if isinstance(v, (np.ndarray, list)):
@@ -145,6 +279,31 @@ class ModelObject:
         file_path: str=None,
         file_name: str=None
         ):
+        """Get the full model information.
+
+        Args:
+            save (bool, optional): Whether to save the model information. Defaults to False.
+            load (bool, optional): Whether to load the model information. Defaults to False.
+            return_info_dict (bool, optional): Whether to return the information as a dictionary. Defaults to True.
+            return_info_df (bool, optional): Whether to return the information as a DataFrame. Defaults to False.
+            file_format (str, optional): The file format to use for saving or loading. Defaults to ".txt".
+            file_name (str, optional): The file name to use for saving or loading. Defaults to None.
+
+        Examples:
+            from model import ModelObject
+            model_object_instance = ModelObject()
+            model_object_instance.set_classifier_model_object(classifier_model_object=kmeans)
+            model_object_instance.set_data(data=data)
+            model_object_instance.fit()
+            model_object_instance.evaluate(metric_function=silhouette_score)
+            model_info = model_object_instance.get_full_model_info(save=True, file_format=".txt", file_path="/path/to/save", file_name="kmeans_model")
+            model_info_dict = model_object_instance.get_full_model_info(return_info_dict=True, return_info_df=False)
+            model_info_df = model_object_instance.get_full_model_info(return_info_dict=False, return_info_df=True)
+            model_info_both = model_object_instance.get_full_model_info(return_info_dict=True, return_info_df=True)
+
+        Returns:
+            _type_: _description_
+        """
         # extract all the metadata for the model
         model_type = self.classifier_model_object.__class__.__name__
         feature_names_in = self.classifier_model_object.feature_names_in_ if hasattr(self.classifier_model_object, 'feature_names_in_') else None
@@ -192,12 +351,83 @@ class ModelObject:
         if return_info_dict:
             return model_info
         elif return_info_df:
-            flat_info_df = self._flatten_model_info(model_info)
+            flat_info_df = self._flatten_model_info(info=model_info)
             return flat_info_df
         elif return_info_dict and return_info_df:
-            flat_info_df = self._flatten_model_info(model_info)
+            flat_info_df = self._flatten_model_info(info=model_info)
             return model_info, flat_info_df
+        
+def flatten_model_info(
+    info: Dict[str, Any]
+    ) -> pd.DataFrame:
+    """Flatten the model information into a DataFrame.
 
+    Args:
+        info (Dict[str, Any]): The model information to flatten.
+
+    Examples:
+        from model import ModelObject
+        model_object_instance = ModelObject()
+        flat_info_df = model_object_instance._flatten_model_info(info=model_info)
+
+    Returns:
+        pd.DataFrame: The flattened model information.
+    """
+    flat_info = {}
+    for k, v in info.items():
+        if isinstance(v, (np.ndarray, list)):
+            flat_info[k] = str(v)
+        elif isinstance(v, dict):
+            flat_info[k] = str(v)
+        else:
+            flat_info[k] = v
+    flat_info_df = pd.DataFrame([flat_info])
+    return flat_info_df
+
+def load_full_model_info(
+    file_format: str=".txt",
+    file_path: str=None,
+    file_name: str=None,
+    return_info_dict: bool=True,
+    return_info_df: bool=False,
+    ) -> Dict[str, Any]:
+    """Load the full model information from a file.
+
+    Args:
+        file_format (str, optional): The file format to use for loading. Defaults to ".txt".
+        file_path (str, optional): The file path to load the model information from. Defaults to None.
+        file_name (str, optional): The pure model file name,
+            without the file extension, that is added by the parameter file_format. Defaults to None.
+
+    Examples:
+        from model import load_full_model_info
+        model_info = load_full_model_info(file_format=".txt", file_path="/path/to/save", file_name="kmeans_model")
+
+    Returns:
+        Dict[str, Any]: The loaded model information.
+    """
+    logging.info(f"Loading model info from {file_path}/{file_name} in format {file_format}")
+    try:
+        model_info = {}
+        with open(fr"{file_path}/{file_name}{file_format}", "r") as f:
+            for line in f:
+                if ": " not in line:
+                    continue  # skip malformed lines
+                key, value = line.strip().split(": ", 1)
+                model_info[key] = value
+        model_info.update(model_info)
+
+        if return_info_df:
+            flat_info_df = flatten_model_info(info=model_info)
+            return flat_info_df
+        elif return_info_dict:
+            return model_info
+        elif return_info_dict and return_info_df:
+            flat_info_df = flatten_model_info(info=model_info)
+            return model_info, flat_info_df
+    except Exception as e:
+        logging.error(f"Error loading model info: {e}")
+        return {}
 
 
 
@@ -254,11 +484,31 @@ new_model_object_instance.get_full_model_info(
 # Loop for multiple models
 models_list = [kmeans, agg, dbscan, spectral, ms]
 for model in models_list:
-    model_object_instance = ModelObject()
-    model_object_instance.set_classifier_model_object(classifier_model_object=model)
-    model_object_instance.set_data(data=data)
-    model_object_instance.fit()
-    predicted_labels = model_object_instance.predict()
-    evaluation_score = model_object_instance.evaluate(metric_function=silhouette_score)
+    model_object_instance = ModelObject() # Initialize a new instance for each model
+    model_object_instance.set_classifier_model_object(classifier_model_object=model) # Set the model
+    model_object_instance.set_data(data=data) # Set the data
+    model_object_instance.fit() # Fit the model
+    predicted_labels = model_object_instance.predict() # Predict the labels
+    evaluation_score = model_object_instance.evaluate(metric_function=silhouette_score) # Evaluate the model
+    # Save the model and the model info with dynamic names based on the model class name
     model_object_instance.save_model(file_format=r".pkl", file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models", model_file_name=f"{model.__class__.__name__}_model")
+    # Get the full model info
     model_object_instance.get_full_model_info(save=True, file_format=r".txt", file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models", file_name=f"{model.__class__.__name__}_model")
+
+# For a proper evaluation now, loading all full_info files and compare the evaluation scores
+import os
+full_model_info_path = r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models"
+all_model_info_files = [file for file in os.listdir(full_model_info_path) if file.endswith(".txt")]
+# Delete the file extension for loading
+all_model_info_files = [os.path.splitext(file)[0] for file in all_model_info_files]
+# Load all model info files into a list of dataframes
+
+all_model_info_dfs = [load_full_model_info(
+    file_format=".txt",
+    file_path=full_model_info_path,
+    file_name=file,
+    return_info_dict=False,
+    return_info_df=True,
+    ) for file in all_model_info_files]
+all_models_comp_df = pd.concat(all_model_info_dfs).reset_index(drop=True)
+# all_models_comp_df.to_excel(r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models/all_models_comparison.xlsx", index=False)
