@@ -1,0 +1,28 @@
+%----------------------------------------------------------------------------------------
+%	NEW CHAPTER TITLE SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Chapter 6)}
+	\begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
+            \includegraphics[width=1.7cm]{wiso_logo.png}
+        };
+		\node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
+            \tikz\node[opacity=0.15] {
+                \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
+            };
+        };
+    \end{tikzpicture}
+	% \begin{block}{} % Empty block title % Set background color (adjust 'blue!20' as needed)
+    %     \centering
+    %     {\large \textbf{Theoretical Framework}} % Slightly smaller text
+    % \end{block}
+	\begin{center}
+        \begin{minipage}{0.6\textwidth} % Adjust the width of the block
+            \begin{block}{} % Empty block title
+                \centering
+                {\large \textbf{Used Data}} % Slightly smaller text
+            \end{block}
+        \end{minipage}
+    \end{center}
+\end{frame}

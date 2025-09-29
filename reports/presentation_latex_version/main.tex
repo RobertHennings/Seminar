@@ -98,13 +98,15 @@
 %------------------------------------------------
 
 %\usepackage{mathptmx} % Use the Times font for serif text
-\usepackage{palatino} % Use the Palatino font for serif text
+%\usepackage{palatino} % Use the Palatino font for serif text
 
 %\usepackage{helvet} % Use the Helvetica font for sans serif text
-\usepackage[default]{opensans} % Use the Open Sans font for sans serif text
+%\usepackage[default]{opensans} % Use the Open Sans font for sans serif text
 %\usepackage[default]{FiraSans} % Use the Fira Sans font for sans serif text
 %\usepackage[default]{lato} % Use the Lato font for sans serif text
-
+\usepackage{helvet} % Use the Helvetica font for sans serif text
+\renewcommand{\familydefault}{\sfdefault}
+\renewcommand{\footnotesize}{\tiny}
 %----------------------------------------------------------------------------------------
 %	SELECT INNER THEME
 %----------------------------------------------------------------------------------------
@@ -138,26 +140,43 @@
 
 %\setbeamertemplate{navigation symbols}{} % Uncomment this line to remove the navigation symbols from the bottom of all slides
 \usepackage{graphicx}
+\usepackage{tikz}
 \usepackage{amsmath}
 \usepackage{hyperref}
 \usepackage{xcolor} % For custom colors
-
+\usepackage[font=small,labelformat=empty]{caption} % Decrease the font size of figure captions
 %----------------------------------------------------------------------------------------
 %	DEFINE CUSTOM COLORS
 %----------------------------------------------------------------------------------------
 \definecolor{CAU_MAIN}{HTML}{9b0a7d} % Replace with your desired hex color
-
-% Apply the custom color
-\setbeamercolor{alerted text}{fg=CAU_MAIN} % Changes the red-colored areas
-\setbeamercolor{item}{fg=CAU_MAIN} % Changes bullet points
-\setbeamercolor{section in toc}{fg=CAU_MAIN} % Changes section titles in the table of contents
-\setbeamercolor{frametitle}{bg=CAU_MAIN, fg=white} % Changes the top bar color
-\setbeamercolor{footline}{bg=CAU_MAIN, fg=white} % Changes the bottom bar color
-\setbeamercolor{title}{bg=CAU_MAIN, fg=white} % Set background and foreground colors for the title
-\setbeamercolor{titlegraphic}{bg=CAU_MAIN}
+\definecolor{CAU_WISO}{HTML}{00677c}
 \definecolor{CustomGrey}{HTML}{B0B0B0} % Replace with your desired hex color for grey
-
-% Apply the grey shade to the footer
+%----------------------------------------------------------------------------------------
+%	APPLY CUSTOM COLORS
+%----------------------------------------------------------------------------------------
+\setbeamercolor{alerted text}{fg=CAU_WISO} % Changes the red-colored areas
+\setbeamercolor{item}{fg=CAU_WISO} % Changes bullet points
+\setbeamercolor{section in toc}{fg=CAU_WISO} % Changes section titles in the table of contents
+\setbeamercolor{frametitle}{bg=CAU_WISO, fg=white} % Changes the top bar color
+\setbeamercolor{footline}{bg=CAU_WISO, fg=white} % Changes the bottom bar color
+\setbeamercolor{title}{bg=CAU_WISO, fg=white} % Set background and foreground colors for the title
+\setbeamercolor{titlegraphic}{bg=CAU_WISO}
+%----------------------------------------------------------------------------------------
+%	CUSTOMIZE BLOCK COLORS
+%----------------------------------------------------------------------------------------
+\setbeamercolor{block body}{bg=CAU_WISO, fg=white}
+\setbeamercolor{block title}{bg=CustomGrey, fg=black}
+%----------------------------------------------------------------------------------------
+%	CUSTOMIZE FIGURE AND LIST OF FIGURES
+%----------------------------------------------------------------------------------------
+\setbeamertemplate{caption}[numbered] % Ensure figures are numbered
+\setbeamertemplate{list of figures}[default] % Use the default style for the list
+\newcommand{\listfigure}[2]{%
+    \item \hyperlink{#1}{Figure \ref{#1}: #2} (Slide \pageref{#1})%
+}
+%----------------------------------------------------------------------------------------
+%	CUSTOMIZE FOOTER COLORS
+%----------------------------------------------------------------------------------------
 \setbeamercolor{footline}{bg=CustomGrey, fg=black}
 \setbeamertemplate{footline}{
     \leavevmode%
@@ -165,10 +184,10 @@
         \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.5ex,dp=1ex,center]{footline}%
             \insertshortauthor
         \end{beamercolorbox}%
-        \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.5ex,dp=1ex,center]{footline}%
+        \begin{beamercolorbox}[wd=.52\paperwidth,ht=2.5ex,dp=1ex,center]{footline}%
             \insertshorttitle
         \end{beamercolorbox}%
-        \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.5ex,dp=1ex,center]{footline}%
+        \begin{beamercolorbox}[wd=.15\paperwidth,ht=2.5ex,dp=1ex,center]{footline}%
             \insertframenumber{} / \inserttotalframenumber
         \end{beamercolorbox}%
     }%
@@ -177,33 +196,50 @@
 %----------------------------------------------------------------------------------------
 %	PRESENTATION INFORMATION
 %----------------------------------------------------------------------------------------
+\title{The relationship between energy commodities and exchange rates}% The short title in the optional parameter appears at the bottom of every slide, the full title in the main parameter is only on the title page
 
-\title[Portfolio Analysis]{Exercise Sheet 02} % The short title in the optional parameter appears at the bottom of every slide, the full title in the main parameter is only on the title page
+\subtitle{\tiny Seminar in Applied Financial Economics: Applied Econometrics of FX Markets - Professor Reitz} % Presentation subtitle, remove this command if a subtitle isn't required
 
-\subtitle{Problems 01 - 04} % Presentation subtitle, remove this command if a subtitle isn't required
+\author[Josef Fella and Robert Hennings]{Josef Fella and Robert Hennings} % Presenter name(s), the optional parameter can contain a shortened version to appear on the bottom of every slide, while the main parameter will appear on the title slide
 
-\author[Robert Hennings]{Robert Hennings} % Presenter name(s), the optional parameter can contain a shortened version to appear on the bottom of every slide, while the main parameter will appear on the title slide
-
-\institute[CAU]{Christian Albrechts University of Kiel \\ \smallskip \textit{robert.hennings@stu.uni-kiel.de} \\ \smallskip \textit{GitHub: https://github.com/RobertHennings}} % Your institution, the optional parameter can be used for the institution shorthand and will appear on the bottom of every slide after author names, while the required parameter is used on the title slide and can include your email address or additional information on separate lines
+\institute[CAU]{Christian Albrechts University of Kiel \\ \smallskip \textit{josef.fella@stu.uni-kiel.de and robert.hennings@stu.uni-kiel.de} \\ \smallskip \textit{GitHub: https://github.com/RobertHennings}} % Your institution, the optional parameter can be used for the institution shorthand and will appear on the bottom of every slide after author names, while the required parameter is used on the title slide and can include your email address or additional information on separate lines
 
 % \date[\today]{International Symposium of Explorers \\ \today} % Presentation date or conference/meeting name, the optional parameter can contain a shortened version to appear on the bottom of every slide, while the required parameter value is output to the title slide
-\date[\today]{\today} % Presentation date or conference/meeting name, the optional parameter can contain a shortened version to appear on the bottom of every slide, while the required parameter value is output to the title slide
-% \date[\today]{2025-5-12}
+% \date[\today]{\today} % Presentation date or conference/meeting name, the optional parameter can contain a shortened version to appear on the bottom of every slide, while the required parameter value is output to the title slide
+\date[\today]{\small Kiel - 14.11.2025}
 %----------------------------------------------------------------------------------------
 \begin{document}
 %----------------------------------------------------------------------------------------
 %	TITLE SLIDE
 %----------------------------------------------------------------------------------------
-\begin{frame}
-	\titlepage % Output the title slide, automatically created using the text entered in the PRESENTATION INFORMATION block above
+\begin{frame}[plain]
+    \titlepage{}
+    \begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=north east, xshift=-0.1cm, yshift=-0.0cm] at (current page.north east) {
+            \includegraphics[width=2cm]{wiso_logo.png}
+        };
+		% Add the .pdf graph as a lightly shaded background
+        \node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
+            \tikz\node[opacity=0.15] {
+                \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
+            };
+        };
+    \end{tikzpicture}
 \end{frame}
+
+% \begin{frame}
+% 	\titlepage % Output the title slide, automatically created using the text entered in the PRESENTATION INFORMATION block above
+% \end{frame}
 %----------------------------------------------------------------------------------------
 %	TABLE OF CONTENTS SLIDE
 %----------------------------------------------------------------------------------------
 % The table of contents outputs the sections and subsections that appear in your presentation, specified with the standard \section and \subsection commands. You may either display all sections and subsections on one slide with \tableofcontents, or display each section at a time on subsequent slides with \tableofcontents[pausesections]. The latter is useful if you want to step through each section and mention what you will discuss.
+% Control the font size of sections and subsections in the table of contents
+\setbeamerfont{section in toc}{size=\small} % Set section font size
+\setbeamerfont{subsection in toc}{size=\tiny} % Set subsection font size
+
 \begin{frame}
-	\frametitle{Overview} % Slide title, remove this command for no title
-	
+	\frametitle{Outline} % Slide title, remove this command for no title
 	\tableofcontents % Output the table of contents (all sections on one slide)
 	%\tableofcontents[pausesections] % Output the table of contents (break sections up across separate slides)
 \end{frame}
@@ -212,18 +248,50 @@
 %----------------------------------------------------------------------------------------
 
 %----------------------------------------------------------------------------------------
-%	PROBLEM 01
+%	00 - Intro
 %----------------------------------------------------------------------------------------
-\section{Problem 01} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
-\input{chapters/problem-01}
+\input{chapters/chapter-00}
 %----------------------------------------------------------------------------------------
-%	PROBLEM 02
+%	01 - Modern Commodities Markets - The current state
 %----------------------------------------------------------------------------------------
-\section{Problem 02} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
-\input{chapters/problem-02}
+\section{Modern Energy Commodities Markets - The current state} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
+\input{chapters/chapter-01}
+%----------------------------------------------------------------------------------------
+%	02 - Research Hypothesis
+%----------------------------------------------------------------------------------------
+\section{Research Hypothesis} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
+\input{chapters/chapter-02}
+%----------------------------------------------------------------------------------------
+%	03 - Literature Review
+%----------------------------------------------------------------------------------------
+\section{Literature Review} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
+\input{chapters/chapter-03}
+%----------------------------------------------------------------------------------------
+%	04 - Methodology Overview
+%----------------------------------------------------------------------------------------
+\section{Methodology Overview} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
+\input{chapters/chapter-04}
+%----------------------------------------------------------------------------------------
+%	05 - Theoretical Framework
+%----------------------------------------------------------------------------------------
+\section{Theoretical Framework} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
+\input{chapters/chapter-05}
+%----------------------------------------------------------------------------------------
+%	06 - Used Data
+%----------------------------------------------------------------------------------------
+\section{Used Data} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
+\input{chapters/chapter-06}
+%----------------------------------------------------------------------------------------
+%	07 - Model Results
+%----------------------------------------------------------------------------------------
+\section{Model Results} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
+\input{chapters/chapter-07}
+%----------------------------------------------------------------------------------------
+%	XX - Data Characteristics and Stylized Facts
+%----------------------------------------------------------------------------------------
+% \section{Data Characteristics and Stylized Facts} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
+% \input{chapters/chapter-06}
 
-
-%------------------------------------------------
 \subsection{Paragraphs and Lists}
 
 \begin{frame}
@@ -343,14 +411,14 @@
 
 \subsection{Figure}
 
-\begin{frame}
-	\frametitle{Figure}
+% \begin{frame}
+% 	\frametitle{Figure}
 	
-	\begin{figure}
-		\includegraphics[width=0.5\linewidth]{problem-01.pdf}
-		\caption{Problem - 01.}
-	\end{figure}
-\end{frame}
+% 	\begin{figure}
+% 		\includegraphics[width=0.5\linewidth]{problem-01.pdf}
+% 		\caption{Problem - 01.}
+% 	\end{figure}
+% \end{frame}
 
 %------------------------------------------------
 
@@ -441,72 +509,149 @@
 	
 	This statement requires citation \cite{p1,p2}.
 \end{frame}
-
-%------------------------------------------------
-
-\begin{frame} % Use [allowframebreaks] to allow automatic splitting across slides if the content is too long
-	\frametitle{References}
-	
-	\begin{thebibliography}{99} % Beamer does not support BibTeX so references must be inserted manually as below, you may need to use multiple columns and/or reduce the font size further if you have many references
-		\footnotesize % Reduce the font size in the bibliography
-		
-		\bibitem[Smith, 2022]{p1}
-			John Smith (2022)
-			\newblock Publication title
-			\newblock \emph{Journal Name} 12(3), 45 -- 678.
-			
-		\bibitem[Kennedy, 2023]{p2}
-			Annabelle Kennedy (2023)
-			\newblock Publication title
-			\newblock \emph{Journal Name} 12(3), 45 -- 678.
-	\end{thebibliography}
-\end{frame}
-
+%----------------------------------------------------------------------------------------
+%	XX - Appendix
+%----------------------------------------------------------------------------------------
+\section{Appendix} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
+\input{chapters/appendix}
+%----------------------------------------------------------------------------------------
+%	XX - References
+%----------------------------------------------------------------------------------------
+\section{References} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
+\input{chapters/references}
 %----------------------------------------------------------------------------------------
 %	ACKNOWLEDGMENTS SLIDE
 %----------------------------------------------------------------------------------------
-
-\begin{frame}
-	\frametitle{Acknowledgements}
+% \begin{frame}
+% 	\frametitle{Acknowledgements}
 	
-	\begin{columns}[t] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
-		\begin{column}{0.45\textwidth} % Left column width
-			\textbf{Smith Lab}
-			\begin{itemize}
-				\item Alice Smith
-				\item Devon Brown
-			\end{itemize}
-			\textbf{Cook Lab}
-			\begin{itemize}
-				\item Margaret
-				\item Jennifer
-				\item Yuan
-			\end{itemize}
-		\end{column}		
-		\begin{column}{0.5\textwidth} % Right column width
-			\textbf{Funding}
-			\begin{itemize}
-				\item British Royal Navy
-				\item Norwegian Government
-			\end{itemize}
-		\end{column}
-	\end{columns}
+% 	\begin{columns}[t] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+% 		\begin{column}{0.45\textwidth} % Left column width
+% 			\textbf{Smith Lab}
+% 			\begin{itemize}
+% 				\item Alice Smith
+% 				\item Devon Brown
+% 			\end{itemize}
+% 			\textbf{Cook Lab}
+% 			\begin{itemize}
+% 				\item Margaret
+% 				\item Jennifer
+% 				\item Yuan
+% 			\end{itemize}
+% 		\end{column}		
+% 		\begin{column}{0.5\textwidth} % Right column width
+% 			\textbf{Funding}
+% 			\begin{itemize}
+% 				\item British Royal Navy
+% 				\item Norwegian Government
+% 			\end{itemize}
+% 		\end{column}
+% 	\end{columns}
+% \end{frame}
+%----------------------------------------------------------------------------------------
+%	LIST OF FIGURES
+%----------------------------------------------------------------------------------------
+\begin{frame}
+    \frametitle{List of Figures}
+    \begin{itemize}
+        \listfigure{fig:oil_production}{Global Oil Production and Consumption}
+		\listfigure{fig:coal_production}{Global Coal Production and Consumption}
+		%\listfigure{fig:}{}
+        % \listfigure{fig:gas_production}{Global Natural Gas Production and Consumption}
+    \end{itemize}
 \end{frame}
-
 %----------------------------------------------------------------------------------------
 %	CLOSING SLIDE
 %----------------------------------------------------------------------------------------
-
 \begin{frame}[plain] % The optional argument 'plain' hides the headline and footline
 	\begin{center}
-		{\Huge The End}
+		{\Huge Thank you for your attention!}
 		
 		\bigskip\bigskip % Vertical whitespace
-		
-		{\LARGE Questions? Comments?}
+
+		{\LARGE We await your Questions and/or Comments.}
+		\begin{tikzpicture}[remember picture, overlay]
+			\node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
+				\includegraphics[width=1.7cm]{wiso_logo.png}
+			};
+			\node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
+			    \tikz\node[opacity=0.15] {
+			        \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
+			    };
+			};
+		\end{tikzpicture}
+
+		\bigskip\bigskip % Vertical whitespace
+		\bigskip\bigskip % Vertical whitespace
+		\bigskip\bigskip % Vertical whitespace
+
+		\begin{columns}[t] % The "t" option specifies top vertical alignment
+			\begin{column}{0.50\textwidth} % Left column width
+				\centering % Center the content
+				\textbf{Josef Fella} \\ % Name in bold
+				{\small\textit{josef.fella@stu.uni-kiel.de}} % Email in italic and smaller font
+			\end{column}
+			\begin{column}{0.50\textwidth} % Right column width
+				\centering % Center the content
+				\textbf{Robert Hennings} \\ % Name in bold
+				{\small\textit{robert.hennings@stu.uni-kiel.de}} % Email in italic and smaller font
+			\end{column}
+		\end{columns}
+		\bigskip
+		\tiny\textit{Public GitHub Project Repository: https://github.com/RobertHennings}
 	\end{center}
 \end{frame}
-
 %----------------------------------------------------------------------------------------
+%	DISCUSSION SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}[plain] % The optional argument 'plain' hides the headline and footline
+	\frametitle{Discussion}
+	\begin{center}
 
+		\bigskip\bigskip % Vertical whitespace
+		\bigskip\bigskip % Vertical whitespace
+
+		\begin{enumerate}
+			\item Have you expected this outcome?
+			\item What do you think about the dynamics?
+			\item What other variables could be potentially included?
+		\end{enumerate}
+
+		\begin{tikzpicture}[remember picture, overlay]
+			\node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
+				\includegraphics[width=1.7cm]{wiso_logo.png}
+			};
+			\node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
+			    \tikz\node[opacity=0.15] {
+			        \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
+			    };
+			};
+		\end{tikzpicture}
+
+		\bigskip\bigskip % Vertical whitespace
+		\bigskip\bigskip % Vertical whitespace
+
+		\begin{columns}[t] % The "t" option specifies top vertical alignment
+			\begin{column}{0.50\textwidth} % Left column width
+				\centering % Center the content
+				\textbf{Josef Fella} \\ % Name in bold
+				{\small\textit{josef.fella@stu.uni-kiel.de}} % Email in italic and smaller font
+			\end{column}
+			\begin{column}{0.50\textwidth} % Right column width
+				\centering % Center the content
+				\textbf{Robert Hennings} \\ % Name in bold
+				{\small\textit{robert.hennings@stu.uni-kiel.de}} % Email in italic and smaller font
+			\end{column}
+		\end{columns}
+		\bigskip
+		\tiny\textit{Public GitHub Project Repository: https://github.com/RobertHennings}
+	\end{center}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	BACK UP SLIDES
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Further Material for Illustrations - Questions}
+	
+\end{frame}
 \end{document} 

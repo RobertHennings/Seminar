@@ -1,8 +1,8 @@
 # ################## Project related stuff
 # config.py
 credentials.json
-**/idea
-**/info
+**/idea # ignore everything in the idea folder
+**/info # ignore everything in the info folder
 data/raw/
 # ################## Project related stuff - LaTex Main document
 seminar/*.toc
