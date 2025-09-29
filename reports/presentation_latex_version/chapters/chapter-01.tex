@@ -1,0 +1,65 @@
+%----------------------------------------------------------------------------------------
+%	NEW CHAPTER TITLE SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Chapter 1)}
+	\begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
+            \includegraphics[width=1.7cm]{wiso_logo.png}
+        };
+		\node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
+            \tikz\node[opacity=0.15] {
+                \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
+            };
+        };
+    \end{tikzpicture}
+	% \begin{block}{} % Empty block title % Set background color (adjust 'blue!20' as needed)
+    %     \centering
+    %     {\large \textbf{Modern Energy Commodity Markets - The current state}} % Slightly smaller text
+    % \end{block}
+	\begin{center}
+        \begin{minipage}{0.6\textwidth} % Adjust the width of the block
+            \begin{block}{} % Empty block title
+                \centering
+                {\large \textbf{Modern Energy Commodity Markets \\ The current state}} % Slightly smaller text
+            \end{block}
+        \end{minipage}
+    \end{center}
+\end{frame}
+%----------------------------------------------------------------------------------------
+\subsection{Physical Markets: Global Oil and Gas Production and Consumption over time}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Oil: Global Production and Consumption over time}
+	
+	\begin{figure}
+		\includegraphics[width=0.8\linewidth]{oil_consumption_production_combined_graph.pdf}
+		\caption{\tiny Figure: Global Oil Production and Consumption over time - in terawatt-hours (TWh).\footnote{Own Illustration based on XYZ (2000), page 7 and data accessed 10.09.25.}\label{fig:oil_production}}
+	\end{figure}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Gas: Global Production and Consumption over time}
+	
+	\begin{figure}
+		\includegraphics[width=0.8\linewidth]{gas_consumption_production_combined_graph.pdf}
+		\caption{\tiny Figure: Global Natural Gas Production and Consumption over time - in terawatt-hours (TWh).\footnote{Own Illustration based on XYZ (2000), page 7 and data accessed 10.09.25.}}
+	\end{figure}
+\end{frame}
+%----------------------------------------------------------------------------------------
+\subsection{Financial Markets: Global Oil and Gas Open Interest over time}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Financial Markets: Oil and Gas OI over time}
+	
+	\begin{figure}
+		\includegraphics[width=0.8\linewidth]{open_interest_oil_gas_combined_graph.pdf}
+		\caption{\tiny Figure: Oil and Gas Open Interest over time.\footnote{Own Illustration based on XYZ (2000), page 7 and data accessed 10.09.25.}}
+	\end{figure}
+\end{frame}

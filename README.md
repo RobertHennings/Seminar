@@ -1,6 +1,15 @@
 # Seminar
 ## The seminar paper
-### To DO
+
+## Organizational Information
+Notion link: [Notion](https://www.notion.so/Seminar-25e94b1118e9809ebb1bf9c73503b7c8?source=copy_link)
+
+### Fromalities
+Formal guidelines for the $\LaTeX$ format offered by the CAU can be found [here](https://www.wiso.uni-kiel.de/de/studium/sonstiges/info-inst-vwl/abschlussarbeiten).
+
+
+
+### To Do
 - [ ] Data
 
 * [ ] Analysis
@@ -31,7 +40,7 @@ The "src" subfolder contains everything related to the .
 ## Citation
 ### BibTex
 ```bibtex
-@software{Hennings_Seminar_Empirical_Finance,
+@software{Hennings_Seminar,
   author = {Hennings, Robert},
   title = {Seminar},
   year = {2025},
@@ -68,5 +77,6 @@ TST: addition or modification of tests
 REL: related to releasing numpy
 ```
 
-## Author
+## Authors
+Josef Fella, 2025
 Robert Hennings, 2025

@@ -1,0 +1,24 @@
+model_type: MeanShift
+feature_names_in: ['feature1' 'feature2' 'feature3']
+model_params: {'bandwidth': None, 'bin_seeding': False, 'cluster_all': True, 'max_iter': 300, 'min_bin_freq': 1, 'n_jobs': None, 'seeds': None}
+n_iter: 7
+cluster_centers: [[229.          47.           2.01075269]
+ [182.          94.           2.        ]
+ [135.         141.           1.98924731]
+ [ 88.         188.           2.03225806]]
+time_last_fitted: 2025-09-26 16:21:23
+predicted_labels: [3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+ 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+ 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+ 3 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+ 2 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+evaluation_score: 0.503914026038315
+file_format: .pkl
+file_path: /Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models
+model_file_name: MeanShift_model
+model_file_saved: 2025-09-26 16:21:23
+full_model_path: /Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models/MeanShift_model.pkl
+model_info_saved: 2025-09-26 16:21:23
