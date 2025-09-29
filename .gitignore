@@ -34,6 +34,7 @@ reports/presentation_latex_version/*.nav
 reports/presentation_latex_version/*.vrb
 reports/presentation_latex_version/*.snm
 **/~$* # Ignore all temporary windows files in the whole repo
+~$* # Ignore all temporary windows files in the whole repo
 # ################## Python related stuff
 __pycache__
 # ################## Mac related stuff
