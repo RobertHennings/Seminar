@@ -4,9 +4,12 @@ keywords:
   - LaTeX
   - Research
 abstract: >
-  This repository contains the materials and source code for Robert Hennings' Seminar Paper.
+  This repository contains the materials and source code for Josef Fellas' and Robert Hennings' Seminar Paper.
   It includes the LaTeX seminar paper project, reports, and source code for related research.
 authors:
+  - family-names: "Fella"
+    given-names: "Josef"
+    orcid: "https://orcid.org/0000-0000-0000-0000" # Replace with actual ORCID if available
   - family-names: "Hennings"
     given-names: "Robert"
     orcid: "https://orcid.org/0000-0000-0000-0000" # Replace with actual ORCID if available

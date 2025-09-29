@@ -40,13 +40,13 @@ The "src" subfolder contains everything related to the .
 ## Citation
 ### BibTex
 ```bibtex
-@software{Hennings_Seminar,
-  author = {Hennings, Robert},
+@software{Fella_Hennings_Seminar,
+  author = {Fella, Josef; Hennings, Robert},
   title = {Seminar},
   year = {2025},
   version = {1.0.0},
   url = {
-author = {Hennings, Robert},
+author = {Fella, Josef; Hennings, Robert},
 doi = {10.1234/example-doi},
 license = {MIT},
 title = {{Seminar}},
@@ -56,7 +56,7 @@ version = {1.0.0}
 ```
 ### APA
 ```apa
-Hennings, R. Seminar (Version 1.0.0) [Computer software]. https://doi.org/10.1234/example-doi
+Fella, J.; Hennings, R. Seminar (Version 1.0.0) [Computer software]. https://doi.org/10.1234/example-doi
 ```
 ## Contributing
 ### Commit Style
@@ -79,4 +79,5 @@ REL: related to releasing numpy
 
 ## Authors
 Josef Fella, 2025
+<br>
 Robert Hennings, 2025
