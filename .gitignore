@@ -33,6 +33,8 @@ reports/presentation_latex_version/*.fls
 reports/presentation_latex_version/*.nav
 reports/presentation_latex_version/*.vrb
 reports/presentation_latex_version/*.snm
+.latex-preview-cache/
+**/.latex-preview-cache/
 **/~$* # Ignore all temporary windows files in the whole repo
 ~$* # Ignore all temporary windows files in the whole repo
 <del>$* **/</del>$*
