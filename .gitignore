@@ -3,6 +3,8 @@
 credentials.json
 **/idea # ignore everything in the idea folder
 **/info # ignore everything in the info folder
+**/idea/ # ignore everything in the idea folder
+**/info/ # ignore everything in the info folder
 data/raw/
 # ################## Project related stuff - LaTex Main document
 seminar/*.toc
