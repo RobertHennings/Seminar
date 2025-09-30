@@ -37,6 +37,7 @@ reports/presentation_latex_version/*.snm
 **/.latex-preview-cache/
 **/~$* # Ignore all temporary windows files in the whole repo
 ~$* # Ignore all temporary windows files in the whole repo
+~$*.pptx
 <del>$* **/</del>$*
 # Ignore a large file for now
 reports/figures/cftc_Futures-and-Options Combined Reports_1995-01-01_to_2025-01-01.csv
