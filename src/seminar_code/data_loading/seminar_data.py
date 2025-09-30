@@ -180,17 +180,40 @@ fred_full_info_table = pd.DataFrame(data_full_info_dict).T
 
 
 ############################### (Real) Exchange Rate Data - BIS ###############################
+# Real effective exchange rate - monthly - broad basket
 country_keys_mapping = {
-    "XM": "Euro Area",
-    "JP": "Japan",
-    "CH": "Switzerland",
     "US": "United States",
-    "GB": "United Kingdom"
+    "XM": "Euro Area",
+    # "GB": "United Kingdom",
+    # "JP": "Japan",
+    # "CH": "Switzerland",
 }
 exchange_rates_df = data_loading_instance.get_bis_exchange_rate_data(
     country_keys_mapping=country_keys_mapping,
-    exchange_rate_type="Real effective exchange rate - monthly - broad basket",
+    exchange_rate_type_list=["Real effective exchange rate - monthly - broad basket", "Real effective exchange rate - monthly - narrow basket"],
 )
+
+# Real effective exchange rate - monthly - broad basket
+# Real effective exchange rate - monthly - narrow basket
+# Nominal effective exchange rate - monthly - broad basket
+# Nominal effective exchange rate - monthly - narrow basket
+# Nominal effective exchange rate - daily - narrow basket
+# Nominal effective exchange rate - daily - broad basket
+
+# For the regime switching analysis, first provide a benchmark model: Markov-Switching for the selected interest rate
+
+# Import the necessary library
+from statsmodels.tsa.regime_switching.markov_switching import MarkovSwitching
+
+# Select the interest rate series for the analysis
+interest_rate_series = data_dict['Interest Rate']
+
+# Fit a Markov-Switching model
+markov_model = MarkovSwitching(interest_rate_series, k_regimes=2)
+markov_fit = markov_model.fit()
+
+# Print the summary of the model
+print(markov_fit.summary())
 
 # import matplotlib.pyplot as plt
 

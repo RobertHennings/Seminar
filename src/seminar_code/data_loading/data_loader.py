@@ -32,6 +32,9 @@ BIS_EXCHANGE_RATE_MAPPING_DICT = cfg.BIS_EXCHANGE_RATE_MAPPING_DICT
 BIS_DATA_BASE_URL = cfg.BIS_DATA_BASE_URL
 
 class DataLoading(object):
+    """The main purpose of this class is to provide a one stop shop for
+       loading all the necessary data from the various sources used.
+    """
     def __init__(
         self,
         credential_path: str=None,
@@ -53,6 +56,7 @@ class DataLoading(object):
         self.verify = verify
         self.bis_exchange_rate_mapping_dict = bis_exchange_rate_mapping_dict
         self.bis_data_base_url = bis_data_base_url
+        # For some APIs credentials are needed, these are loaded here from a local file
         if (self.credential_path and self.credential_file_name) is not None:
             # trigger credential loading
             credentials = self.__load_credentials()
@@ -151,7 +155,20 @@ class DataLoading(object):
     ######################### FRED Data #########################
     def __normalize_freq_fred(
         self,
-        freq: str) -> str:
+        freq: str
+        ) -> str:
+        """Normalize frequency strings for FRED API requests. Since we often want
+           to load multiple series with different frequencies, we need to
+           normalize them to a common set of frequency indicators (i.e. resample them).
+           In order to directly see what is the common lowest frequency, we normalize
+           the frequency strings to a common set of indicators.
+
+        Args:
+            freq (str): The frequency string to normalize.
+
+        Returns:
+            str: The normalized frequency string.
+        """
         if freq is None:
             return None
         # Take only the first letter for common cases (D, W, M, Q, A, etc.)
@@ -175,6 +192,16 @@ class DataLoading(object):
         start_date: str,
         end_date: str
         ) -> Tuple[Dict[str, pd.Series], Dict[str, str], Dict[str, str], Dict[str, str], pd.DataFrame]:
+        """Fetch data from FRED API for multiple series at once.
+
+        Args:
+            series_dict_mapping (Dict[str, str]): Mapping of series names to their IDs.
+            start_date (str): Start date for the data retrieval.
+            end_date (str): End date for the data retrieval.
+
+        Returns:
+            Tuple[Dict[str, pd.Series], Dict[str, str], Dict[str, str], Dict[str, str], pd.DataFrame]: A tuple containing the data series, full info, frequency info, and a DataFrame of the combined data.
+        """
         data_dict = {}
         data_full_info_dict = {}
         data_freq_dict = {}
@@ -223,6 +250,16 @@ class DataLoading(object):
         params_mapping_dict: Dict[str, List[str]]=PARAMS_MAPPING_DICT,
         storage_options_dict: Dict[str, str]=STORAGE_OPTIONS_DICT
         ) -> Tuple[Dict[str, pd.Series], Dict[str, str], Dict[str, str], Dict[str, str], pd.DataFrame]:
+        """Fetch oil and gas production/consumption data from World in Data.
+
+        Args:
+            series_dict_mapping (Dict[str, str]): Mapping of series names to their URLs.
+            params_mapping_dict (Dict[str, List[str]], optional): Mapping of parameter names to their values. Defaults to PARAMS_MAPPING_DICT.
+            storage_options_dict (Dict[str, str], optional): Storage options for the data retrieval. Defaults to STORAGE_OPTIONS_DICT.
+
+        Returns:
+            Tuple[Dict[str, pd.Series], Dict[str, str], Dict[str, str], Dict[str, str], pd.DataFrame]: A tuple containing the data series, full info, frequency info, and a DataFrame of the combined data.
+        """
         data_dict = {}
         data_full_info_dict = {}
         data_freq_dict = {}
@@ -345,6 +382,18 @@ class DataLoading(object):
         auto_adjust: bool=False,
         interval: str="1d"
         ) -> pd.DataFrame:
+        """Fetch historical market data from Yahoo Finance.
+
+        Args:
+            ticker (List[str]): List of stock tickers to fetch data for.
+            start_date (pd.Timestamp): Start date for the data retrieval.
+            end_date (pd.Timestamp): End date for the data retrieval.
+            auto_adjust (bool, optional): Whether to automatically adjust prices for splits and dividends. Defaults to False.
+            interval (str, optional): Data interval frequency. Defaults to "1d".
+
+        Returns:
+            pd.DataFrame: Historical market data for the specified tickers and date range.
+        """
         tickers_connected = " ".join(ticker)
         print("FUNCTION: get_yahoo_data")
         data = yf.download(
@@ -363,7 +412,16 @@ class DataLoading(object):
         yahoo_df: pd.DataFrame,
         columns: List[str]
         ) -> pd.DataFrame:
-        print("FUNCTION: filter_yahoo_data")
+        """Filter the Yahoo Finance DataFrame to keep only the specified columns.
+
+        Args:
+            yahoo_df (pd.DataFrame): The original Yahoo Finance DataFrame.
+            columns (List[str]): List of columns to keep.
+
+        Returns:
+            pd.DataFrame: A filtered DataFrame with only the specified columns.
+        """
+        logging.info("FUNCTION: filter_yahoo_data")
         return yahoo_df[columns]
 
 
@@ -378,6 +436,21 @@ class DataLoading(object):
         lastnobservations: int=None,
         includehistory: bool=False
         ) -> Dict[str, pd.Series]:
+        """Fetch historical data from the ECB.
+
+        Args:
+            series_dict_mapping (Dict[str, str]): Mapping of variable names to series IDs.
+            start_date (str): Start date for the data retrieval.
+            end_date (str): End date for the data retrieval.
+            detail (str, optional): Level of detail for the data. Defaults to None.
+            updatedafter (str, optional): Fetch data updated after this date. Defaults to None.
+            firstnobservations (int, optional): Fetch only the first n observations. Defaults to None.
+            lastnobservations (int, optional): Fetch only the last n observations. Defaults to None.
+            includehistory (bool, optional): Whether to include historical data. Defaults to False.
+
+        Returns:
+            Dict[str, pd.Series]: A dictionary mapping variable names to their historical data series.
+        """
         data_dict = {}
         for name, sid in series_dict_mapping.items():
             logging.info(f"Fetching data for variable {name} with series id: ({sid}) for start date: {start_date} and end date: {end_date}")
@@ -398,32 +471,40 @@ class DataLoading(object):
         self,
         country_keys_mapping: Dict[str, str],
         dataflow: str="WS_EER",
-        exchange_rate_type: str="Real effective exchange rate - monthly - broad basket",
-        keep_columns: List[str]=["REF_AREA", "TIME_PERIOD", "OBS_VALUE"],
+        exchange_rate_type_list: List[str]=["Real effective exchange rate - monthly - broad basket"],
         ) -> pd.DataFrame:
+        """Fetch exchange rate data from the BIS API.
+
+        Args:
+            country_keys_mapping (Dict[str, str]): Mapping of country names to their keys.
+            dataflow (str, optional): The data flow to use. Defaults to "WS_EER".
+            exchange_rate_type (List[str], optional): List of exchange rate types to fetch. Defaults to ["Real effective exchange rate - monthly - broad basket"].
+            keep_columns (List[str], optional): List of columns to keep in the final DataFrame. Defaults to ["REF_AREA", "TIME_PERIOD", "OBS_VALUE"].
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the fetched exchange rate data.
+        """
         # Construct the single urls
-        urls = [f"https://stats.bis.org/api/v2/data/dataflow/BIS/WS_EER/1.0/M.R.B.{country}?format=csv" for country in list(country_keys_mapping.keys())]
-        rate_type = self.bis_exchange_rate_mapping_dict.get(exchange_rate_type, None)
-        urls = [f"{self.bis_data_base_url}data/dataflow/BIS/{dataflow}/1.0/{rate_type}{country}?format=csv" for country in list(country_keys_mapping.keys())]
+        converted_rate_types = [self.bis_exchange_rate_mapping_dict.get(rate_type, None) for rate_type in exchange_rate_type_list]
+        urls = [f"{self.bis_data_base_url}data/dataflow/BIS/{dataflow}/1.0/{rate_type}{country}?format=csv" for country in list(country_keys_mapping.keys()) for rate_type in converted_rate_types if rate_type is not None]
+        exchange_rate_type_long_list = [f"{country}_{rate}" for country in list(country_keys_mapping.keys()) for rate in exchange_rate_type_list if rate is not None]
+
         master_df = pd.DataFrame()
         for i in range(len(urls)):
             country_url = urls[i]
+            column_name = exchange_rate_type_long_list[i]
             logging.info(f"Fetching data from URL: {country_url}")
             country_df = pd.read_csv(country_url)
+            country_df_pivoted = country_df.pivot(index="TIME_PERIOD", columns="REF_AREA", values="OBS_VALUE")
+            country_df_pivoted.columns = [column_name]
+            
             if master_df.empty:
-                master_df = country_df
+                master_df = country_df_pivoted
             else:
-                master_df = pd.concat([master_df, country_df], ignore_index=True)
+                master_df = pd.concat([master_df, country_df_pivoted], ignore_index=False, axis=1)
 
-        # df = pd.concat([pd.read_csv(url) for url in urls])
-        df = master_df.copy()
-        df_filtered = df[keep_columns].copy()
-        df_filtered = df_filtered.dropna().reset_index(drop=True)
-
-        df_filtered = df_filtered.pivot(index="TIME_PERIOD", columns="REF_AREA", values="OBS_VALUE").rename(columns=country_keys_mapping).reset_index()
-        df_filtered = df_filtered.set_index("TIME_PERIOD")
-        df_filtered.index = pd.to_datetime(df_filtered.index, format="%Y-%m")
-        effective_exchange_rates_df_pivoted = df_filtered.copy()
-        return effective_exchange_rates_df_pivoted
+        master_df.index = pd.to_datetime(master_df.index, format="%Y-%m")
+        master_df = master_df.sort_index()
+        return master_df
 
         
