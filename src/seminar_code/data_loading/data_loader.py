@@ -506,5 +506,3 @@ class DataLoading(object):
         master_df.index = pd.to_datetime(master_df.index, format="%Y-%m")
         master_df = master_df.sort_index()
         return master_df
-
-        

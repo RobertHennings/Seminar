@@ -183,22 +183,43 @@ fred_full_info_table = pd.DataFrame(data_full_info_dict).T
 # Real effective exchange rate - monthly - broad basket
 country_keys_mapping = {
     "US": "United States",
-    "XM": "Euro Area",
+    # "XM": "Euro Area",
     # "GB": "United Kingdom",
     # "JP": "Japan",
     # "CH": "Switzerland",
 }
 exchange_rates_df = data_loading_instance.get_bis_exchange_rate_data(
     country_keys_mapping=country_keys_mapping,
-    exchange_rate_type_list=["Real effective exchange rate - monthly - broad basket", "Real effective exchange rate - monthly - narrow basket"],
+    exchange_rate_type_list=[
+        "Real effective exchange rate - monthly - broad basket",
+        "Real effective exchange rate - monthly - narrow basket"
+        ],
 )
-
 # Real effective exchange rate - monthly - broad basket
 # Real effective exchange rate - monthly - narrow basket
 # Nominal effective exchange rate - monthly - broad basket
 # Nominal effective exchange rate - monthly - narrow basket
 # Nominal effective exchange rate - daily - narrow basket
 # Nominal effective exchange rate - daily - broad basket
+
+series_dict_mapping = {
+    'USD-EUR Spot Rate': 'DEXUSEU',
+    'USD-JPY Spot Rate': 'DEXJPUS',
+    'USD-GBP Spot Rate': 'DEXUSUK',
+    'USD-CHF Spot Rate': 'DEXSZUS',
+}
+start_date = '2000-01-01'
+end_date = '2024-12-31'
+
+data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_data(
+    series_dict_mapping=series_dict_mapping,
+    start_date=start_date,
+    end_date=end_date
+    )
+data_us_df = pd.concat(list(data_dict.values()), axis=1).dropna()
+data_us_full_info_table = pd.DataFrame(data_full_info_dict).T
+
+
 
 # For the regime switching analysis, first provide a benchmark model: Markov-Switching for the selected interest rate
 
