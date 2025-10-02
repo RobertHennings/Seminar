@@ -6,10 +6,12 @@ Seminar in Applied Financial Economics: Applied Econometrics of FX Markets - Pro
 2. Open a terminal -> Navigate to the desired local folder path where to save the files (cd some/path/to/store) -> enter: git clone https://github.com/RobertHennings/Seminar 
 <br>
 The full terminal code:
+
 ```zsh
 cd some/path/to/store
 git clone https://github.com/RobertHennings/Seminar 
 ```
+
 ## The seminar paper
 ### Abstract
 The seminar paper deals with the question if and if so how heavily energy commodity price shocks affect exchange rates. The main research hypothesis are the following ones:
