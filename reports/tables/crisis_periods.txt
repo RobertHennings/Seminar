@@ -1,0 +1,24 @@
+	Start-date	End-date	Event-Type	Source
+US Recession 1970-1970	1970-01-01	1970-12-01	US-Recession	FRED: USREC
+Bretton Woods Breakdown	1971-08-15	1973-03-19	Major Global Crisis	Various
+Nixon Shock	1971-08-15	1973-03-19	Major Global Crisis	Various
+Oil Crisis I	1973-10-17	1974-03-01	Major Global Crisis	Various
+US Recession 1973-1975	1973-12-01	1975-04-01	US-Recession	FRED: USREC
+Oil Crisis II	1979-01-01	1981-03-01	Major Global Crisis	Various
+US Recession 1980-1980	1980-02-01	1980-08-01	US-Recession	FRED: USREC
+US Recession 1981-1982	1981-08-01	1982-12-01	US-Recession	FRED: USREC
+Black Monday Crash	1987-10-19	1987-10-19	Major Global Crisis	Various
+US Recession 1990-1991	1990-08-01	1991-04-01	US-Recession	FRED: USREC
+Asian Financial Crisis	1997-07-02	1998-12-31	Major Global Crisis	Various
+Russian Crisis	1998-08-17	1998-09-01	Major Global Crisis	Various
+Dot-com Bubble	2000-03-01	2002-10-01	Major Global Crisis	Various
+US Recession 2001-2001	2001-04-01	2001-12-01	US-Recession	FRED: USREC
+Global Financial Crisis	2007-08-09	2009-03-09	Major Global Crisis	Various
+US Recession 2008-2009	2008-01-01	2009-07-01	US-Recession	FRED: USREC
+US QE	2008-11-25	2014-12-31	Major Global Crisis	Various
+European Debt Crisis	2009-10-01	2012-12-31	Major Global Crisis	Various
+US Debt Ceiling Crisis	2011-08-20	2011-08-05	Major Global Crisis	Various
+US-China Trade War	2018-03-22	2020-01-15	Major Global Crisis	Various
+COVID-19 Pandemic	2020-02-20	2021-11-16	Major Global Crisis	Various
+US Recession 2020-2020	2020-03-01	2020-05-01	US-Recession	FRED: USREC
+Russia-Ukraine War	2022-02-24	2022-06-01	Major Global Crisis	Various

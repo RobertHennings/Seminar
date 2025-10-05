@@ -33,6 +33,8 @@ In order to test the research hypotheses a two stage procedure is folowed:
 ## Organizational Information
 Notion link: [Notion](https://www.notion.so/Seminar-25e94b1118e9809ebb1bf9c73503b7c8?source=copy_link)
 
+Tips for academic work at the QBER-Kiel: [Link](https://alexanderklos.github.io/py_dos_and_donts/index_py_dos_and_donts.html)
+
 ### Fromalities
 Formal guidelines for the $\LaTeX$ format offered by the CAU can be found [here](https://www.wiso.uni-kiel.de/de/studium/sonstiges/info-inst-vwl/abschlussarbeiten).
 

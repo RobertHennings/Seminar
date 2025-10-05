@@ -430,6 +430,42 @@ def load_full_model_info(
         return {}
 
 
+# Set up Benchmark models to identify the relevant exchange rate regimes
+print(os.getcwd())
+os.chdir(r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code")
+print(os.getcwd())
+
+from data_graphing.data_grapher import DataGraphing
+
+data_loading_instance = DataLoading(
+    credential_path=r"/Users/Robert_Hennings/Projects/SettingsPackages",
+    credential_file_name=r"credentials.json"
+)
+# Now load the exchange rate data from BIS - daily data
+country_keys_mapping = {
+    "US": "United States",
+}
+exchange_rates_df = data_loading_instance.get_bis_exchange_rate_data(
+    country_keys_mapping=country_keys_mapping,
+    exchange_rate_type_list=[
+        "Nominal effective exchange rate - daily - narrow basket",
+        ]).rename(columns={"US_Nominal effective exchange rate - daily - narrow basket": "US_NEER"})
+exchange_rates_df = exchange_rates_df.dropna()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # For each model type create a data model object instance 
 from sklearn.cluster import KMeans
