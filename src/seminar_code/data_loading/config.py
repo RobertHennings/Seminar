@@ -76,7 +76,7 @@ BIS_EXCHANGE_RATE_MAPPING_DICT = {
     "Real effective exchange rate - monthly - narrow basket": "M.R.N.",
     "Nominal effective exchange rate - monthly - broad basket": "M.R.B.",
     "Nominal effective exchange rate - monthly - narrow basket": "M.R.N.",
-    "Nominal effective exchange rate - daily - narrow basket": "D.R.N.",
-    "Nominal effective exchange rate - daily - broad basket": "D.R.B.",
+    "Nominal effective exchange rate - daily - narrow basket": "D.N.N.",
+    "Nominal effective exchange rate - daily - broad basket": "D.N.B.",
 }
 BIS_DATA_BASE_URL = "https://stats.bis.org/api/v2/"

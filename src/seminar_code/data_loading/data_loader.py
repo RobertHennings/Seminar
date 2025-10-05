@@ -10,6 +10,7 @@ import pandas as pd
 from fredapi import Fred
 import yfinance as yf
 import requests
+import matplotlib.pyplot as plt
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -503,6 +504,124 @@ class DataLoading(object):
             else:
                 master_df = pd.concat([master_df, country_df_pivoted], ignore_index=False, axis=1)
 
-        master_df.index = pd.to_datetime(master_df.index, format="%Y-%m")
+        master_df.index = pd.to_datetime(master_df.index,
+                                         infer_datetime_format=True
+                                        #  format="%Y-%m"
+                                         )
         master_df = master_df.sort_index()
         return master_df
+
+
+    def export_dataframe(
+        self,
+        df: pd.DataFrame,
+        file_name: str,
+        txt_path: str,
+        pdf_path: str,
+        json_path: str,
+        excel_path: str,
+        save_index: bool = True,
+        figsize=(8, 4),
+        font_size=10,
+        col_widths=None,
+        title=None,
+        title_pad: int=20,
+        style=None,
+        font_family="DejaVu Sans",
+        font_weight="normal"
+        ) -> None:
+        """
+        Export a DataFrame to a .txt file and a styled .pdf file.
+
+        Parameters:
+            df (pd.DataFrame): The DataFrame to export.
+            txt_path (str): Path to save the .txt file.
+            pdf_path (str): Path to save the .pdf file.
+            figsize (tuple): Aspect ratio for the PDF (width, height).
+            font_size (int): Font size for table text.
+            col_widths (list or None): List of column widths for the PDF.
+            title (str or None): Optional title for the PDF.
+            style (dict or None): Optional matplotlib table style dict.
+        """
+        # Export to .txt (tab-separated)
+        self.__check_path_existence(path=txt_path)
+        full_path_save = f"{txt_path}/{file_name}.txt"
+        try:
+            df.to_csv(
+                full_path_save,
+                sep='\t',
+            index=save_index
+            )
+            logging.info(f"Exported DataFrame to {full_path_save}")
+        except Exception as e:
+            logging.error(f"Error exporting to .txt: {e}")
+        # Export to .json
+        self.__check_path_existence(path=json_path)
+        full_path_save = f"{json_path}/{file_name}.json"
+        try:
+            df.to_json(
+                full_path_save,
+                orient="records",
+                indent=4
+            )
+            logging.info(f"Exported DataFrame to {full_path_save}")
+        except Exception as e:
+            logging.error(f"Error exporting to .json: {e}")
+        # Export to .xlsx
+        self.__check_path_existence(path=excel_path)
+        full_path_save = f"{excel_path}/{file_name}.xlsx"
+        try:
+            df.to_excel(
+                full_path_save,
+                sheet_name=file_name,
+                index=save_index
+            )
+            logging.info(f"Exported DataFrame to {full_path_save}")
+        except Exception as e:
+            logging.error(f"Error exporting to .xlsx: {e}")
+
+        # Export to .pdf with matplotlib
+        self.__check_path_existence(path=pdf_path)
+        full_path_save = f"{pdf_path}/{file_name}.pdf"
+        try:
+            # Set global font style for matplotlib
+            plt.rcParams["font.family"] = font_family
+            plt.rcParams["font.weight"] = font_weight
+
+            fig, ax = plt.subplots(figsize=figsize)
+            ax.axis('off')
+            mpl_table = ax.table(cellText=df.values,
+                                colLabels=df.columns,
+                                rowLabels=df.index,
+                                loc='center',
+                                cellLoc='center')
+            mpl_table.auto_set_font_size(False)
+            mpl_table.set_fontsize(font_size)
+            # Set font style for table cells
+            for key, cell in mpl_table.get_celld().items():
+                cell.set_text_props(fontfamily=font_family, fontweight=font_weight)
+            # Set column widths if provided
+            if col_widths:
+                for i, width in enumerate(col_widths):
+                    mpl_table.auto_set_column_width(i)
+                    for key, cell in mpl_table.get_celld().items():
+                        if key[1] == i:
+                            cell.set_width(width)
+
+            # Apply custom style if provided
+            if style:
+                for key, cell in mpl_table.get_celld().items():
+                    for prop, val in style.items():
+                        setattr(cell, prop, val)
+
+            # Add title if provided
+            if title:
+                plt.title(title, fontsize=font_size + 2, pad=title_pad)
+
+            plt.tight_layout()
+            # plt.subplots_adjust(top=0.85)
+            plt.savefig(full_path_save, bbox_inches='tight')
+            plt.close(fig)
+            logging.info(f"Exported DataFrame to {full_path_save}")
+        except Exception as e:
+            logging.error(f"Error exporting to .pdf: {e}")
