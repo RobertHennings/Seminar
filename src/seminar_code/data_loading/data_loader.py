@@ -140,14 +140,14 @@ class DataLoading(object):
             logging.info(f"Status code: {status_code} not defined")
         else: # if status code is definded in the dicts
             # get the defined message for the status code
-            status_code_message = f"{"".join(status_code_message)} for URL: {response_url}"
+            status_code_message = f"{''.join(status_code_message)} for URL: {response_url}"
             # get the defined return (type) for the status code
             status_code_return = [
                 dict_.get(status_code).get("return_")
                 for dict_ in [self.error_codes_dict, self.success_codes_dict]
                 if status_code in dict_.keys()]
 
-            if status_code_return is not None:
+            if any(r is not None for r in status_code_return):
                 logging.info(status_code_message)
             else:
                 raise Exception("Error")
