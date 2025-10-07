@@ -498,7 +498,7 @@ class DataLoading(object):
             country_df = pd.read_csv(country_url)
             country_df_pivoted = country_df.pivot(index="TIME_PERIOD", columns="REF_AREA", values="OBS_VALUE")
             country_df_pivoted.columns = [column_name]
-            
+
             if master_df.empty:
                 master_df = country_df_pivoted
             else:
@@ -530,18 +530,24 @@ class DataLoading(object):
         font_family="DejaVu Sans",
         font_weight="normal"
         ) -> None:
-        """
-        Export a DataFrame to a .txt file and a styled .pdf file.
+        """Export a DataFrame to multiple file formats.
 
-        Parameters:
+        Args:
             df (pd.DataFrame): The DataFrame to export.
+            file_name (str): The base file name (without extension).
             txt_path (str): Path to save the .txt file.
             pdf_path (str): Path to save the .pdf file.
-            figsize (tuple): Aspect ratio for the PDF (width, height).
-            font_size (int): Font size for table text.
-            col_widths (list or None): List of column widths for the PDF.
-            title (str or None): Optional title for the PDF.
-            style (dict or None): Optional matplotlib table style dict.
+            json_path (str): Path to save the .json file.
+            excel_path (str): Path to save the .xlsx file.
+            save_index (bool, optional): Whether to save the index. Defaults to True.
+            figsize (tuple, optional): Figure size for the PDF. Defaults to (8, 4).
+            font_size (int, optional): Font size for the PDF. Defaults to 10.
+            col_widths (list, optional): Column widths for the PDF. Defaults to None.
+            title (str, optional): Title for the PDF. Defaults to None.
+            title_pad (int, optional): Title padding for the PDF. Defaults to 20.
+            style (dict, optional): Style for the PDF. Defaults to None.
+            font_family (str, optional): Font family for the PDF. Defaults to "DejaVu Sans".
+            font_weight (str, optional): Font weight for the PDF. Defaults to "normal".
         """
         # Export to .txt (tab-separated)
         self.__check_path_existence(path=txt_path)
