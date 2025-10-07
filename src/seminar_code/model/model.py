@@ -4,6 +4,16 @@ import pandas as pd
 import numpy as np
 import logging
 import joblib
+import statsmodels
+import json
+import datetime as dt
+import inspect
+import os
+import warnings
+import ast
+warnings.filterwarnings("ignore", category=UserWarning)
+
+MODELS_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models"
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,11 +43,54 @@ class ModelObject:
     # and extract the metadata
     # So we need to be able to set the model and the data after the object is created
     # and not only at the time of creation
-    def set_classifier_model_object(
+    ######################## Internal helper methods #########################
+    def __check_path_existence(
         self,
-        classifier_model_object: sklearn.base.BaseEstimator,
+        path: str
+        ):
+        """Internal helper method - serves as generous path existence
+           checker when saving and reading of an kind of data from files
+           suspected at the given location
+           
+           !!!!If given path does not exist it will be created!!!!
+
+        Args:
+            path (str): full path where expected data is saved, i.e.
+                        i.e. /Users/Robert_Hennings/Uni/Master/Seminar/reports/figures
+                    !!!!DO NOT INCLUDE THE FILENAME like: /Users/Robert_Hennings/Uni/Master/Seminar/reports/figures/figure.pdf
+        """
+        folder_name = path.split("/")[-1]
+        path = "/".join(path.split("/")[:-1])
+        # FileNotFoundError()
+        # os.path.isdir()
+        if folder_name not in os.listdir(path):
+            logging.info(f"{folder_name} not found in path: {path}")
+            folder_path = f"{path}/{folder_name}"
+            os.mkdir(folder_path)
+            logging.info(f"Folder: {folder_name} created in path: {path}")
+
+
+    def __get_init_params(
+        self,
+        model
+        ) -> Dict[str, Any]:
+        sig = inspect.signature(model.__class__.__init__)
+        param_names = [p for p in sig.parameters if p != 'self']
+        params = {}
+        for name in param_names:
+            if hasattr(model, name):
+                params[name] = getattr(model, name)
+            else:
+                # Try to get from __dict__ if not a direct attribute
+                params[name] = model.__dict__.get(name, None)
+        return params
+
+
+    def set_model_object(
+        self,
+        model_object: sklearn.base.BaseEstimator,
         ) -> None:
-        """Setting the classifier model object.
+        """Setting the model object.
 
         Args:
             classifier_model_object (sklearn.base.BaseEstimator): The classifier model object to set.
@@ -46,41 +99,68 @@ class ModelObject:
             from model import ModelObject
             kmeans = KMeans(n_clusters=3, random_state=42)
             model_object_instance = ModelObject()
-            model_object_instance.set_classifier_model_object(classifier_model_object=kmeans)
+            model_object_instance.set_model_object(model_object=kmeans)
         """
-        self.classifier_model_object = classifier_model_object
+        self.model_object = model_object
+        # Also save the initialization parameters of the model
+        self.model_init_params = self.__get_init_params(model_object)
 
 
     def set_data(
         self,
-        data: pd.DataFrame
+        training_data: pd.DataFrame,
+        testing_data: pd.DataFrame, 
         ) -> None:
         """Setting the data for the model.
 
         Args:
-            data (pd.DataFrame): The data to set.
+            training_data (pd.DataFrame): The training data to set.
+            testing_data (pd.DataFrame): The testing data to set.
         Examples:
             import pandas as pd
             from model import ModelObject
-            data = pd.DataFrame(index=pd.date_range(start="2000-01-01", end="2023-01-01", freq="M"),
+            training_data = pd.DataFrame(index=pd.date_range(start="2000-01-01", end="2023-01-01", freq="M"),
                                 data={
                                     "feature1": range(276),
                                     "feature2": range(276, 0, -1),
                                     "feature3": [x % 5 for x in range(276)],
                                 })
+            testing_data = pd.DataFrame(index=pd.date_range(start="2023-02-01", end="2024-01-01", freq="M"),
+                                data={
+                                    "feature1": range(276, 0, -1),
+                                    "feature2": range(276),
+                                    "feature3": [x % 5 for x in range(276)],
+                                })
             model_object_instance = ModelObject()
-            model_object_instance.set_data(data=data)
+            model_object_instance.set_data(training_data=training_data, testing_data=testing_data)
         """
-        self.data = data
+        self.training_data = training_data
+        self.testing_data = testing_data
 
 
     def fit(
-        self
-        ):
-        """Fit the model to the data.
-        """
-        logging.info(f"Fitting model: {self.classifier_model_object.__class__.__name__}")
-        self.fitted_model = self.classifier_model_object.fit(self.data)
+        self,
+        **kwargs
+        ) -> None:
+        """Fit the model to the data."""
+        logging.info(f"Fitting model: {self.model_object.__class__.__name__}")
+
+        # Statsmodels-style model: already has data inside
+        if hasattr(self.model_object, 'fit') and 'endog' in self.model_init_params:
+            valid_fit_params = inspect.signature(self.model_object.fit).parameters
+            filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_fit_params}
+            fit_mod = self.model_object.fit(**filtered_kwargs)
+
+        # Sklearn-style model: data must be passed in
+        elif hasattr(self.model_object, 'fit'):
+            valid_fit_params = inspect.signature(self.model_object.fit).parameters
+            filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_fit_params}
+            fit_mod = self.model_object.fit(self.training_data, **filtered_kwargs)
+
+        else:
+            raise TypeError(f"Model {self.model_object.__class__.__name__} does not have a fit() method.")
+
+        self.fitted_model = fit_mod
         self.time_last_fitted = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
@@ -117,17 +197,43 @@ class ModelObject:
         """
         if self.fitted_model is None:
             raise ValueError("Model must be fitted before prediction.")
-        logging.info(f"Predicting with model: {self.classifier_model_object.__class__.__name__}")
+        logging.info(f"Predicting with model: {self.model_object.__class__.__name__}")
         if new_data is not None:
+            testing_start_date = new_data.index.min()
+            testing_end_date = new_data.index.max()
             if "predict" in dir(self.fitted_model):
-                self.labels = self.fitted_model.predict(new_data)
+                try:
+                    self.labels = self.fitted_model.predict(new_data)
+                except Exception as e:
+                    logging.info(f"Error during prediction: {e}")
+                    if "start" in inspect.signature(self.fitted_model.predict).parameters:
+                        self.labels = self.fitted_model.predict(start=testing_start_date, end=testing_end_date)
             elif "fit_predict" in dir(self.fitted_model):
-                self.labels = self.fitted_model.fit_predict(new_data)
+                try:
+                    self.labels = self.fitted_model.fit_predict(new_data)
+                except Exception as e:
+                    logging.info(f"Error during prediction: {e}")
+                    if "start" in inspect.signature(self.fitted_model.fit_predict).parameters:
+                        self.labels = self.fitted_model.fit_predict(start=testing_start_date, end=testing_end_date)
         else:
             if "predict" in dir(self.fitted_model):
-                self.labels = self.fitted_model.predict(self.data)
-            elif "fit_predict" in dir(self.fitted_model):
-                self.labels = self.fitted_model.fit_predict(self.data)
+                try:
+                    self.labels = self.fitted_model.predict(self.testing_data)
+                except Exception as e:
+                    logging.info(f"Error during prediction: {e}")
+                    self.labels = self.fitted_model.predict()
+            elif "fit_predict" in dir(self.fitted_model):  
+                try:
+                    self.labels = self.fitted_model.fit_predict(self.testing_data)
+                except Exception as e:
+                    logging.info(f"Error during prediction: {e}")
+                    self.labels = self.fitted_model.fit_predict()
+        if type(self.labels) == np.ndarray:
+            self.labels = self.labels.tolist()
+        elif type(self.labels) == pd.Series:
+            # also transform to a simple list
+            self.labels = self.labels.tolist()
+            # self.labels = self.labels.to_frame(name="predicted_labels")
         return self.labels
 
 
@@ -167,7 +273,7 @@ class ModelObject:
         if self.labels is None:
             raise ValueError("Model must be fitted before evaluation.")
         try:
-            self.score = metric_function(self.data, self.labels)
+            self.score = metric_function(self.testing_data, self.labels)
         except Exception as e:
             logging.error(f"Error evaluating model: {e}")
             self.score = None
@@ -196,7 +302,7 @@ class ModelObject:
             model_object_instance.fit()
             model_object_instance.save_model(file_format=".pkl", file_path="/path/to/save", model_file_name="kmeans_model")
         """
-        logging.info(f"Saving model to {file_path}/{model_file_name} in format {file_format}")
+        logging.info(f"Saving model to {file_path}/{model_file_name}{file_format}")
         joblib.dump(
             value=self.fitted_model,
             filename=fr"{file_path}/{model_file_name}{file_format}"
@@ -213,9 +319,14 @@ class ModelObject:
 
     def load_model(
         self,
-        file_format: str=".pkl",
-        file_path: str=None,
-        model_file_name: str=None
+        file_format_model: str=".pkl",
+        file_path_model: str=None,
+        model_file_name: str=None,
+        return_info_dict: bool=False,
+        return_info_df: bool=False,
+        file_format_model_info: str=".json",
+        file_path_model_info: str=None,
+        model_file_name_info: str=None
         ):
         """Load a model from a file.
 
@@ -233,11 +344,26 @@ class ModelObject:
         Returns:
             _type_: _description_
         """
-        logging.info(f"Loading model from {file_path}/{model_file_name} in format {file_format}")
-        self.fitted_model = joblib.load(filename=fr"{file_path}/{model_file_name}{file_format}")
-        self.classifier_model_object = self.fitted_model
-        self.labels = self.fitted_model.labels_ if hasattr(self.fitted_model, 'labels_') else None
-        return self.fitted_model
+        self = new_model_object_instance
+        logging.info(f"Loading model from {file_path_model}/{model_file_name}{file_format_model}")
+        self.fitted_model = joblib.load(filename=fr"{file_path_model}/{model_file_name}{file_format_model}")
+        self.model_object = self.fitted_model
+
+        full_model_info_loaded_dict, full_model_info_loaded_dict_df = self.get_full_model_info(
+            load=True,
+            return_info_dict=True,
+            return_info_df=True,
+            file_format=file_format_model_info,
+            file_path=file_path_model_info,
+            file_name=model_file_name_info
+            )
+        # Now we could loop through the dict and set the attributes of the class instance
+        for key, value in full_model_info_loaded_dict.items():
+            setattr(self, key, value)
+        if return_info_dict:
+            return self.fitted_model, full_model_info_loaded_dict, full_model_info_loaded_dict_df
+        if return_info_df:
+            return self.fitted_model, full_model_info_loaded_dict_df
 
 
     def _flatten_model_info(
@@ -304,59 +430,156 @@ class ModelObject:
         Returns:
             _type_: _description_
         """
-        # extract all the metadata for the model
-        model_type = self.classifier_model_object.__class__.__name__
-        feature_names_in = self.classifier_model_object.feature_names_in_ if hasattr(self.classifier_model_object, 'feature_names_in_') else None
-        model_params = self.classifier_model_object.get_params() if hasattr(self.classifier_model_object, 'get_params') else None
-        n_iter = self.classifier_model_object.n_iter_ if hasattr(self.classifier_model_object, 'n_iter_') else None
-        cluster_centers = self.classifier_model_object.cluster_centers_ if hasattr(self.classifier_model_object, 'cluster_centers_') else None
-        labels = self.classifier_model_object.labels_ if hasattr(self.classifier_model_object, 'labels_') else None
-        time_last_fitted = self.time_last_fitted if hasattr(self, 'time_last_fitted') else None
-        model_info = {
-            "model_type": model_type,
-            "feature_names_in": feature_names_in,
-            "model_params": model_params,
-            "n_iter": n_iter,
-            "cluster_centers": cluster_centers,
-            "time_last_fitted": time_last_fitted,
-            "predicted_labels": labels
-        }
+        if save:
+            # extract all the metadata for the model
+            model_type = self.model_object.__class__.__name__
+            feature_names_in = self.model_object.feature_names_in_ if hasattr(self.model_object, 'feature_names_in_') else self.training_data.columns.tolist()
+            # save also the training and testing data
+            training_data = self.training_data if hasattr(self, 'training_data') else None
+            testing_data = self.testing_data if hasattr(self, 'testing_data') else None
+            model_params = self.model_object.get_params() if hasattr(self.model_object, 'get_params') else None
+            n_iter = self.model_object.n_iter_ if hasattr(self.model_object, 'n_iter_') else None
+            cluster_centers = self.model_object.cluster_centers_ if hasattr(self.model_object, 'cluster_centers_') else None
+            labels = self.labels if hasattr(self, 'labels') else None
+            time_last_fitted = self.time_last_fitted if hasattr(self, 'time_last_fitted') else None
+            model_info = {
+                "model_type": model_type,
+                "feature_names_in": feature_names_in,
+                "model_params": model_params,
+                "n_iter": n_iter,
+                "cluster_centers": cluster_centers,
+                "time_last_fitted": time_last_fitted,
+                "predicted_labels": labels,
+                "training_data": training_data,
+                "testing_data": testing_data,
+            }
+            # Also append the initialization parameters of the model
+            if hasattr(self, 'model_init_params'):
+                for key, value in self.model_init_params.items():
+                    model_info[key] = value
 
-        model_info["evaluation_score"] = self.score
-        if self.model_saving_info is not None:
-            model_info.update(self.model_saving_info)
-
+            model_info["evaluation_score"] = self.score
+            if self.model_saving_info is not None:
+                model_info.update(self.model_saving_info)
         if save and file_path is not None and file_name is not None:
             model_info["model_info_saved"] = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
-            logging.info(f"Saving model info to {file_path}/{file_name} in format {file_format}")
-            try:
-                with open(fr"{file_path}/{file_name}{file_format}", "w") as f:
-                    for key, value in model_info.items():
-                        f.write(f"{key}: {value}\n")
-            except Exception as e:
-                logging.error(f"Error saving model info: {e}")
+            logging.info(f"Saving model info to {file_path}/{file_name}{file_format}")
+
+            if file_format == ".txt":
+                try:
+                    with open(fr"{file_path}/{file_name}{file_format}", "w") as f:
+                        for key, value in model_info.items():
+                            f.write(f"{key}: {value}\n")
+                except Exception as e:
+                    logging.error(f"Error saving model info: {e}")
+            elif file_format == ".json":
+                # Transform numpy.ndarray to list for JSON serialization
+                for key, value in model_info.items():
+                    if isinstance(value, np.ndarray):
+                        model_info[key] = value.tolist()
+                # Also transform the pd.DataFrame objects to string representation
+                for key, value in model_info.items():
+                    if isinstance(value, pd.DataFrame):
+                        model_info[key] = value.to_dict(orient="list")
+                try:
+                    with open(fr"{file_path}/{file_name}{file_format}", "w") as f:
+                        json.dump(model_info, f, indent=2)
+                except Exception as e:
+                    logging.error(f"Error saving model info: {e}")
 
         elif load and file_path is not None and file_name is not None:
-            logging.info(f"Loading model info from {file_path}/{file_name} in format {file_format}")
-            try:
-                model_info = {}
-                with open(fr"{file_path}/{file_name}{file_format}", "r") as f:
-                    for line in f:
-                        key, value = line.strip().split(": ", 1)
-                        model_info[key] = value
-                model_info.update(model_info)
-            except Exception as e:
-                logging.error(f"Error loading model info: {e}")
+            logging.info(f"Loading model info from {file_path}/{file_name}{file_format}")
+            if file_format == ".txt":
+                try:
+                    model_info = {}
+                    with open(fr"{file_path}/{file_name}{file_format}", "r") as f:
+                        for line in f:
+                            key, value = line.strip().split(": ", 1)
+                            model_info[key] = value
+                    model_info.update(model_info)
+                except Exception as e:
+                    logging.error(f"Error loading model info: {e}")
+            elif file_format == ".json":
+                try:
+                    with open(fr"{file_path}/{file_name}{file_format}", "r") as f:
+                        model_info = json.load(f)
+                    model_info.update(model_info)
+                    # Transfer the testing and training data back to pd.DataFrame
+                    if "training_data" in model_info and isinstance(model_info["training_data"], dict):
+                        model_info["training_data"] = pd.DataFrame(model_info["training_data"])
+                    if "testing_data" in model_info and isinstance(model_info["testing_data"], dict):
+                        model_info["testing_data"] = pd.DataFrame(model_info["testing_data"])
+                except Exception as e:
+                    logging.error(f"Error loading model info: {e}")
 
-        if return_info_dict:
-            return model_info
-        elif return_info_df:
-            flat_info_df = self._flatten_model_info(info=model_info)
-            return flat_info_df
-        elif return_info_dict and return_info_df:
-            flat_info_df = self._flatten_model_info(info=model_info)
+        flat_info_df = self._flatten_model_info(info=model_info)
+
+        if return_info_dict and return_info_df:
             return model_info, flat_info_df
-        
+        elif return_info_df:
+            return flat_info_df
+        elif return_info_dict:
+            return model_info
+
+
+    def save_model_summary(
+        self,
+        model_summary: str,
+        save_txt: bool=False,
+        save_csv: bool=False,
+        save_latex: bool=False,
+        save_html: bool=False,
+        save_json: bool=False,
+        file_path: str=None,
+        file_name: str=None,
+        ) -> None:
+        self.__check_path_existence(path=file_path)
+        full_path_save = f"{file_path}/{file_name}"
+        if save_txt:
+            full_path_save_txt = f"{full_path_save}.txt"
+            try:
+                with open(file=full_path_save_txt, mode="w") as f:
+                    f.write(model_summary.as_text())
+                logging.info(f"Exported DataFrame to {full_path_save_txt}")
+            except Exception as e:
+                logging.error(f"Error exporting to .txt: {e}")
+        if save_csv:
+            full_path_save_csv = f"{full_path_save}.csv"
+            try:
+                with open(file=full_path_save_csv, mode="w") as f:
+                    f.write(model_summary.as_csv())
+                logging.info(f"Exported DataFrame to {full_path_save_csv}")
+            except Exception as e:
+                logging.error(f"Error exporting to .csv: {e}")
+
+        if save_latex:
+            full_path_save_latex = f"{full_path_save}.tex"
+            try:
+                with open(file=full_path_save_latex, mode="w") as f:
+                    f.write(model_summary.as_latex())
+                logging.info(f"Exported DataFrame to {full_path_save_latex}")
+            except Exception as e:
+                logging.error(f"Error exporting to .tex: {e}")
+
+        if save_html:
+            full_path_save_html = f"{full_path_save}.html"
+            try:
+                with open(file=full_path_save_html, mode="w") as f:
+                    f.write(model_summary.as_html())
+                logging.info(f"Exported DataFrame to {full_path_save_html}")
+            except Exception as e:
+                logging.error(f"Error exporting to .html: {e}")
+
+        if save_json:
+            full_path_save_json = f"{full_path_save}.json"
+            try:
+                with open(file=full_path_save_json, mode="w") as f:
+                    json.dump(model_summary.as_csv(), f, indent=2)
+                logging.info(f"Exported DataFrame to {full_path_save_json}")
+            except Exception as e:
+                logging.error(f"Error exporting to .json: {e}")
+
+
 def flatten_model_info(
     info: Dict[str, Any]
     ) -> pd.DataFrame:
@@ -384,6 +607,7 @@ def flatten_model_info(
     flat_info_df = pd.DataFrame([flat_info])
     return flat_info_df
 
+
 def load_full_model_info(
     file_format: str=".txt",
     file_path: str=None,
@@ -407,40 +631,86 @@ def load_full_model_info(
         Dict[str, Any]: The loaded model information.
     """
     logging.info(f"Loading model info from {file_path}/{file_name} in format {file_format}")
-    try:
-        model_info = {}
-        with open(fr"{file_path}/{file_name}{file_format}", "r") as f:
-            for line in f:
-                if ": " not in line:
-                    continue  # skip malformed lines
-                key, value = line.strip().split(": ", 1)
-                model_info[key] = value
-        model_info.update(model_info)
+    if file_path is not None and file_name is not None:
+        if file_format == ".txt":
+            try:
+                model_info = {}
+                with open(fr"{file_path}/{file_name}{file_format}", "r") as f:
+                    for line in f:
+                        if ": " not in line:
+                            continue  # skip malformed lines
+                        key, value = line.strip().split(": ", 1)
+                        model_info[key] = value
+                model_info.update(model_info)
 
-        if return_info_df:
-            flat_info_df = flatten_model_info(info=model_info)
-            return flat_info_df
-        elif return_info_dict:
-            return model_info
-        elif return_info_dict and return_info_df:
-            flat_info_df = flatten_model_info(info=model_info)
-            return model_info, flat_info_df
-    except Exception as e:
-        logging.error(f"Error loading model info: {e}")
-        return {}
+                if return_info_df:
+                    flat_info_df = flatten_model_info(info=model_info)
+                    return flat_info_df
+                elif return_info_dict:
+                    return model_info
+                elif return_info_dict and return_info_df:
+                    flat_info_df = flatten_model_info(info=model_info)
+                    return model_info, flat_info_df
+            except Exception as e:
+                logging.error(f"Error loading model info: {e}")
+                return {}
+        elif file_format == ".json":
+            try:
+                with open(fr"{file_path}/{file_name}{file_format}", "r") as f:
+                    model_info = json.load(f)
+                model_info.update(model_info)
 
+                if return_info_df:
+                    flat_info_df = flatten_model_info(info=model_info)
+                    return flat_info_df
+                elif return_info_dict:
+                    return model_info
+                elif return_info_dict and return_info_df:
+                    flat_info_df = flatten_model_info(info=model_info)
+                    return model_info, flat_info_df
+            except Exception as e:
+                logging.error(f"Error loading model info: {e}")
+                return {}
 
-# Set up Benchmark models to identify the relevant exchange rate regimes
+#----------------------------------------------------------------------------------------
+# 0X - Econometric Modelling - Benchmark Models for Regime Identification
+#----------------------------------------------------------------------------------------
 print(os.getcwd())
 os.chdir(r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code")
 print(os.getcwd())
 
-from data_graphing.data_grapher import DataGraphing
+from data_loading.data_loader import DataLoading
 
 data_loading_instance = DataLoading(
     credential_path=r"/Users/Robert_Hennings/Projects/SettingsPackages",
     credential_file_name=r"credentials.json"
 )
+# The regime classification measure (RCM) of Ang and Bekaert (2002) is used
+# to determine the accuracy of the Markov-switching models. This statistic is computed using the following formula:
+# The RCM is computed as the average of the product of smoothed probabilities p~; where S is the number of
+# regimes (states, S). The switching variable follows a Bernoulli distribution and as a result, the RCM provides an
+# estimate of the variance. The RCM statistic ranges be- tween 0 (perfect regime classification) and 100
+# (failure to detect any re- gime classification) with lower values of the RCM preferable to higher values of the RCM.
+# Thus to ensure significantly different regimes, it is important that a model's RCM is close to zero and its
+# smoothed proba- bility indicator be close to 1.
+def compute_rcm(S: int, smoothed_probs: pd.Series, threshold: float=0.5) -> float:
+    """Compute the Regime Classification Measure (RCM) for a series of smoothed probabilities.
+
+    Args:
+        S (int): The number of regimes.
+        smoothed_probs (pd.Series): The smoothed probabilities for the regimes.
+        threshold (float, optional): The threshold to classify regimes. Defaults to 0.5.
+
+    Examples:
+        from model import compute_rcm
+        rcm = compute_rcm(S=2, smoothed_probs=exchange_rates_df["msm_regime"])
+
+    Returns:
+        float: The RCM value.
+    """
+    regime_classification = (smoothed_probs >= threshold).astype(int)
+    rcm = 100 * S**2 * (1 - (1 / len(smoothed_probs)) * np.sum(regime_classification * smoothed_probs + (1 - regime_classification) * (1 - smoothed_probs)))
+    return rcm
 # Now load the exchange rate data from BIS - daily data
 country_keys_mapping = {
     "US": "United States",
@@ -451,100 +721,353 @@ exchange_rates_df = data_loading_instance.get_bis_exchange_rate_data(
         "Nominal effective exchange rate - daily - narrow basket",
         ]).rename(columns={"US_Nominal effective exchange rate - daily - narrow basket": "US_NEER"})
 exchange_rates_df = exchange_rates_df.dropna()
+# Recreate the Markov-Switching model from the paper: The impact of oil shocks on exchange rates: A Markov-switching approach
+# Two regimes assumed: High volatility and low volatility regime, page 14
+# Dependent variable: first difference of the log real exchange rate for country i, page 14
+# The Markov-switching models for exchange rates were estimated using the fMarkovSwitching package in R (Perlin, 2008).
+# The models were estimated with two states, state dependent regression coefficients and state dependent volatility for
+# the error process. Exchange rates are known to exhibit volatility clustering which is why we allow volatility to vary across regimes. Models were estimated using two different as- sumptions about the error term (normal, Student-t).
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# For each model type create a data model object instance 
+# Prepare the data for the Markov Switching model
+exchange_rates_df["log_US_NEER"] = np.log(exchange_rates_df["US_NEER"])
+exchange_rates_df["log_US_NEER_diff"] = exchange_rates_df["log_US_NEER"].diff()
+exchange_rates_df = exchange_rates_df.dropna()
+window = 30
+exchange_rates_vola_df = exchange_rates_df["log_US_NEER_diff"].rolling(window=window).std().dropna().to_frame(name="rolling_vola")
+# A first benchmark approach will be to only use the univariate rolling volatility of the exchange rate changes
+# as the variable to identify the regimes
+# Later we will also include exogeneous variables like oil price volatility and gas price volatility
+# to see if the regimes change
+# Also note that the Markov Switching model is only capable of doing IN-SAMPLE Forecasts
 from sklearn.cluster import KMeans
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.cluster import DBSCAN
 from sklearn.cluster import SpectralClustering
 from sklearn.cluster import MeanShift
-
-kmeans = KMeans(n_clusters=3, random_state=42)
-agg = AgglomerativeClustering(n_clusters=3)
-dbscan = DBSCAN(eps=1.5, min_samples=8)
-spectral = SpectralClustering(n_clusters=3, affinity='nearest_neighbors', random_state=42)
-ms = MeanShift()
-
-
-
-# Create the single ModelObjects
-data = pd.DataFrame(index=pd.date_range(start="2000-01-01", end="2023-01-01", freq="M"),
-                    data={
-                        "feature1": range(276),
-                        "feature2": range(276, 0, -1),
-                        "feature3": [x % 5 for x in range(276)],
-                    })
-# models_objects_list = [ModelObject() for model in models_list]
-# Fit each model and store the labels
-model_object_instance = ModelObject()
-model_object_instance.set_classifier_model_object(classifier_model_object=kmeans)
-model_object_instance.set_data(data=data)
-model_object_instance.fit()
-predicted_labels = model_object_instance.predict()
+from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
 from sklearn.metrics import silhouette_score
-evaluation_score = model_object_instance.evaluate(metric_function=silhouette_score)
-model_object_instance.save_model(file_format=r".pkl", file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models", model_file_name=r"kmeans_model")
-model_object_instance.get_full_model_info(save=True, file_format=r".txt", file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models", file_name=r"kmeans_model")
-full_model_info = model_object_instance.get_full_model_info()
-# Load a model from a saved file
-new_model_object_instance = ModelObject()
-new_model_object_instance.load_model(file_format=r".pkl", file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models", model_file_name=r"kmeans_model")
-dir(new_model_object_instance.fitted_model)
-full_model_info_new = new_model_object_instance.get_full_model_info()
-# Load an alreaday saved full_model_info file
-new_model_object_instance.get_full_model_info(
-    save=False,
-    load=True,
-    return_info_dict=True,
-    return_info_df=False,
-    file_format=".txt",
-    file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models",
-    file_name="KMeans_model")
 
-
-# Loop for multiple models
-models_list = [kmeans, agg, dbscan, spectral, ms]
+# At first we assume three regimes: One low volatility regime and two high volatility regimes
+n_regimes = 2
+kmeans = KMeans(n_clusters=n_regimes, random_state=42)
+agg = AgglomerativeClustering(n_clusters=n_regimes)
+dbscan = DBSCAN(eps=1.5, min_samples=8)
+# spectral = SpectralClustering(n_clusters=n_regimes, affinity='nearest_neighbors', random_state=42)
+ms = MeanShift()
+msm = MarkovRegression(
+    endog=exchange_rates_vola_df,
+    k_regimes=n_regimes,
+    trend='c',  # or 'nc' for no constant
+    switching_trend=True,
+    switching_exog=True,
+    switching_variance=True,
+)
+models_list = [kmeans, agg, dbscan, ms, msm]
 for model in models_list:
+    # model = models_list[-1]
+    # 1) Initialize a new instance for each model class
     model_object_instance = ModelObject() # Initialize a new instance for each model
-    model_object_instance.set_classifier_model_object(classifier_model_object=model) # Set the model
-    model_object_instance.set_data(data=data) # Set the data
-    model_object_instance.fit() # Fit the model
-    predicted_labels = model_object_instance.predict() # Predict the labels
-    evaluation_score = model_object_instance.evaluate(metric_function=silhouette_score) # Evaluate the model
+    # 2) Set the model
+    model_object_instance.set_model_object(model_object=model)
+    # 3) Set the data
+    model_object_instance.set_data(
+        training_data=exchange_rates_vola_df,
+        testing_data=exchange_rates_vola_df
+    )
+    # 4) Fit the model
+    model_object_instance.fit()
+    # 5) Predict the labels
+    predicted_labels = model_object_instance.predict()
+    # 6) Evaluate the model
+    evaluation_score = model_object_instance.evaluate(metric_function=silhouette_score)
     # Save the model and the model info with dynamic names based on the model class name
-    model_object_instance.save_model(file_format=r".pkl", file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models", model_file_name=f"{model.__class__.__name__}_model")
+    timestamp = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    file_name = f"{model.__class__.__name__}_{timestamp}"
+    model_object_instance.save_model(
+        file_format=r".pkl",
+        file_path=MODELS_PATH,
+        model_file_name=file_name
+        )
     # Get the full model info
-    model_object_instance.get_full_model_info(save=True, file_format=r".txt", file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models", file_name=f"{model.__class__.__name__}_model")
-
+    model_object_instance.get_full_model_info(
+        save=True,
+        return_info_dict=False,
+        file_format=r".json",
+        file_path=MODELS_PATH,
+        file_name=file_name
+        )
 # For a proper evaluation now, loading all full_info files and compare the evaluation scores
-import os
-full_model_info_path = r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models"
-all_model_info_files = [file for file in os.listdir(full_model_info_path) if file.endswith(".txt")]
+full_model_info_path = MODELS_PATH
+file_format=".json"
+all_model_info_files = [file for file in os.listdir(full_model_info_path) if file.endswith(file_format)]
 # Delete the file extension for loading
 all_model_info_files = [os.path.splitext(file)[0] for file in all_model_info_files]
 # Load all model info files into a list of dataframes
 
 all_model_info_dfs = [load_full_model_info(
-    file_format=".txt",
+    file_format=file_format,
     file_path=full_model_info_path,
     file_name=file,
     return_info_dict=False,
     return_info_df=True,
     ) for file in all_model_info_files]
 all_models_comp_df = pd.concat(all_model_info_dfs).reset_index(drop=True)
-# all_models_comp_df.to_excel(r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models/all_models_comparison.xlsx", index=False)
+# all_models_comp_df.to_excel(r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models/all_models_comparison_1.xlsx", index=False)
+
+# Extract all the predicted regimes and compare them in a plot
+predicted_labels_df = pd.DataFrame()
+for i in all_models_comp_df.index:
+    model = all_models_comp_df["model_type"][i]
+    predicted_labels_string = all_models_comp_df["predicted_labels"][i]
+    predicted_labels = ast.literal_eval(predicted_labels_string)
+    predicted_labels_df[model] = predicted_labels
+# Transform the values of the Markov Model
+smoothed_probabilities = model_object_instance.fitted_model.smoothed_marginal_probabilities
+msm_regime = smoothed_probabilities[1]
+regime = (msm_regime >= 0.5).astype(int)
+predicted_labels_df["MarkovRegression"] = regime.tolist()
+# Compare the fitted in sample regimes
+predicted_labels_df.value_counts()
+# Plot them all together in a plotly graph, together with the target data
+# Plot the regimes on a secondary y-axis
+predicted_labels_df.index = exchange_rates_vola_df.index
+import plotly.graph_objects as go
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=exchange_rates_vola_df.index, y=exchange_rates_vola_df["rolling_vola"],
+                         mode='lines', name='Rolling Volatility'))
+for column in predicted_labels_df.columns:
+    fig.add_trace(go.Scatter(x=predicted_labels_df.index, y=predicted_labels_df[column],
+                             mode='lines', name=column, yaxis='y2'))
+fig.update_layout(
+    title='Clustering Model Regimes with Rolling Volatility',
+    xaxis_title='Date',
+    yaxis_title='Log US NEER Diff',
+    yaxis2=dict(
+        title='Regime',
+        overlaying='y',
+        side='right'
+    ),
+    legend=dict(x=0, y=1)
+)
+fig.show(renderer="browser")
+
+
+# Load a specific model/model object back - Here a MarkovRegression Model
+new_model_object_instance = ModelObject()
+fitted_model, model_info_dict, model_info_df = new_model_object_instance.load_model(
+    file_format_model=".pkl",
+    file_path_model=MODELS_PATH,
+    model_file_name="MarkovRegression_2025-10-07_12-00-52",
+    return_info_dict=True,
+    return_info_df=True,
+    file_format_model_info=".json",
+    file_path_model_info=MODELS_PATH,
+    model_file_name_info="MarkovRegression_2025-10-07_12-00-52"
+    )
+# Extract the regime periods
+model_info_dict.keys()
+model_info_dict.get("training_data")
+model_info_dict.get("testing_data")
+len(model_info_dict.get("predicted_labels"))
+
+
+
+model_object_instance = ModelObject()
+# Splitting the data into training and testing is not necessary since the Model is only capable of doing IN-SAMPLE Forecasts
+# rel_train_size = 0.5
+# train_size = int(rel_train_size * len(exchange_rates_vola_df))
+# training_data = exchange_rates_vola_df.iloc[:train_size]
+# testing_data = exchange_rates_vola_df.iloc[train_size:]
+msm = MarkovRegression(
+    endog=exchange_rates_vola_df,
+    k_regimes=2,
+    trend='c',  # or 'nc' for no constant
+    switching_trend=True,
+    switching_exog=True,
+    switching_variance=True,
+)
+model_object_instance.set_model_object(model_object=msm)
+model_object_instance.set_data(
+    training_data=exchange_rates_vola_df, # see comment above
+    testing_data=exchange_rates_vola_df # see comment above
+    )
+model_object_instance.fit(em_iter=10, search_reps=20)
+predicted_labels = model_object_instance.predict()
+# Save the model summary
+timestamp = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+file_name = f"{msm.__class__.__name__}_summary_{timestamp}"
+model_object_instance.save_model_summary(
+    model_summary=model_object_instance.fitted_model.summary(),
+    save_csv=False,
+    save_latex=False,
+    save_html=False,
+    save_txt=True,
+    save_json=False,
+    file_path=MODELS_PATH,
+    file_name=file_name
+)
+model_object_instance.save_model(file_format=r".pkl", file_path=MODELS_PATH, model_file_name=file_name)
+model_object_instance.get_full_model_info(save=True, file_format=r".json", file_path=MODELS_PATH, file_name=file_name)
+# Extract the expected durations for each regime
+expected_durations = model_object_instance.fitted_model.expected_durations
+# Get the smoothed probabilities for each regime
+smoothed_probabilities = model_object_instance.fitted_model.smoothed_marginal_probabilities
+exchange_rates_vola_df["msm_regime"] = smoothed_probabilities[1]
+exchange_rates_vola_df["regime"] = (exchange_rates_vola_df["msm_regime"] >= 0.5).astype(int)
+# Data Points per regime
+exchange_rates_vola_df["regime"].value_counts()
+rcm_value = compute_rcm(S=2, smoothed_probs=exchange_rates_vola_df["msm_regime"])
+print(f"Regime Classification Measure (RCM): {rcm_value}")
+
+regime_0_periods = exchange_rates_vola_df[exchange_rates_vola_df["regime"] == 0].index
+regime_1_periods = exchange_rates_vola_df[exchange_rates_vola_df["regime"] == 1].index
+print(f"Regime 0 periods: {regime_0_periods}")
+print(f"Regime 1 periods: {regime_1_periods}")
+
+# Plot the regimes together with the exchange rate changes as plotly graph
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=exchange_rates_vola_df.index, y=exchange_rates_vola_df["rolling_vola"],
+                         mode='lines', name='Rolling Volatility'))
+fig.add_trace(go.Scatter(x=exchange_rates_vola_df.index, y=exchange_rates_vola_df["msm_regime"],
+                         mode='lines', name='MSM Regime Probability', yaxis='y2'))
+fig.update_layout(
+    title='Markov Switching Model Regimes with Rolling Volatility',
+    xaxis_title='Date',
+    yaxis_title='Log US NEER Diff',
+    yaxis2=dict(
+        title='MSM Regime Probability',
+        overlaying='y',
+        side='right'
+    ),
+    legend=dict(x=0, y=1)
+)
+fig.show(renderer="browser")
+
+
+# Now try to also include exogeneous variables like WTI Oil Price vola and Henry Hub gas Vola and see if something changes
+series_dict_mapping = {
+    'WTI Oil': 'DCOILWTICO',
+}
+
+start_date = exchange_rates_vola_df.index.min().strftime('%Y-%m-%d')
+end_date = exchange_rates_vola_df.index.max().strftime('%Y-%m-%d')
+
+data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_data(
+    series_dict_mapping=series_dict_mapping,
+    start_date=start_date,
+    end_date=end_date
+    )
+data_us_df = pd.concat(list(data_dict.values()), axis=1).dropna()
+data_us_full_info_table = pd.DataFrame(data_full_info_dict).T
+
+
+
+# Relevel the data to have the same dimensions
+data_us_df = data_us_df.reindex(exchange_rates_vola_df.index).dropna()
+data_us_df["log_WTI_Oil"] = np.log(data_us_df["WTI Oil"])
+data_us_df["log_WTI_Oil_diff"] = data_us_df["log_WTI_Oil"].diff()
+data_us_df = data_us_df["log_WTI_Oil_diff"].rolling(window=window).std().dropna().to_frame(name="rolling_vola_oil")
+data = pd.concat([exchange_rates_vola_df, data_us_df], axis=1).dropna()
+
+
+model_object_instance = ModelObject()
+msm = MarkovRegression(
+    endog=data["rolling_vola"],
+    exog=data[['rolling_vola_oil']],
+    k_regimes=2,
+    trend='c',  # or 'nc' for no constant
+    switching_trend=True,
+    switching_exog=True,
+    switching_variance=False,
+)
+model_object_instance.set_model_object(model_object=msm)
+model_object_instance.set_data(
+    training_data=data["rolling_vola"], # see comment above
+    testing_data=data["rolling_vola"] # see comment above
+    )
+model_object_instance.fit(em_iter=10, search_reps=20)
+predicted_labels = model_object_instance.predict()
+model_object_instance.fitted_model.summary()
+# Get the smoothed probabilities for each regime
+smoothed_probabilities = model_object_instance.fitted_model.smoothed_marginal_probabilities
+data["msm_regime"] = smoothed_probabilities[1]
+data["regime"] = (data["msm_regime"] >= 0.5).astype(int)
+# Data Points per regime
+data["regime"].value_counts()
+rcm_value = compute_rcm(S=2, smoothed_probs=data["msm_regime"])
+print(f"Regime Classification Measure (RCM): {rcm_value}")
+
+regime_0_periods = data[data["regime"] == 0].index
+regime_1_periods = data[data["regime"] == 1].index
+print(f"Regime 0 periods: {regime_0_periods}")
+print(f"Regime 1 periods: {regime_1_periods}")
+
+# Plot the regimes together with the exchange rate changes as plotly graph
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=data.index, y=data["rolling_vola"],
+                         mode='lines', name='Rolling Volatility'))
+fig.add_trace(go.Scatter(x=data.index, y=data["msm_regime"],
+                         mode='lines', name='MSM Regime Probability', yaxis='y2'))
+fig.update_layout(
+    title='Markov Switching Model Regimes with Rolling Volatility',
+    xaxis_title='Date',
+    yaxis_title='Log US NEER Diff',
+    yaxis2=dict(
+        title='MSM Regime Probability',
+        overlaying='y',
+        side='right'
+    ),
+    legend=dict(x=0, y=1)
+)
+fig.show(renderer="browser")
+# Try to replicate the example from the Lecture Notes
+# Page 3/16 Modeling Nonlinearities I: Markov-Switching
+# A model incorporating GARCH effects in the return equation has been introduced by Engle, Lilien and Robins (1987)
+# The so-called GARCH-M model:
+# s_t - s_t-1 = beta_0 + beta_1 * (i_t-1 - i*_t-1) + beta_2 * h_t + u_t
+# u_t = epsilon_t * sqrt(h_t)
+# h_t = c + alpha * epsilon_t-1^2 + beta * h_t-1
+# Of course, we expect beta_0 = 0, beta_1 = 1 and beta_2 > 0!
+# The parameter estimates are calculated by numerical maximization of
+# the log likelihood
+# Estimate the model
+import statsmodels.api as sm
+
+msm_garch = sm.tsa.MarkovAutoregression(
+    endog=exchange_rates_df["log_US_NEER_diff"],
+    k_regimes=2,
+    trend='c',  # or 'nc' for no constant
+    switching_trend=True,
+    switching_exog=True,
+    switching_variance=True,
+    order=1,
+    switching_ar=True,
+    garch_order=(1, 1)
+)
+msm_garch_fitted = msm_garch.fit(em_iter=10, search_reps=20)
+print(msm_garch_fitted.summary())
+# Get the smoothed probabilities for each regime
+exchange_rates_df["msm_garch_regime"] = msm_garch_fitted.smoothed_marginal_probabilities[1]
+# Plot the smoothed probabilities
+exchange_rates_df["msm_garch_regime"]
+# Evaluate the RCM for the Markov Switching GARCH model
+rcm_garch_value = compute_rcm(S=2, smoothed_probs=exchange_rates_df["msm_garch_regime"])
+print(f"Regime Classification Measure (RCM) for GARCH model: {rcm_garch_value}")
+# Plot the regimes together with the exchange rate changes as plotly graph
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=exchange_rates_df.index, y=exchange_rates_df["log_US_NEER_diff"],
+                         mode='lines', name='Log US NEER Diff'))
+fig.add_trace(go.Scatter(x=exchange_rates_df.index, y=exchange_rates_df["msm_garch_regime"],
+                         mode='lines', name='MSM GARCH Regime Probability', yaxis='y2'))
+fig.update_layout(
+    title='Markov Switching GARCH Model Regimes',
+    xaxis_title='Date',
+    yaxis_title='Log US NEER Diff',
+    yaxis2=dict(
+        title='MSM GARCH Regime Probability',
+        overlaying='y',
+        side='right'
+    ),
+    legend=dict(x=0, y=1)
+)
+fig.show(renderer="browser")
