@@ -5,9 +5,7 @@ import datetime as dt
 import pandas as pd
 import numpy as np
 import yfinance as yf
-# from sklearn.preprocessing import StandardScaler
-# from sklearn.metrics import silhouette_score
-# from sklearn.cluster import KMeans
+
 
 CAU_COLOR_SCALE = ["#9b0a7d", "grey", "black", "darkgrey", "lightgrey"]
 COLOR_DISCRETE_SEQUENCE_DEFAULT = CAU_COLOR_SCALE
@@ -15,11 +13,13 @@ FIGURES_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/figures"
 TABLES_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables"
 DATA_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/data"
 NUM_YEARS_INTERVAL_X_AXIS = 5
+SRC_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/src"
+SEMINAR_CODE_PATH = rf"{SRC_PATH}/seminar_code"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 # import config settings with static global variables
 print(os.getcwd())
-os.chdir(r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code")
+os.chdir(SEMINAR_CODE_PATH)
 print(os.getcwd())
 
 from data_loading.data_loader import DataLoading
