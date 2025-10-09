@@ -14,6 +14,7 @@ import ast
 warnings.filterwarnings("ignore", category=UserWarning)
 
 MODELS_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models"
+FIGURES_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/figures"
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -139,6 +140,21 @@ class ModelObject:
         # Also store the timestamps for training and testing data
         self.training_data_dates = training_data.index.strftime("%Y-%m-%d %H:%M:%S").tolist()
         self.testing_data_dates = testing_data.index.strftime("%Y-%m-%d %H:%M:%S").tolist()
+        # Compare the dates of training and testing data
+        # Statsmodels-style model: already has data inside
+        if hasattr(self.model_object, 'fit') and 'endog' in self.model_init_params:
+            model_training_data_dates = self.model_object.data.orig_endog.index.tolist()
+            model_training_data_dates = [pd.Timestamp(date).strftime("%Y-%m-%d %H:%M:%S") for date in model_training_data_dates]
+            if model_training_data_dates == self.training_data_dates and model_training_data_dates == self.testing_data_dates:
+                logging.info("Model data dates match training data dates.")
+            else:
+                logging.warning("Model data dates do not match training data dates.")
+                logging.warning(f"Model data dates: {model_training_data_dates}")
+                logging.warning(f"Training data dates: {self.training_data_dates}")
+                self.training_data_dates = model_training_data_dates
+            # Also extract the testing data from the model and check
+            if self.training_data.equals(self.testing_data):
+                self.testing_data_dates = self.training_data_dates
 
 
     def fit(
@@ -153,7 +169,6 @@ class ModelObject:
             valid_fit_params = inspect.signature(self.model_object.fit).parameters
             filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_fit_params}
             fit_mod = self.model_object.fit(**filtered_kwargs)
-
         # Sklearn-style model: data must be passed in
         elif hasattr(self.model_object, 'fit'):
             valid_fit_params = inspect.signature(self.model_object.fit).parameters
@@ -230,7 +245,13 @@ class ModelObject:
                         # Use index values for start/end
                         start = self.testing_data.index.min()
                         end = self.testing_data.index.max()
-                        self.labels = self.fitted_model.predict()
+                        self.labels = self.fitted_model.predict(start=0, end=len(self.testing_data)-1)
+                        if self.model_object.__class__.__name__ == "MarkovRegression":
+                            # Convert the probabilities to regimes based on a threshold
+                            smoothed_probabilities = model_object_instance.fitted_model.smoothed_marginal_probabilities
+                            msm_regime = smoothed_probabilities[1]
+                            regime = (msm_regime >= MARKOV_REGIME_PROB).astype(int)
+                            self.labels = regime.tolist()
                     else:
                         self.labels = self.fitted_model.predict()
             elif "fit_predict" in dir(self.fitted_model):  
@@ -600,98 +621,6 @@ class ModelObject:
                 logging.error(f"Error exporting to .json: {e}")
 
 
-def flatten_model_info(
-    info: Dict[str, Any]
-    ) -> pd.DataFrame:
-    """Flatten the model information into a DataFrame.
-
-    Args:
-        info (Dict[str, Any]): The model information to flatten.
-
-    Examples:
-        from model import ModelObject
-        model_object_instance = ModelObject()
-        flat_info_df = model_object_instance._flatten_model_info(info=model_info)
-
-    Returns:
-        pd.DataFrame: The flattened model information.
-    """
-    flat_info = {}
-    for k, v in info.items():
-        if isinstance(v, (np.ndarray, list)):
-            flat_info[k] = str(v)
-        elif isinstance(v, dict):
-            flat_info[k] = str(v)
-        else:
-            flat_info[k] = v
-    flat_info_df = pd.DataFrame([flat_info])
-    return flat_info_df
-
-
-def load_full_model_info(
-    file_format: str=".txt",
-    file_path: str=None,
-    file_name: str=None,
-    return_info_dict: bool=True,
-    return_info_df: bool=False,
-    ) -> Dict[str, Any]:
-    """Load the full model information from a file.
-
-    Args:
-        file_format (str, optional): The file format to use for loading. Defaults to ".txt".
-        file_path (str, optional): The file path to load the model information from. Defaults to None.
-        file_name (str, optional): The pure model file name,
-            without the file extension, that is added by the parameter file_format. Defaults to None.
-
-    Examples:
-        from model import load_full_model_info
-        model_info = load_full_model_info(file_format=".txt", file_path="/path/to/save", file_name="kmeans_model")
-
-    Returns:
-        Dict[str, Any]: The loaded model information.
-    """
-    logging.info(f"Loading model info from {file_path}/{file_name} in format {file_format}")
-    if file_path is not None and file_name is not None:
-        if file_format == ".txt":
-            try:
-                model_info = {}
-                with open(fr"{file_path}/{file_name}{file_format}", "r") as f:
-                    for line in f:
-                        if ": " not in line:
-                            continue  # skip malformed lines
-                        key, value = line.strip().split(": ", 1)
-                        model_info[key] = value
-                model_info.update(model_info)
-
-                if return_info_df:
-                    flat_info_df = flatten_model_info(info=model_info)
-                    return flat_info_df
-                elif return_info_dict:
-                    return model_info
-                elif return_info_dict and return_info_df:
-                    flat_info_df = flatten_model_info(info=model_info)
-                    return model_info, flat_info_df
-            except Exception as e:
-                logging.error(f"Error loading model info: {e}")
-                return {}
-        elif file_format == ".json":
-            try:
-                with open(fr"{file_path}/{file_name}{file_format}", "r") as f:
-                    model_info = json.load(f)
-                model_info.update(model_info)
-
-                if return_info_df:
-                    flat_info_df = flatten_model_info(info=model_info)
-                    return flat_info_df
-                elif return_info_dict:
-                    return model_info
-                elif return_info_dict and return_info_df:
-                    flat_info_df = flatten_model_info(info=model_info)
-                    return model_info, flat_info_df
-            except Exception as e:
-                logging.error(f"Error loading model info: {e}")
-                return {}
-
 #----------------------------------------------------------------------------------------
 # 0X - Econometric Modelling - Benchmark Models for Regime Identification
 #----------------------------------------------------------------------------------------
@@ -700,37 +629,23 @@ os.chdir(r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code")
 print(os.getcwd())
 
 from data_loading.data_loader import DataLoading
+from data_graphing.data_grapher import DataGraphing
 
+# Import util functions for model evaluation and comparisons
+from utils.evaluation import get_model_metadata_df,\
+    extract_predicted_labels_from_metadata_df,\
+    get_recoded_predicted_labels_df, \
+    get_regime_counts_df, \
+    get_overlapping_regimes_df, \
+    get_periods_overlaying_df
+# Import custom written model evaluation scores
+from utils.evaluation_metrics import compute_rcm
+
+data_graphing_instance = DataGraphing()
 data_loading_instance = DataLoading(
     credential_path=r"/Users/Robert_Hennings/Projects/SettingsPackages",
     credential_file_name=r"credentials.json"
 )
-# The regime classification measure (RCM) of Ang and Bekaert (2002) is used
-# to determine the accuracy of the Markov-switching models. This statistic is computed using the following formula:
-# The RCM is computed as the average of the product of smoothed probabilities p~; where S is the number of
-# regimes (states, S). The switching variable follows a Bernoulli distribution and as a result, the RCM provides an
-# estimate of the variance. The RCM statistic ranges be- tween 0 (perfect regime classification) and 100
-# (failure to detect any re- gime classification) with lower values of the RCM preferable to higher values of the RCM.
-# Thus to ensure significantly different regimes, it is important that a model's RCM is close to zero and its
-# smoothed proba- bility indicator be close to 1.
-def compute_rcm(S: int, smoothed_probs: pd.Series, threshold: float=0.5) -> float:
-    """Compute the Regime Classification Measure (RCM) for a series of smoothed probabilities.
-
-    Args:
-        S (int): The number of regimes.
-        smoothed_probs (pd.Series): The smoothed probabilities for the regimes.
-        threshold (float, optional): The threshold to classify regimes. Defaults to 0.5.
-
-    Examples:
-        from model import compute_rcm
-        rcm = compute_rcm(S=2, smoothed_probs=exchange_rates_df["msm_regime"])
-
-    Returns:
-        float: The RCM value.
-    """
-    regime_classification = (smoothed_probs >= threshold).astype(int)
-    rcm = 100 * S**2 * (1 - (1 / len(smoothed_probs)) * np.sum(regime_classification * smoothed_probs + (1 - regime_classification) * (1 - smoothed_probs)))
-    return rcm
 # Now load the exchange rate data from BIS - daily data
 country_keys_mapping = {
     "US": "United States",
@@ -764,11 +679,17 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.cluster import DBSCAN
 from sklearn.cluster import SpectralClustering
 from sklearn.cluster import MeanShift
+from sklearn.mixture import GaussianMixture
+from sklearn.cluster import Birch
+from sklearn.cluster import AffinityPropagation
+from sklearn.cluster import OPTICS
+from sklearn.cluster import MiniBatchKMeans
 from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
 from sklearn.metrics import silhouette_score
 
 # At first we assume three regimes: One low volatility regime and two high volatility regimes
 n_regimes = 2
+MARKOV_REGIME_PROB = 0.5
 # Now the work flow looks like follows:
 # We initialize a new instance of the ModelObject class for each model with desired settings
 kmeans = KMeans(n_clusters=n_regimes, random_state=42)
@@ -784,6 +705,11 @@ msm = MarkovRegression(
     switching_exog=True,
     switching_variance=True,
 )
+gmm = GaussianMixture(n_components=n_regimes, random_state=42)
+birch = Birch(n_clusters=n_regimes)
+affinity = AffinityPropagation()
+optics = OPTICS()
+minibatch_kmeans = MiniBatchKMeans(n_clusters=n_regimes, random_state=42)
 # In the below dict, additional fit kwargs for each model class can be specified
 # that will be passed to the fit() method of the respective model class
 fit_kwargs_dict = {
@@ -796,7 +722,7 @@ fit_kwargs_dict = {
     # Add more models as needed
 }
 # We store them in a list that we will loop through
-models_list = [kmeans, agg, dbscan, ms, msm]
+models_list = [kmeans, agg, dbscan, ms, msm, gmm, birch, affinity, optics, minibatch_kmeans]
 for model in models_list:
     # 1) Initialize a new instance for each model class
     model_object_instance = ModelObject() # Initialize a new instance for each model
@@ -809,6 +735,7 @@ for model in models_list:
         testing_data=exchange_rates_vola_df
     )
     # 4) Fit the model
+    # based on the model class name extract additional parameters for the fit
     model_name = model.__class__.__name__
     fit_kwargs = fit_kwargs_dict.get(model_name, {})
     model_object_instance.fit(**fit_kwargs)
@@ -820,13 +747,13 @@ for model in models_list:
     # Save the model and the model info with dynamic names based on the model class name
     timestamp = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     file_name = f"{model.__class__.__name__}_{timestamp}"
-    # First save the fitted model object itself
+    # First save the fitted model object itself to a .pkl file - we can also read it in later
     model_object_instance.save_model(
         file_format=r".pkl",
         file_path=MODELS_PATH,
         model_file_name=file_name
         )
-    # Second save all the related metadata/information about the model
+    # Second save all the related metadata/information about the model - from here the relevant metadata will be pulled
     model_object_instance.get_full_model_info(
         save=True,
         return_info_dict=False,
@@ -834,134 +761,33 @@ for model in models_list:
         file_path=MODELS_PATH,
         file_name=file_name
         )
-# For a proper evaluation now, loading all full_info files and compare the evaluation scores
-def get_model_metadata_df(
-    full_model_info_path: str,
-    file_format: str=".json"
-    ) -> pd.DataFrame:
-    # If some entries are strings, convert them to dicts
-    def safe_dict(x):
-        if isinstance(x, dict):
-            return x
-        try:
-            return ast.literal_eval(x)
-        except Exception:
-            return {}
-    all_model_info_files = [file for file in os.listdir(full_model_info_path) if file.endswith(file_format)]
-    logging.info(f"Found {len(all_model_info_files)} model info files in {full_model_info_path}")
-    # Delete the file extension for loading
-    all_model_info_files = [os.path.splitext(file)[0] for file in all_model_info_files]
-    # Load all model info files into a list of dataframes
-    all_model_info_dfs = [load_full_model_info(
-        file_format=file_format,
-        file_path=full_model_info_path,
-        file_name=file,
-        return_info_dict=False,
-        return_info_df=True,
-        ) for file in all_model_info_files]
-    all_models_comp_df = pd.concat(all_model_info_dfs).reset_index(drop=True)
-    all_models_comp_df["evaluation_score_dict"] = all_models_comp_df["evaluation_score"].apply(safe_dict)
-    expanded_scores = all_models_comp_df["evaluation_score_dict"].apply(pd.Series)
-    all_models_comp_df = pd.concat([all_models_comp_df, expanded_scores], axis=1)
-    return all_models_comp_df
-
+# For a proper evaluation now, loading all full_info.json files and compare the evaluation scores
 all_models_comp_df = get_model_metadata_df(
     full_model_info_path=MODELS_PATH,
     )
-all_models_comp_df["testing_data_dates"]
-# metadata_df = all_models_comp_df
-# Apply conversion
-all_models_comp_df[["model_type", "silhouette_score"]].sort_values(by="silhouette_score", ascending=False)
+all_models_comp_df[["model_type", "silhouette_score", "feature_names_in"]].sort_values(by="silhouette_score", ascending=False)
 # all_models_comp_df.to_excel(r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models/all_models_comparison_1.xlsx", index=False)
-
-# Extract all the predicted regimes and compare them in a plot
-# When there are multiple models that were trained on different lengths of data sets then
-# ther resulting predicted labels will have different lengths
-# Therefore we need to align them first
-
-def extract_predicted_labels_from_metadata_df(
-    metadata_df: pd.DataFrame,
-    column_name_predicted_labels: str="predicted_labels"
-    ) -> pd.DataFrame:
-    predicted_labels_df = pd.DataFrame()
-    # Set the initial and longest index of all for later merging correctly
-    len_model_dates = [len(ast.literal_eval(metadata_df["testing_data_dates"][i])) for i in range(len(metadata_df.index))]
-    # get the index of the max
-    max_length_index = np.argmax(len_model_dates)
-    predicted_labels_df_index = ast.literal_eval(metadata_df["testing_data_dates"][max_length_index])
-    predicted_labels_df.index = [pd.Timestamp(date) for date in predicted_labels_df_index]
-    for i in range(len(metadata_df.index)):
-        model = metadata_df["model_type"][i]
-        if model in predicted_labels_df.columns:
-            model = f"{model}_{i}"
-        predicted_labels_string = metadata_df[column_name_predicted_labels][i]
-        predicted_labels = ast.literal_eval(predicted_labels_string)
-        # also extract the testing_data_dates for a correct matching of the predicted_lables data
-        testing_data_dates_string = metadata_df["testing_data_dates"][i]
-        testing_data_dates = ast.literal_eval(testing_data_dates_string)
-        testing_data_dates = [pd.Timestamp(date) for date in testing_data_dates]
-        # create a small DataFrame for a correct merging
-        model_df = pd.DataFrame(index=testing_data_dates, data=predicted_labels, columns=[model])
-        try:
-            predicted_labels_df = predicted_labels_df.merge(
-                right=model_df,
-                left_index=True,
-                right_index=True
-            )
-        except Exception as e:
-            logging.error(f"Error adding predicted labels for model {model}: {e} because of differing length: {len(predicted_labels)}")
-            continue
-    return predicted_labels_df
-
 predicted_labels_df = extract_predicted_labels_from_metadata_df(
     metadata_df=all_models_comp_df,
 )
-# Transform the values of the Markov Model
-smoothed_probabilities = model_object_instance.fitted_model.smoothed_marginal_probabilities
-msm_regime = smoothed_probabilities[1]
-regime = (msm_regime >= 0.5).astype(int)
-predicted_labels_df["MarkovRegression"] = regime.tolist()
 # Now also map the regimes across the models correctly, in that we assume the high vola regime is encoded as 1 and the low vola regime is a 0
 # KMeans is already correctly encoded
 # AgglomerativeClustering needs to be encoded
 # MeanShift is also correctly encoded
 # MarkovRegression needs to be encoded
-models_recoding_list = ["AgglomerativeClustering", "MarkovRegression"]
-for model in models_recoding_list:
-    if model in predicted_labels_df.columns:
-        # Recode the regimes
-        predicted_labels_df[model] = predicted_labels_df[model].map({0: 1, 1: 0})
-# DBSCAN has some -1 values for noise points
-
+predicted_labels_df = get_recoded_predicted_labels_df(
+    predicted_labels_df=predicted_labels_df,
+    label_mapping_dict={0: 1, 1: 0},
+    column_names_list=["AgglomerativeClustering", "MarkovRegression"]
+    )
 # Compare the fitted in sample regimes
-# Count the number of data points per regime
-# Create a dictionary to hold counts for each model
-regime_counts = {}
-for column in predicted_labels_df.columns:
-    counts = predicted_labels_df[column].value_counts()
-    # Ensure both regimes (0 and 1) are present
-    counts = counts.reindex([0, 1], fill_value=0)
-    regime_counts[column] = counts
-# Convert to DataFrame
-regime_counts_df = pd.DataFrame(regime_counts)
-regime_counts_df.index.name = "Regime"
-print(regime_counts_df)
+regime_counts_df = get_regime_counts_df(
+    predicted_labels_df=predicted_labels_df
+    )
 # Also identify the time periods that are overlapping in the classification of the algorithms and count their share
-predicted_labels_overlap_df = pd.DataFrame()
-for i in range(len(predicted_labels_df.columns)):
-    for j in range(i + 1, len(predicted_labels_df.columns)):
-        model_i = predicted_labels_df.columns[i]
-        model_j = predicted_labels_df.columns[j]
-        overlap = (predicted_labels_df[model_i] == predicted_labels_df[model_j]).sum()
-        overlap_percentage = overlap / len(predicted_labels_df) * 100
-        print(f"Overlap between {model_i} and {model_j}: {overlap} data points ({overlap_percentage:.2f}%)")
-        predicted_labels_overlap_df = pd.concat([predicted_labels_overlap_df, pd.DataFrame({
-            "Model 1": [model_i],
-            "Model 2": [model_j],
-            "Overlap (absolute number of obs.)": [overlap],
-            "Overlap (percentage of total obs.)": [round(overlap_percentage, 2)]
-        })], ignore_index=True)
-    print("\n")
+predicted_labels_overlap_df = get_overlapping_regimes_df(
+    predicted_labels_df=predicted_labels_df
+    )
 # Notice: Overlap is defined as two models having the exact same regime encoding so 1 == 1
 # It might be that the regimes are just encoded differently, e.g. 0 == 1 and 1 == 0 for two models
 # This is not captured in the above overlap calculation
@@ -969,83 +795,77 @@ for i in range(len(predicted_labels_df.columns)):
 # Plot them all together in a plotly graph, together with the target data
 # Plot the regimes on a secondary y-axis
 predicted_labels_df.index = exchange_rates_vola_df.index
-import plotly.graph_objects as go
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=exchange_rates_vola_df.index, y=exchange_rates_vola_df["rolling_vola"],
-                         mode='lines', name='Rolling Volatility'))
-for column in predicted_labels_df.columns:
-    fig.add_trace(go.Scatter(x=predicted_labels_df.index, y=predicted_labels_df[column],
-                             mode='lines', name=column, yaxis='y2'))
-fig.update_layout(
-    title='Clustering Model Regimes with Rolling Volatility',
-    xaxis_title='Date',
-    yaxis_title='Log US NEER Diff',
-    yaxis2=dict(
-        title='Regime',
-        overlaying='y',
-        side='right'
-    ),
-    legend=dict(x=0, y=1)
-)
-fig.show(renderer="browser")
+
 # Now also load in the table of crisis periods and overlay these time periods as well
 # to see if regime changes have been picked up
-crisis_periods_df = pd.read_json(r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/crisis_periods.json")
-crisis_periods_df["Start-date"] = pd.to_datetime(crisis_periods_df["Start-date"])
-crisis_periods_df["End-date"] = pd.to_datetime(crisis_periods_df["End-date"])
-# Restric the crisis periods to the time frame of the exchange rate data
-crisis_periods_df = crisis_periods_df[
-    (crisis_periods_df["End-date"] >= exchange_rates_vola_df.index.min()) &
-    (crisis_periods_df["Start-date"] <= exchange_rates_vola_df.index.max())
-    ].reset_index(drop=True)
-# Add these periods as shaded areas in the plotly graph
-for i, row in crisis_periods_df.iterrows():
-    fig.add_vrect(
-        x0=row["Start-date"], x1=row["End-date"],
-        fillcolor="LightSalmon", opacity=0.5,
-        layer="below", line_width=0,
-        annotation_text=row["Event-Type"], annotation_position="top left"
-    )
-fig.show(renderer="browser")
+graphing_df = pd.concat(
+    [exchange_rates_vola_df, predicted_labels_df],
+    axis=1
+)
 
+
+with open("/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/crisis_periods_dict.json", "r") as f:
+    crisis_periods_dict = json.load(f)
+
+custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
+    start_hex="#9b0a7d",
+    end_hex="black",
+    center_color="grey",
+    steps=round((len(graphing_df.columns)+1)/2),
+    lightening_factor=0.8,
+)
+# Extract only the hex color codes from the created list
+custom_color_scale_codes = [color[1] for color in custom_color_scale]
+color_mapping = {var: custom_color_scale_codes[i % len(custom_color_scale_codes)] for i, var in enumerate(graphing_df.columns.tolist())}
+
+
+fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_highlighted(
+    data=graphing_df,
+    crisis_periods_dict=crisis_periods_dict,
+    variables=["rolling_vola"],
+    secondary_y_variables=graphing_df.columns[1:].tolist(),
+    recession_shading_color="rgba(155, 10, 125, 0.3)",
+    title=f"Exchange Rate and Oil Volatility with Crisis Periods highlighted over the time: {graphing_df.index[0].year} - {graphing_df.index[-1].year}",
+    secondary_y_axis_title="WTI Oil & Natural Gas Volatility",
+    x_axis_title="Date",
+    y_axis_title="Exchange Rate Volatility",
+    color_mapping_dict=color_mapping,
+    num_years_interval_x_axis=5,
+    showlegend=True,
+    save_fig=False,
+    file_name="exchange_rate_oil_raw_vola_crisis_periods_highlighted",
+    file_path=FIGURES_PATH,
+    width=1200,
+    height=800,
+    scale=3
+    )
+# Show the figure
+fig_crisis_periods_highlighted.show(renderer="browser")
 # evaluate numerically if the models were able to identify the crisis periods
 # by checking how many of the crisis period data points were classified as high volatility regime
 # by each model
-for column in predicted_labels_df.columns:
-    print(f"Model: {column}")
-    total_crisis_points = 0
-    high_vol_crisis_points = 0
-    for i, row in crisis_periods_df.iterrows():
-        mask = (predicted_labels_df.index >= row["Start-date"]) & (predicted_labels_df.index <= row["End-date"])
-        crisis_points = predicted_labels_df.loc[mask, column]
-        total_crisis_points += len(crisis_points)
-        if len(crisis_points) > 0:
-            # Assuming high volatility regime is encoded as '1'
-            high_vol_crisis_points += (crisis_points == 1).sum()
-    if total_crisis_points > 0:
-        high_vol_percentage = (high_vol_crisis_points / total_crisis_points) * 100
-    else:
-        high_vol_percentage = 0
-    print(f"Total crisis data points: {total_crisis_points}")
-    print(f"High volatility regime during crisis periods: {high_vol_crisis_points} data points ({high_vol_percentage:.2f}%)")
-    print("\n")
-
-
-
+crisis_periods_df = pd.DataFrame(crisis_periods_dict).T.reset_index().rename(columns={"index": "Crisis", "start": "Start-date", "end": "End-date"})
+overlay_df = get_periods_overlaying_df(
+    crisis_periods_df=crisis_periods_df,
+    predicted_labels_df=predicted_labels_df,
+    predicted_labels_df_column_names_list=predicted_labels_df.columns[1:].tolist(),
+)
 # Load a specific model/model object back - Here a MarkovRegression Model
 new_model_object_instance = ModelObject()
 fitted_model, model_info_dict, model_info_df = new_model_object_instance.load_model(
     file_format_model=".pkl",
     file_path_model=MODELS_PATH,
-    model_file_name="MarkovRegression_2025-10-07_15-00-36",
+    model_file_name="MarkovRegression_2025-10-08_22-26-05",
     return_info_dict=True,
     return_info_df=True,
     file_format_model_info=".json",
     file_path_model_info=MODELS_PATH,
-    model_file_name_info="MarkovRegression_2025-10-07_15-00-36"
+    model_file_name_info="MarkovRegression_2025-10-08_22-26-05"
     )
+fitted_model.predict(start=0, end=len(model_info_dict.get("testing_data_dates"))-1)
 # Extract the regime periods
 model_info_dict.keys()
+len(model_info_dict.get("testing_data_dates"))
 model_info_dict.get("training_data")
 model_info_dict.get("testing_data")
 len(model_info_dict.get("predicted_labels"))
@@ -1056,6 +876,7 @@ new_model_object_instance.fitted_model.summary()
 # Now try to also include exogeneous variables like WTI Oil Price vola and Henry Hub gas Vola and see if something changes
 series_dict_mapping = {
     'WTI Oil': 'DCOILWTICO',
+    "Nat Gas": "DHHNGSP",
 }
 
 start_date = exchange_rates_vola_df.index.min().strftime('%Y-%m-%d')
@@ -1074,13 +895,28 @@ data_us_full_info_table = pd.DataFrame(data_full_info_dict).T
 # Relevel the data to have the same dimensions
 data_us_df = data_us_df.reindex(exchange_rates_vola_df.index).dropna()
 data_us_df["log_WTI_Oil"] = np.log(data_us_df["WTI Oil"])
+data_us_df["log_Nat_Gas"] = np.log(data_us_df["Nat Gas"])
 data_us_df["log_WTI_Oil_diff"] = data_us_df["log_WTI_Oil"].diff()
-data_us_df = data_us_df["log_WTI_Oil_diff"].rolling(window=window).std().dropna().to_frame(name="rolling_vola_oil")
+data_us_df["log_Nat_Gas_diff"] = data_us_df["log_Nat_Gas"].diff()
+data_us_df = data_us_df.dropna()
+# Calculate rolling volatilities
+window = 30
+data_us_df["rolling_vola_oil"] = data_us_df["log_WTI_Oil_diff"].rolling(window=window).std().dropna()
+data_us_df["rolling_vola_gas"] = data_us_df["log_Nat_Gas_diff"].rolling(window=window).std().dropna()
 data = pd.concat([exchange_rates_vola_df, data_us_df], axis=1).dropna()
 
 # Now apply the very same loop from earlier, but now with the exogeneous variable included
 # We initialize a new instance of the ModelObject class for each model with desired settings
 # We store them in a list that we will loop through
+msm = MarkovRegression(
+    endog=data[["rolling_vola"]],
+    exog=data[['rolling_vola_oil', 'rolling_vola_gas']],
+    k_regimes=n_regimes,
+    trend='c',  # or 'nc' for no constant
+    switching_trend=True,
+    switching_exog=True,
+    switching_variance=True,
+) # <- remember to always create a new msm object if new data is used because else the dimensions will not align due to different data
 models_list = [kmeans, agg, dbscan, ms, msm]
 for model in models_list:
     # 1) Initialize a new instance for each model class
@@ -1090,8 +926,8 @@ for model in models_list:
     # 3) Set the data - Here we only want an In-sample comparison
     # therefore train and test data are the same
     model_object_instance.set_data(
-        training_data=data[["rolling_vola", "rolling_vola_oil"]],
-        testing_data=data[["rolling_vola", "rolling_vola_oil"]]
+        training_data=data[["rolling_vola", "rolling_vola_oil", "rolling_vola_gas"]],
+        testing_data=data[["rolling_vola", "rolling_vola_oil", "rolling_vola_gas"]]
     )
     # 4) Fit the model
     model_name = model.__class__.__name__
@@ -1125,9 +961,27 @@ for model in models_list:
 all_models_comp_df = get_model_metadata_df(
     full_model_info_path=MODELS_PATH,
     )
-all_models_comp_df["evaluation_score_dict"] = all_models_comp_df["evaluation_score"].apply(safe_dict)
-all_models_comp_df["silhouette_score"] = all_models_comp_df["evaluation_score_dict"].apply(extract_score)
 all_models_comp_df[["model_type", "silhouette_score", "feature_names_in"]].sort_values(by="silhouette_score", ascending=False)
+predicted_labels_df = extract_predicted_labels_from_metadata_df(
+    metadata_df=all_models_comp_df,
+)
+# Plotting the results as a plotly bar plot
+fig = go.Figure()
+for model in all_models_comp_df["model_type"].unique():
+    model_data = all_models_comp_df[all_models_comp_df["model_type"] == model]
+    fig.add_trace(go.Bar(
+        x=model_data["feature_names_in"],
+        y=model_data["silhouette_score"],
+        name=model
+    ))
+fig.update_layout(
+    title="Model Comparison",
+    xaxis_title="Feature Names",
+    yaxis_title="Silhouette Score",
+    barmode="group"
+)
+fig.show(renderer="browser")
+
 #################################################################################
 model_object_instance = ModelObject()
 msm = MarkovRegression(
@@ -1163,6 +1017,7 @@ print(f"Regime 0 periods: {regime_0_periods}")
 print(f"Regime 1 periods: {regime_1_periods}")
 
 # Plot the regimes together with the exchange rate changes as plotly graph
+import plotly.graph_objects as go
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=data.index, y=data["rolling_vola"],
                          mode='lines', name='Rolling Volatility'))
@@ -1175,11 +1030,21 @@ fig.update_layout(
     yaxis2=dict(
         title='MSM Regime Probability',
         overlaying='y',
-        side='right'
+        side='right'    
     ),
     legend=dict(x=0, y=1)
 )
 fig.show(renderer="browser")
+#################################################################################
+model_object_instance = ModelObject()
+model_object_instance.set_model_object(model_object=kmeans)
+model_object_instance.set_data(
+    training_data=data[['rolling_vola']], # see comment above
+    testing_data=data[['rolling_vola']] # see comment above
+    )
+model_object_instance.fit()
+dir(model_object_instance.fitted_model)
+len(model_object_instance.fitted_model.labels_)
 # Try to replicate the example from the Lecture Notes
 # Page 3/16 Modeling Nonlinearities I: Markov-Switching
 # A model incorporating GARCH effects in the return equation has been introduced by Engle, Lilien and Robins (1987)

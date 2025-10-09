@@ -1042,6 +1042,18 @@ for period in recession_periods:
         "start": period["start"],
         "end": period["end"]
     }
+# Transform all Timestamps to a string object
+for key in crisis_periods_dict.keys():
+    if type(crisis_periods_dict[key]["start"]) is not str:
+        crisis_periods_dict[key]["start"] = crisis_periods_dict[key]["start"].strftime("%Y-%m-%d")
+    if type(crisis_periods_dict[key]["end"]) is not str:
+        crisis_periods_dict[key]["end"] = crisis_periods_dict[key]["end"].strftime("%Y-%m-%d")
+
+with open(r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/crisis_periods_dict.json", "w") as f:
+    json.dump(crisis_periods_dict, f)
+
+print(crisis_periods_dict)
+
 
 crisis_periods_df = pd.DataFrame(crisis_periods_dict).T
 crisis_periods_df["start"] = pd.to_datetime(crisis_periods_df["start"]).dt.strftime("%Y-%m-%d")

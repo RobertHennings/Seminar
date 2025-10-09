@@ -1572,7 +1572,6 @@ class DataGraphing(object):
     def get_fig_crisis_periods_highlighted(
         self,
         data: pd.DataFrame,
-        crisis_periods_dict: Dict[str, Dict[str, str]],
         variables: List[str],
         secondary_y_variables: List[str],
         title: str,
@@ -1580,6 +1579,7 @@ class DataGraphing(object):
         x_axis_title: str,
         y_axis_title: str,
         color_mapping_dict: Dict[str, str],
+        crisis_periods_dict: Dict[str, Dict[str, str]]=None,
         num_years_interval_x_axis: int=5,
         recession_shading_color: str="rgba(200,200,200,0.3)",  # Light gray for recessions
         margin_dict: Dict[str, float]=dict(
@@ -1652,24 +1652,26 @@ class DataGraphing(object):
                     )
                 )
         # Add shaded regions as traces (these will appear in the legend)
-        for name, period in crisis_periods_dict.items():
-            start = pd.to_datetime(period["start"])
-            end = pd.to_datetime(period["end"])
-            if start < start_date or end > end_date:
-                continue  # Skip periods outside the data range
-            # Clip the start and end to the data range
-            fig.add_trace(
-                go.Scatter(
-                    x=[start, end, end, start],
-                    y=[data.min().min(), data.min().min(), data.max().max(), data.max().max()],
-                    fill="toself",
-                    fillcolor="rgba(255,0,0,0.2)" if not "recession" in name.lower() else recession_shading_color,
-                    line=dict(color="rgba(255,0,0,0.2)" if not "recession" in name.lower() else recession_shading_color),
-                    name=name,
-                    showlegend=showlegend,
-                    hoverinfo="skip"
+        if crisis_periods_dict is not None:
+            for name, period in crisis_periods_dict.items():
+                start = pd.to_datetime(period["start"])
+                end = pd.to_datetime(period["end"])
+                if start < start_date or end > end_date:
+                    continue  # Skip periods outside the data range
+                # Clip the start and end to the data range
+                fig.add_trace(
+                    go.Scatter(
+                        x=[start, end, end, start],
+                        # y=[data.min().min(), data.min().min(), data.max().max(), data.max().max()],
+                        y=[data[variables].min().min(), data[variables].min().min(), data[variables].max().max(), data[variables].max().max()],
+                        fill="toself",
+                        fillcolor="rgba(255,0,0,0.2)" if not "recession" in name.lower() else recession_shading_color,
+                        line=dict(color="rgba(255,0,0,0.2)" if not "recession" in name.lower() else recession_shading_color),
+                        name=name,
+                        showlegend=showlegend,
+                        hoverinfo="skip"
+                    )
                 )
-            )
         tickvals = pd.date_range(
             start=pd.Timestamp(year=data.index.min().year, month=1, day=1),
             end=data.index.max(),
