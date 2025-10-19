@@ -219,6 +219,7 @@ data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_dat
 data_us_df = pd.concat(list(data_dict.values()), axis=1).dropna()
 data_us_full_info_table = pd.DataFrame(data_full_info_dict).T
 
+<<<<<<< HEAD
 # Crisis Periods
 crisis_periods_dict = {
     "Bretton Woods Breakdown": {
@@ -358,6 +359,8 @@ data_loading_instance.export_dataframe(
 )
 ############################### Regime Switching Analysis ###############################
 
+=======
+>>>>>>> 64e6c7a98bbcf7aa3985e71a792d24dbcd297185
 
 
 # For the regime switching analysis, first provide a benchmark model: Markov-Switching for the selected interest rate
