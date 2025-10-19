@@ -30,6 +30,7 @@ REQUEST_TIMEOUT = cfg.REQUEST_TIMEOUT
 ERROR_CODES_DICT = cfg.ERROR_CODES_DICT
 SUCCESS_CODES_DICT = cfg.SUCCESS_CODES_DICT
 BIS_EXCHANGE_RATE_MAPPING_DICT = cfg.BIS_EXCHANGE_RATE_MAPPING_DICT
+BIS_CENTRAL_BANK_POLICY_RATE_MAPPING_DICT = cfg.BIS_CENTRAL_BANK_POLICY_RATE_MAPPING_DICT
 BIS_DATA_BASE_URL = cfg.BIS_DATA_BASE_URL
 
 class DataLoading(object):
@@ -46,6 +47,7 @@ class DataLoading(object):
         error_codes_dict: Dict[int, Dict[str, str]]=ERROR_CODES_DICT,
         success_codes_dict: Dict[int, Dict[str, str]]=SUCCESS_CODES_DICT,
         bis_exchange_rate_mapping_dict: Dict[str, str]=BIS_EXCHANGE_RATE_MAPPING_DICT,
+        bis_central_bank_policy_rate_mapping_dict: Dict[str, str]=BIS_CENTRAL_BANK_POLICY_RATE_MAPPING_DICT,
         bis_data_base_url: str=BIS_DATA_BASE_URL,
         ):
         self.credential_path = credential_path
@@ -56,6 +58,7 @@ class DataLoading(object):
         self.proxies = proxies
         self.verify = verify
         self.bis_exchange_rate_mapping_dict = bis_exchange_rate_mapping_dict
+        self.bis_central_bank_policy_rate_mapping_dict = bis_central_bank_policy_rate_mapping_dict
         self.bis_data_base_url = bis_data_base_url
         # For some APIs credentials are needed, these are loaded here from a local file
         if (self.credential_path and self.credential_file_name) is not None:
@@ -473,6 +476,7 @@ class DataLoading(object):
         country_keys_mapping: Dict[str, str],
         dataflow: str="WS_EER",
         exchange_rate_type_list: List[str]=["Real effective exchange rate - monthly - broad basket"],
+        # rate_type_mapping_dict: Dict[str, str]=None,
         ) -> pd.DataFrame:
         """Fetch exchange rate data from the BIS API.
 
@@ -485,8 +489,63 @@ class DataLoading(object):
         Returns:
             pd.DataFrame: A DataFrame containing the fetched exchange rate data.
         """
+        # # Set the default parameters if not provided
+        # if rate_type_mapping_dict is not None:
+        #     rate_type_mapping_dict = self.bis_exchange_rate_mapping_dict
+        # if dataflow is not None:
+        #     dataflow = "WS_EER"
         # Construct the single urls
         converted_rate_types = [self.bis_exchange_rate_mapping_dict.get(rate_type, None) for rate_type in exchange_rate_type_list]
+        urls = [f"{self.bis_data_base_url}data/dataflow/BIS/{dataflow}/1.0/{rate_type}{country}?format=csv" for country in list(country_keys_mapping.keys()) for rate_type in converted_rate_types if rate_type is not None]
+        exchange_rate_type_long_list = [f"{country}_{rate}" for country in list(country_keys_mapping.keys()) for rate in exchange_rate_type_list if rate is not None]
+
+        master_df = pd.DataFrame()
+        for i in range(len(urls)):
+            country_url = urls[i]
+            column_name = exchange_rate_type_long_list[i]
+            logging.info(f"Fetching data from URL: {country_url}")
+            country_df = pd.read_csv(country_url)
+            country_df_pivoted = country_df.pivot(index="TIME_PERIOD", columns="REF_AREA", values="OBS_VALUE")
+            country_df_pivoted.columns = [column_name]
+
+            if master_df.empty:
+                master_df = country_df_pivoted
+            else:
+                master_df = pd.concat([master_df, country_df_pivoted], ignore_index=False, axis=1)
+
+        master_df.index = pd.to_datetime(master_df.index,
+                                         infer_datetime_format=True
+                                        #  format="%Y-%m"
+                                         )
+        master_df = master_df.sort_index()
+        return master_df
+
+
+    def get_bis_central_bank_policy_rate_data(
+        self,
+        country_keys_mapping: Dict[str, str],
+        dataflow: str="WS_CBPOL",
+        exchange_rate_type_list: List[str]=["Central bank policy rate - daily"],
+        # rate_type_mapping_dict: Dict[str, str]=None,
+        ) -> pd.DataFrame:
+        """Fetch exchange rate data from the BIS API.
+
+        Args:
+            country_keys_mapping (Dict[str, str]): Mapping of country names to their keys.
+            dataflow (str, optional): The data flow to use. Defaults to "WS_EER".
+            exchange_rate_type (List[str], optional): List of exchange rate types to fetch. Defaults to ["Real effective exchange rate - monthly - broad basket"].
+            keep_columns (List[str], optional): List of columns to keep in the final DataFrame. Defaults to ["REF_AREA", "TIME_PERIOD", "OBS_VALUE"].
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the fetched exchange rate data.
+        """
+        # # Set the default parameters if not provided
+        # if rate_type_mapping_dict is not None:
+        #     rate_type_mapping_dict = self.bis_exchange_rate_mapping_dict
+        # if dataflow is not None:
+        #     dataflow = "WS_EER"
+        # Construct the single urls
+        converted_rate_types = [self.bis_central_bank_policy_rate_mapping_dict.get(rate_type, None) for rate_type in exchange_rate_type_list]
         urls = [f"{self.bis_data_base_url}data/dataflow/BIS/{dataflow}/1.0/{rate_type}{country}?format=csv" for country in list(country_keys_mapping.keys()) for rate_type in converted_rate_types if rate_type is not None]
         exchange_rate_type_long_list = [f"{country}_{rate}" for country in list(country_keys_mapping.keys()) for rate in exchange_rate_type_list if rate is not None]
 
@@ -515,12 +574,19 @@ class DataLoading(object):
     def export_dataframe(
         self,
         df: pd.DataFrame,
-        file_name: str,
-        txt_path: str,
-        pdf_path: str,
-        json_path: str,
-        excel_path: str,
-        save_index: bool = True,
+        file_name: str=None,
+        excel_sheet_name: str=None,
+        latex_path: str=None,
+        txt_path: str=None,
+        pdf_path: str=None,
+        json_path: str=None,
+        excel_path: str=None,
+        save_txt: bool=False,
+        save_latex: bool=False,
+        save_pdf: bool=False,
+        save_json: bool=False,
+        save_excel: bool=False,
+        save_index: bool=True,
         figsize=(8, 4),
         font_size=10,
         col_widths=None,
@@ -549,85 +615,116 @@ class DataLoading(object):
             font_family (str, optional): Font family for the PDF. Defaults to "DejaVu Sans".
             font_weight (str, optional): Font weight for the PDF. Defaults to "normal".
         """
-        # Export to .txt (tab-separated)
-        self.__check_path_existence(path=txt_path)
-        full_path_save = f"{txt_path}/{file_name}.txt"
-        try:
-            df.to_csv(
-                full_path_save,
-                sep='\t',
-            index=save_index
-            )
-            logging.info(f"Exported DataFrame to {full_path_save}")
-        except Exception as e:
-            logging.error(f"Error exporting to .txt: {e}")
-        # Export to .json
-        self.__check_path_existence(path=json_path)
-        full_path_save = f"{json_path}/{file_name}.json"
-        try:
-            df.to_json(
-                full_path_save,
-                orient="records",
-                indent=4
-            )
-            logging.info(f"Exported DataFrame to {full_path_save}")
-        except Exception as e:
-            logging.error(f"Error exporting to .json: {e}")
-        # Export to .xlsx
-        self.__check_path_existence(path=excel_path)
-        full_path_save = f"{excel_path}/{file_name}.xlsx"
-        try:
-            df.to_excel(
-                full_path_save,
-                sheet_name=file_name,
+        if save_txt:
+            # Export to .txt (tab-separated)
+            self.__check_path_existence(path=txt_path)
+            full_path_save = f"{txt_path}/{file_name}.txt"
+            try:
+                df.to_csv(
+                    full_path_save,
+                    sep='\t',
                 index=save_index
-            )
-            logging.info(f"Exported DataFrame to {full_path_save}")
-        except Exception as e:
-            logging.error(f"Error exporting to .xlsx: {e}")
+                )
+                logging.info(f"Exported DataFrame to {full_path_save}")
+            except Exception as e:
+                logging.error(f"Error exporting to .txt: {e}")
+        
+        if save_latex:
+            # Export to .tex (LaTeX format)
+            self.__check_path_existence(path=latex_path)
+            full_path_save = f"{latex_path}/{file_name}.tex"
+            try:
+                df.to_latex(
+                    full_path_save,
+                    index=save_index
+                )
+                logging.info(f"Exported DataFrame to {full_path_save}")
+            except Exception as e:
+                logging.error(f"Error exporting to .tex: {e}")
 
-        # Export to .pdf with matplotlib
-        self.__check_path_existence(path=pdf_path)
-        full_path_save = f"{pdf_path}/{file_name}.pdf"
-        try:
-            # Set global font style for matplotlib
-            plt.rcParams["font.family"] = font_family
-            plt.rcParams["font.weight"] = font_weight
+        if save_txt:
+            # Export to .txt (tab-separated)
+            self.__check_path_existence(path=txt_path)
+            full_path_save = f"{txt_path}/{file_name}.txt"
+            try:
+                df.to_csv(
+                    full_path_save,
+                    sep='\t',
+                index=save_index
+                )
+                logging.info(f"Exported DataFrame to {full_path_save}")
+            except Exception as e:
+                logging.error(f"Error exporting to .txt: {e}")
+        if save_json:
+            # Export to .json
+            self.__check_path_existence(path=json_path)
+            full_path_save = f"{json_path}/{file_name}.json"
+            try:
+                df.to_json(
+                    full_path_save,
+                    orient="records",
+                    indent=4
+                )
+                logging.info(f"Exported DataFrame to {full_path_save}")
+            except Exception as e:
+                logging.error(f"Error exporting to .json: {e}")
+        if save_excel:
+            # Export to .xlsx
+            self.__check_path_existence(path=excel_path)
+            full_path_save = f"{excel_path}/{file_name}.xlsx"
+            try:
+                df.to_excel(
+                    full_path_save,
+                    sheet_name=excel_sheet_name if excel_sheet_name is not None else "Data",
+                    index=save_index
+                )
+                logging.info(f"Exported DataFrame to {full_path_save}")
+            except Exception as e:
+                logging.error(f"Error exporting to .xlsx: {e}")
 
-            fig, ax = plt.subplots(figsize=figsize)
-            ax.axis('off')
-            mpl_table = ax.table(cellText=df.values,
-                                colLabels=df.columns,
-                                rowLabels=df.index,
-                                loc='center',
-                                cellLoc='center')
-            mpl_table.auto_set_font_size(False)
-            mpl_table.set_fontsize(font_size)
-            # Set font style for table cells
-            for key, cell in mpl_table.get_celld().items():
-                cell.set_text_props(fontfamily=font_family, fontweight=font_weight)
-            # Set column widths if provided
-            if col_widths:
-                for i, width in enumerate(col_widths):
-                    mpl_table.auto_set_column_width(i)
-                    for key, cell in mpl_table.get_celld().items():
-                        if key[1] == i:
-                            cell.set_width(width)
+        if save_pdf:
+            # Export to .pdf with matplotlib
+            self.__check_path_existence(path=pdf_path)
+            full_path_save = f"{pdf_path}/{file_name}.pdf"
+            try:
+                # Set global font style for matplotlib
+                plt.rcParams["font.family"] = font_family
+                plt.rcParams["font.weight"] = font_weight
 
-            # Apply custom style if provided
-            if style:
+                fig, ax = plt.subplots(figsize=figsize)
+                ax.axis('off')
+                mpl_table = ax.table(cellText=df.values,
+                                    colLabels=df.columns,
+                                    rowLabels=df.index,
+                                    loc='center',
+                                    cellLoc='center')
+                mpl_table.auto_set_font_size(False)
+                mpl_table.set_fontsize(font_size)
+                # Set font style for table cells
                 for key, cell in mpl_table.get_celld().items():
-                    for prop, val in style.items():
-                        setattr(cell, prop, val)
+                    cell.set_text_props(fontfamily=font_family, fontweight=font_weight)
+                # Set column widths if provided
+                if col_widths:
+                    for i, width in enumerate(col_widths):
+                        mpl_table.auto_set_column_width(i)
+                        for key, cell in mpl_table.get_celld().items():
+                            if key[1] == i:
+                                cell.set_width(width)
 
-            # Add title if provided
-            if title:
-                plt.title(title, fontsize=font_size + 2, pad=title_pad)
+                # Apply custom style if provided
+                if style:
+                    for key, cell in mpl_table.get_celld().items():
+                        for prop, val in style.items():
+                            setattr(cell, prop, val)
 
-            plt.tight_layout()
-            # plt.subplots_adjust(top=0.85)
-            plt.savefig(full_path_save, bbox_inches='tight')
-            plt.close(fig)
-            logging.info(f"Exported DataFrame to {full_path_save}")
-        except Exception as e:
-            logging.error(f"Error exporting to .pdf: {e}")
+                # Add title if provided
+                if title:
+                    plt.title(title, fontsize=font_size + 2, pad=title_pad)
+
+                plt.tight_layout()
+                # plt.subplots_adjust(top=0.85)
+                plt.savefig(full_path_save, bbox_inches='tight')
+                plt.close(fig)
+                logging.info(f"Exported DataFrame to {full_path_save}")
+            except Exception as e:
+                logging.error(f"Error exporting to .pdf: {e}")

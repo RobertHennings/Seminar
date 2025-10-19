@@ -219,6 +219,145 @@ data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_dat
 data_us_df = pd.concat(list(data_dict.values()), axis=1).dropna()
 data_us_full_info_table = pd.DataFrame(data_full_info_dict).T
 
+# Crisis Periods
+crisis_periods_dict = {
+    "Bretton Woods Breakdown": {
+        "start": "1971-08-15",
+        "end": "1973-03-19"
+    },
+    "Nixon Shock": {
+        "start": "1971-08-15",
+        "end": "1973-03-19"
+    },
+    "Oil Crisis I": {
+        "start": "1973-10-17",
+        "end": "1974-03-01"
+    },
+    "Oil Crisis II": {
+        "start": "1979-01-01",
+        "end": "1981-03-01"
+    },
+    "Black Monday Crash": {
+        "start": "1987-10-19",
+        "end": "1987-10-19"
+    },
+    "Asian Financial Crisis": {
+        "start": "1997-07-02",
+        "end": "1998-12-31"
+    },
+    "Russian Crisis": {
+        "start": "1998-08-17",
+        "end": "1998-09-01"
+    },
+    "Dot-com Bubble": {
+        "start": "2000-03-01",
+        "end": "2002-10-01"
+    },
+    "Global Financial Crisis": {
+        "start": "2007-08-09",
+        "end": "2009-03-09"
+    },
+    "US QE": {
+        "start": "2008-11-25",
+        "end": "2014-12-31"
+    },
+    "US Debt Ceiling Crisis": {
+        "start": "2011-08-20",
+        "end": "2011-08-05"
+    },
+    "US-China Trade War": {
+        "start": "2018-03-22",
+        "end": "2020-01-15"
+    },
+    "European Debt Crisis": {
+        "start": "2009-10-01",
+        "end": "2012-12-31"
+    },
+    "COVID-19 Pandemic": {
+        "start": "2020-02-20",
+        "end": "2021-11-16"
+    },
+    "Russia-Ukraine War": {
+        "start": "2022-02-24",
+        "end": "2022-06-01"
+    },
+}
+
+#  Load additionally all US Recession Periods from FRED
+start_date = '1964-01-01'
+end_date = '2024-12-31'
+
+series_dict_mapping = {
+    "US Recessions": "USREC"
+}
+
+data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_data(
+    series_dict_mapping=series_dict_mapping,
+    start_date=start_date,
+    end_date=end_date
+    )
+recession_periods = []
+in_recession = False
+for date, rec in data_dict["US Recessions"].items():
+    if rec == 1 and not in_recession:
+        start = date
+        in_recession = True
+    elif rec == 0 and in_recession:
+        end = date
+        recession_periods.append({"start": start, "end": end})
+        in_recession = False
+# If the last period is still in recession, close it at the last date
+if in_recession:
+    recession_periods.append({"start": start, "end": data_dict["US Recessions"].index[-1]})
+
+# Append US recession periods to crisis_periods_dict
+for period in recession_periods:
+    name = f"US Recession {period['start'].year}-{period['end'].year}"
+    crisis_periods_dict[name] = {
+        "start": period["start"],
+        "end": period["end"]
+    }
+# Transform all Timestamps to a string object
+for key in crisis_periods_dict.keys():
+    if type(crisis_periods_dict[key]["start"]) is not str:
+        crisis_periods_dict[key]["start"] = crisis_periods_dict[key]["start"].strftime("%Y-%m-%d")
+    if type(crisis_periods_dict[key]["end"]) is not str:
+        crisis_periods_dict[key]["end"] = crisis_periods_dict[key]["end"].strftime("%Y-%m-%d")
+
+
+with open(r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/crisis_periods_dict.json", "w") as f:
+    json.dump(crisis_periods_dict, f)
+
+print(crisis_periods_dict)
+
+
+crisis_periods_df = pd.DataFrame(crisis_periods_dict).T
+crisis_periods_df["start"] = pd.to_datetime(crisis_periods_df["start"]).dt.strftime("%Y-%m-%d")
+crisis_periods_df["end"] = pd.to_datetime(crisis_periods_df["end"]).dt.strftime("%Y-%m-%d")
+crisis_periods_df.columns = ["Start-date", "End-date"]
+crisis_periods_df["Event-Type"] = ["US-Recession" if "US Recession" in name else "Major Global Crisis" for name in crisis_periods_df.index]
+crisis_periods_df["Source"] = ["FRED: USREC" if "US Recession" in name else "Various" for name in crisis_periods_df.index]
+crisis_periods_df = crisis_periods_df.sort_values(by="Start-date")
+# Save the crisis_periods_dict as json and the dataframe to an excel file
+file_name = "crisis_periods"
+
+data_loading_instance.export_dataframe(
+    df=crisis_periods_df,
+    file_name=file_name,
+    excel_path=TABLES_PATH,
+    txt_path=TABLES_PATH,
+    pdf_path=FIGURES_PATH,
+    json_path=f"{DATA_PATH}/raw/",
+    figsize=(12, 6),
+    font_size=8,
+    col_widths=[0.2]*len(crisis_periods_df.columns),
+    title="Crisis Periods",
+    style={"edgecolor": "black"},
+    font_family="Arial",
+    font_weight="bold"
+)
+############################### Regime Switching Analysis ###############################
+
 
 
 # For the regime switching analysis, first provide a benchmark model: Markov-Switching for the selected interest rate

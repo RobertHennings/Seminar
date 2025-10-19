@@ -5,7 +5,8 @@ import numpy as np
 import ast
 import json
 import logging
-
+from datetime import datetime
+import re
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -154,20 +155,34 @@ def extract_predicted_labels_from_metadata_df(
     model_type_seen = {}
     columns = []
     for i in range(len(metadata_df.index)):
-        model = metadata_df["model_type"][i]
-        # Track how many times we've seen this model type
-        model_type_seen[model] = model_type_seen.get(model, 0) + 1
-        # If there are multiple occurrences, append a suffix
-        if model_type_counts[model] > 1:
-            model_name = f"{model}_{model_type_seen[model]}"
-        else:
-            model_name = model
-        columns.append(model_name)
-        predicted_labels_string = metadata_df[column_name_predicted_labels][i]
-        predicted_labels = ast.literal_eval(predicted_labels_string)
-        testing_data_dates_string = metadata_df["testing_data_dates"][i]
-        testing_data_dates = ast.literal_eval(testing_data_dates_string)
-        testing_data_dates = [pd.Timestamp(date) for date in testing_data_dates]
+        try:
+            model = metadata_df["model_type"][i]
+            time_last_fitted = metadata_df["time_last_fitted"][i]
+            # Create a unique model name
+            model_name = f"{model}_{time_last_fitted}"
+            # Track how many times we've seen this model type
+            model_type_seen[model] = model_type_seen.get(model, 0) + 1
+            # If there are multiple occurrences, append a suffix
+            # if model_type_counts[model] > 1:
+            #     model_name = f"{model}_{model_type_seen[model]}"
+            # else:
+            #     model_name = model
+            columns.append(model_name)
+            predicted_labels_string = metadata_df[column_name_predicted_labels][i]
+            # Check if the string is a list of only NaNs
+            if re.fullmatch(r"\[ *(nan, *)*nan *\]", predicted_labels_string.replace(" ", "")):
+                logging.warning(f"Predicted labels at index {i} are all NaN, skipping.")
+                continue
+            predicted_labels = ast.literal_eval(predicted_labels_string)
+            # Optionally, check if all elements are NaN after eval
+            if isinstance(predicted_labels, list) and all(pd.isna(x) for x in predicted_labels):
+                logging.warning(f"Predicted labels at index {i} are all NaN after eval, skipping.")
+                continue
+            testing_data_dates_string = metadata_df["testing_data_dates"][i]
+            testing_data_dates = ast.literal_eval(testing_data_dates_string)
+            testing_data_dates = [pd.Timestamp(date) for date in testing_data_dates]
+        except Exception as e:
+            logging.error(f"Error parsing predicted labels or testing data dates for model at index {i}: {e}")
         try:
             model_df = pd.DataFrame(index=testing_data_dates, data=predicted_labels, columns=[model_name])
             predicted_labels_df = predicted_labels_df.merge(
@@ -177,7 +192,7 @@ def extract_predicted_labels_from_metadata_df(
                 how="left"
             )
         except Exception as e:
-            logging.error(f"Error adding predicted labels for model {model_name}: {e} because of differing length: {len(predicted_labels)} at index {i}")
+            logging.error(f"Error adding predicted labels for model {model_name}: {e} because of differing length at index {i}")
             continue
     return predicted_labels_df
 
@@ -261,3 +276,255 @@ def get_periods_overlaying_df(
             })
         ], ignore_index=True)
     return overlay_df
+
+
+def adf_test(
+    data: pd.Series,
+    title: str = "Augmented Dickey-Fuller Test",
+    regression_type: str = 'c',  # 'c' for constant, 'ct' for constant and trend, 'nc' for no constant
+    autolag: str = 'AIC',  # 'AIC', 'BIC', 't-stat', None
+    maxlag: int = None,
+    return_regression_summary: bool = False,
+    variable: str = None,
+    significance_level: float = 0.05
+    ) -> pd.DataFrame:
+    """
+    Performs the Augmented Dickey-Fuller (ADF) test on a time series and prints the results.
+
+    Args:
+        data (pd.Series): Time series data to test for stationarity.
+        title (str): Title for the output.
+        regression_type (str): Type of regression ('c', 'ct', 'ctt', 'n').
+        autolag (str): Method to use for lag selection ('AIC', 'BIC', 't-stat', None).
+        maxlag (int): Maximum number of lags to consider.
+        variable (str): Name of the variable being tested.
+        significance_level (float): Significance level for the test.
+    Returns:
+        pd.DataFrame: DataFrame containing the ADF test results.
+    """
+    if data.empty:
+        raise ValueError("The provided Series is empty.")
+
+    from statsmodels.tsa.stattools import adfuller
+    from datetime import datetime
+    data = data[variable].dropna()
+    adf_stat, p_val, crit_vals, result = adfuller(
+        x=data,
+        maxlag=maxlag,
+        regression=regression_type,
+        autolag=autolag,
+        store=True,
+        regresults=False
+        )
+    regression_summary = result.resols.summary()
+    print(f"{title}\n")
+    print(f"ADF Statistic: {adf_stat}")
+    print(f"p-value: {p_val}")
+    print("Critical Values:")
+    for key, value in crit_vals.items():
+        print(f"   {key}: {value}")
+    if p_val < significance_level:
+        print(f"The null hypothesis can be rejected at the {significance_level*100}% significance level. The series is stationary.")
+    else:
+        print(f"The null hypothesis cannot be rejected at the {significance_level*100}% significance level. The series is non-stationary.")
+
+    result_df = pd.DataFrame({
+        'ADF Statistic': [adf_stat],
+        'p-value': [p_val],
+        '1% Critical Value': [crit_vals['1%']],
+        '5% Critical Value': [crit_vals['5%']],
+        '10% Critical Value': [crit_vals['10%']],
+        'H0': [result.H0],
+        'HA': [result.HA],
+        'Used Lag:': [result.usedlag],
+        'Max Lag:': [result.maxlag],
+        'Start Time:': [f"{data.index.min().strftime('%d-%m-%Y')}"],
+        'End Time:': [f"{data.index.min().strftime('%d-%m-%Y')}"],
+        'Regression Type': [regression_type],
+        'Observations:': [result.nobs],
+        'Data': [data],
+        'Variable': [variable],
+        'Tested at': [f"{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}"]
+        })
+    if return_regression_summary:    
+        return result_df, regression_summary
+    else:
+        return result_df
+
+
+def granger_causality_test(
+    data: pd.DataFrame,
+    variable_x: str,
+    variable_y: str,
+    max_lag: int = 10,
+    significance_level: float = 0.05,
+    test_type_p_value: str = 'ssr_ftest'
+    ) -> None:
+    """
+    Performs the Granger Causality test between two time series and prints the results.
+
+    Args:
+        data (pd.DataFrame): DataFrame containing the time series data.
+        variable_x (str): The name of the first variable (cause).
+        variable_y (str): The name of the second variable (effect).
+        max_lag (int): Maximum number of lags to test.
+        significance_level (float): Significance level for the test.
+        test_type_p_value (str): Type of test statistic to use for p-value ('ssr_ftest', 'ssr_chi2test', etc.).
+
+    Returns:
+        None
+    """
+    if data.empty:
+        raise ValueError("The provided DataFrame is empty.")
+    if variable_x not in data.columns or variable_y not in data.columns:
+        raise ValueError(f"One or both variables '{variable_x}', '{variable_y}' are not in the DataFrame columns.")
+
+    from statsmodels.tsa.stattools import grangercausalitytests
+    print(f"Granger Causality Test between {variable_x} and {variable_y}\n")
+    data = data[[variable_y, variable_x]].dropna()
+    test_result = grangercausalitytests(data, maxlag=max_lag, verbose=True)
+    granger_test_df_list = []
+    for lag in range(1, max_lag + 1):
+        lag_data = test_result[lag]
+        lag_data = lag_data[0]
+        granger_test_df = pd.DataFrame()
+        for key in lag_data.keys():
+            lag_diagnostics = pd.DataFrame(
+                lag_data.get(key),
+                ).T
+            if lag_diagnostics.shape[1] == 3:
+                columns = ['Test-Statistic', 'p-value', 'df_num']
+            else:
+                columns = ['Test-Statistic', 'p-value', 'df_denom', 'df_num']
+            lag_diagnostics.columns = columns
+            lag_diagnostics["Metric"] = key
+            granger_test_df = pd.concat(
+                [granger_test_df,
+                lag_diagnostics],
+                axis=0)
+        granger_test_df["Lag"] = lag
+        granger_test_df_list.append(granger_test_df)
+        p_value = test_result[lag][0][test_type_p_value][1]
+        if p_value < significance_level:
+            print(f"Lag {lag}: Reject null hypothesis at {significance_level*100}% significance level. {variable_x} Granger-causes {variable_y}.")
+        else:
+            print(f"Lag {lag}: Cannot reject null hypothesis at {significance_level*100}% significance level. No Granger causality from {variable_x} to {variable_y}.")
+    granger_test_df_complete = pd.concat(granger_test_df_list, axis=0).reset_index(drop=True)
+    granger_test_df_complete['Start Time'] = f"{data.index.min().strftime('%d-%m-%Y')}"
+    granger_test_df_complete['End Time'] = f"{data.index.max().strftime('%d-%m-%Y')}"
+    granger_test_df_complete['Observations'] = data.shape[0]
+    granger_test_df_complete["Variable X"] = variable_x
+    granger_test_df_complete["Variable Y"] = variable_y
+    # granger_test_df_complete["Data Variable X"] = [data[variable_x]]
+    # granger_test_df_complete["Data Variable Y"] = [data[variable_y]]
+    granger_test_df_complete['Test'] = f"{variable_x} causes {variable_y}"
+    granger_test_df_complete['Tested at'] = f"{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}"
+
+    return test_result, granger_test_df_complete
+
+
+def cointegration_test(
+    data: pd.DataFrame,
+    variable_x: str,
+    variable_y: str,
+    significance_level: float = 0.05,
+    trend: str = 'c',
+    method: str = 'aeg',
+    maxlag: int = None,
+    ) -> pd.DataFrame:
+    """
+    Performs the Engle-Granger cointegration test between two time series and prints the results.
+
+    Args:
+        data (pd.DataFrame): DataFrame containing the time series data.
+        variable_x (str): The name of the first variable.
+        variable_y (str): The name of the second variable.
+        significance_level (float): Significance level for the test.
+
+    Returns:
+        None
+    """
+    if data.empty:
+        raise ValueError("The provided DataFrame is empty.")
+    if variable_x not in data.columns or variable_y not in data.columns:
+        raise ValueError(f"One or both variables '{variable_x}', '{variable_y}' are not in the DataFrame columns.")
+
+    from statsmodels.tsa.stattools import coint
+    data = data[[variable_x, variable_y]].dropna()
+    cointegration_test_result = coint(
+        data[variable_x],
+        data[variable_y],
+        trend=trend,
+        method=method,
+        maxlag=maxlag
+        )
+    print(f"Cointegration Test between {variable_x} and {variable_y}\n")
+    print(f"Cointegration Score: {cointegration_test_result[0]}")
+    print(f"p-value: {cointegration_test_result[1]}")
+    if cointegration_test_result[1] < significance_level:
+        print(f"The null hypothesis can be rejected at the {significance_level*100}% significance level. The series are cointegrated.")
+    else:
+        print(f"The null hypothesis cannot be rejected at the {significance_level*100}% significance level. The series are not cointegrated.")
+    cointegration_df = pd.DataFrame({
+        'Cointegration Score': [cointegration_test_result[0]],
+        'p-value': [cointegration_test_result[1]],
+        'Start Time': [f"{data.index.min().strftime('%d-%m-%Y')}"],
+        'End Time': [f"{data.index.max().strftime('%d-%m-%Y')}"],
+        'Observations': [data.shape[0]],
+        'Trend': [trend],
+        'Method': [method],
+        'Max Lag': [maxlag],
+        'Variable X': [variable_x],
+        'Variable Y': [variable_y],
+        "Data": [data],
+        'Test': [f'{variable_x} and {variable_y}'],
+        'Tested at': [f"{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}"]
+        })
+    return cointegration_df
+
+
+def test_data_for_normality(
+    data: pd.DataFrame,
+    variables: List[str],
+    significance_level: float = 0.05,
+    test_shapiro_wilks: bool = True,
+    test_anderson_darling: bool = True,
+    test_kolmogorov_smirnov: bool = True,
+    test_dagostino_k2: bool = True
+    ) -> pd.DataFrame:
+    normality_test_results = pd.DataFrame(columns=["Variable", "Test", "Statistic", "p-value"])
+    for variable in variables:
+        # logging.info(f"Testing normality for variable: {variable}")
+        if test_shapiro_wilks:
+            # Shapiro-Wilk Test
+            # The Shapiro-Wilk test tests the null hypothesis that the data was drawn from a normal distribution.
+            stat, p = shapiro(data[variable])
+            test_df = pd.DataFrame({"Variable": variable, "Test": "Shapiro-Wilk", "Statistic": stat, "p-value": p}, index=[0])
+            normality_test_results = pd.concat([normality_test_results, test_df], ignore_index=True)
+
+        if test_anderson_darling:
+            # Anderson-Darling Test
+            # The Anderson-Darling test tests the null hypothesis that a sample is drawn from a population that follows a particular distribution.
+            # Default is norm.
+            result = anderson(data[variable])
+            test_df = pd.DataFrame({"Variable": variable, "Test": "Anderson-Darling", "Statistic": result.statistic, "p-value": result.critical_values[2]}, index=[0])
+            normality_test_results = pd.concat([normality_test_results, test_df], ignore_index=True)
+
+        if test_kolmogorov_smirnov:
+            # Kolmogorov-Smirnov Test
+            # The one-sample test compares the underlying distribution F(x) of a sample against a given distribution G(x).
+            stat, p = kstest(data[variable], 'norm')
+            test_df = pd.DataFrame({"Variable": variable, "Test": "Kolmogorov-Smirnov", "Statistic": stat, "p-value": p}, index=[0])
+            normality_test_results = pd.concat([normality_test_results, test_df], ignore_index=True)
+
+        if test_dagostino_k2:
+            # D'Agostino's K^2 Test
+            # This function tests the null hypothesis that a sample comes from a normal distribution.
+            stat, p = normaltest(data[variable])
+            test_df = pd.DataFrame({"Variable": variable, "Test": "D'Agostino's K^2", "Statistic": stat, "p-value": p}, index=[0])
+            normality_test_results = pd.concat([normality_test_results, test_df], ignore_index=True)
+
+    normality_test_results["Significance-level"] = significance_level
+    normality_test_results[f"p-value < {significance_level}"] = normality_test_results["p-value"] < significance_level
+    normality_test_results["Result"] = np.where(normality_test_results["p-value"] < significance_level, "Not-Normal", "Normal")
+    return normality_test_results

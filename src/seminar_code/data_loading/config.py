@@ -79,4 +79,7 @@ BIS_EXCHANGE_RATE_MAPPING_DICT = {
     "Nominal effective exchange rate - daily - narrow basket": "D.N.N.",
     "Nominal effective exchange rate - daily - broad basket": "D.N.B.",
 }
+BIS_CENTRAL_BANK_POLICY_RATE_MAPPING_DICT = {
+    "Central bank policy rate - daily": "D."
+}
 BIS_DATA_BASE_URL = "https://stats.bis.org/api/v2/"

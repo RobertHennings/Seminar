@@ -5,10 +5,9 @@ import datetime as dt
 import pandas as pd
 import numpy as np
 import yfinance as yf
-
+import json
 
 CAU_COLOR_SCALE = ["#9b0a7d", "grey", "black", "darkgrey", "lightgrey"]
-COLOR_DISCRETE_SEQUENCE_DEFAULT = CAU_COLOR_SCALE
 FIGURES_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/figures"
 TABLES_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables"
 DATA_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/data"
@@ -22,6 +21,11 @@ print(os.getcwd())
 os.chdir(SEMINAR_CODE_PATH)
 print(os.getcwd())
 
+from utils.evaluation import adf_test, \
+    granger_causality_test, \
+    cointegration_test, \
+    test_data_for_normality
+
 from data_loading.data_loader import DataLoading
 from data_graphing.data_grapher import DataGraphing
 
@@ -33,26 +37,10 @@ data_loading_instance = DataLoading(
 # Instantiate the data graphing class
 data_graphing_instance = DataGraphing()
 # Convention for Figure Titles: [Data Frequency] + [Variable Description] + [Country/Region] + [Time Period as only years]
+# Convention for Figure x_axis: Time
 #----------------------------------------------------------------------------------------
-# 00 - Intro - Deviations of USD spot rates from PPP-values
+# 00 - Intro - Intro: The PPP puzzle and Commodity Currencies
 #----------------------------------------------------------------------------------------
-# Source: https://data.imf.org/en/datasets/IMF.STA:EER
-# effective_exchange_rates_df = pd.read_csv(r'/Users/Robert_Hennings/Downloads/dataset_2025-09-16T13_25_58.318468730Z_DEFAULT_INTEGRATION_IMF.STA_EER_6.0.0.csv')
-# countries_list = ["United States", "United Kingdom", "Japan", "Switzerland", "Euro Area (EA)"]
-# indicator_list = ["Real effective exchange rate (REER), Index (2010=100) Adjusted by relative consumer prices"]
-# frequency_list = ["Monthly"]
-
-# effective_exchange_rates_df = effective_exchange_rates_df.query("INDICATOR.isin(@indicator_list) and COUNTRY.isin(@countries_list) and FREQUENCY.isin(@frequency_list)").reset_index(drop=True)
-
-# effective_exchange_rates_df_pivoted = effective_exchange_rates_df.pivot(index="TIME_PERIOD", columns="COUNTRY", values="OBS_VALUE").reset_index(drop=False).set_index("TIME_PERIOD", drop=True).dropna()
-# effective_exchange_rates_df_pivoted.index = effective_exchange_rates_df_pivoted.index.str.replace("M", "") + "-01"
-# effective_exchange_rates_df_pivoted.index = pd.to_datetime(effective_exchange_rates_df_pivoted.index, format="mixed")
-# effective_exchange_rates_df_pivoted = effective_exchange_rates_df_pivoted.sort_index()
-# effective_exchange_rates_df_pivoted["GBPREAL"] = np.log(effective_exchange_rates_df_pivoted["United Kingdom"]) - np.log(effective_exchange_rates_df_pivoted["United States"])
-# effective_exchange_rates_df_pivoted["JPYREAL"] = np.log(effective_exchange_rates_df_pivoted["Japan"]) - np.log(effective_exchange_rates_df_pivoted["United States"])
-# effective_exchange_rates_df_pivoted["CHFREAL"] = np.log(effective_exchange_rates_df_pivoted["Switzerland"]) - np.log(effective_exchange_rates_df_pivoted["United States"])
-# effective_exchange_rates_df_pivoted["EUROREAL"] = np.log(effective_exchange_rates_df_pivoted["Euro Area (EA)"]) - np.log(effective_exchange_rates_df_pivoted["United States"])
-
 # Also sourcing the real effective exchange rates on a daily basis from BIS
 country_keys_mapping = {
     "US": "United States",
@@ -82,10 +70,9 @@ effective_exchange_rates_df["EUROREAL"] = np.log(exchange_rates_df["Euro Area (E
 data = effective_exchange_rates_df.copy()
 variables = data.columns.tolist()
 secondary_yaxis_variables = []
-color_discrete_sequence = ["grey", "black", "#9b0a7d"]
-title = f"Deviations of USD Spot Rate from PPP-values over the time: {data.index[0].year} - {data.index[-1].year}"
-x_axis_title = "Date"
-y_axis_title = "Deviation from PPP-values (log)"
+title = f"Monthly deviations of USD Spot Rate from PPP-values over the time: {data.index[0].year} - {data.index[-1].year}"
+x_axis_title = "Time"
+y_axis_title = "Deviations of USD Spot Rate from PPP-values (log)"
 secondary_yaxis_title = ""
 color_mapping = {
     'GBPREAL': "grey",
@@ -93,21 +80,19 @@ color_mapping = {
     'CHFREAL': "#9b0a7d",
     'EUROREAL': "darkgrey"
 }
-
-
 fig_deviations_from_ppp = data_graphing_instance.get_fig_deviations_ppp(
         data=data,
         variables=variables,
         secondary_y_variables=secondary_yaxis_variables,
-        title=title,
+        title="",
         secondary_y_axis_title=secondary_yaxis_title,
-        color_discrete_sequence=color_discrete_sequence,
+        color_discrete_sequence=CAU_COLOR_SCALE,
         num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
         x_axis_title=x_axis_title,
         y_axis_title=y_axis_title,
         color_mapping_dict=color_mapping,
         save_fig=False,
-        file_name="deviations_of_usd_spotrates_from_ppp_values",
+        file_name="chap_00_deviations_of_usd_spotrates_from_ppp_values",
         file_path=FIGURES_PATH,
         width=1200,
         height=800,
@@ -116,7 +101,7 @@ fig_deviations_from_ppp = data_graphing_instance.get_fig_deviations_ppp(
 # Show the figure
 fig_deviations_from_ppp.show(renderer="browser")
 # ----------------------------------------------------------------------------------------
-# 01 - Modern Commodities Markets - The current state
+# 01 - Modern Commodities Markets - The current state - Oil: Global Production and Consumption over time
 # ----------------------------------------------------------------------------------------
 series_dict_mapping = {
     "Oil Consumption": "https://ourworldindata.org/grapher/oil-consumption-by-country",
@@ -148,10 +133,10 @@ oil_start_year = max(start_year_consumption, start_year_production)
 
 start_year = oil_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
 end_year = oil_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
-title = f"Oil Consumption by Country per year (in terawatt-hours) over the time: {start_year} - {end_year}"
-x_axis_title = "Year"
-y_axis_title = "Oil Consumption (in terawatt-hours)"
-secondary_y_axis_title = "World Oil Consumption (in terawatt-hours)"
+title = f"Yearly oil consumption by country (in terawatt-hours) over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
+y_axis_title = "Oil consumption (in terawatt-hours)"
+secondary_y_axis_title = "World oil consumption (in terawatt-hours)"
 
 
 custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
@@ -172,6 +157,11 @@ oil_consumption_df["Year"] = pd.to_datetime(oil_consumption_df["Year"], format="
 oil_consumption_df = oil_consumption_df.pivot(index="Year", columns="Entity", values="oil_consumption_twh")
 oil_consumption_df = oil_consumption_df[variables + secondary_y_variables]
 
+# See if the overall pricture get better when we restrict the data to only the relative share of the US
+oil_consumption_df_usa = oil_consumption_df[["United States", "World"]]
+# Calculate the relative share of the US in world oil consumption
+oil_consumption_df_usa["United States Share of World"] = oil_consumption_df_usa["United States"] / oil_consumption_df_usa["World"]
+
 fig_oil_consumption = data_graphing_instance.get_fig_consumption_production_oil_gas(
         data=oil_consumption_df,
         variables=variables,
@@ -183,7 +173,7 @@ fig_oil_consumption = data_graphing_instance.get_fig_consumption_production_oil_
         color_mapping_dict=color_mapping,
         num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
         save_fig=False,
-        file_name="oil_consumption_by_country",
+        file_name="chap_01_yearly_oil_consumption_by_country",
         file_path=FIGURES_PATH,
         width=1200,
         height=800,
@@ -201,10 +191,10 @@ oil_production_df = oil_production_df[oil_production_df.Year >= oil_start_year]
 start_year = oil_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
 end_year = oil_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
 
-title = f"Oil Production by Country per year (in terawatt-hours) over the time: {start_year} - {end_year}"
-x_axis_title = "Year"
-y_axis_title = "Oil Production (in terawatt-hours)"
-secondary_y_axis_title = "World Oil Production (in terawatt-hours)"
+title = f"Yearly oil production by country (in terawatt-hours) over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
+y_axis_title = "Oil production (in terawatt-hours)"
+secondary_y_axis_title = "World oil production (in terawatt-hours)"
 
 custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
     start_hex="#9b0a7d",
@@ -237,7 +227,7 @@ fig_oil_production = data_graphing_instance.get_fig_consumption_production_oil_g
         color_mapping_dict=color_mapping,
         num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
         save_fig=False,
-        file_name="oil_production_by_country",
+        file_name="chap_01_yearly_oil_production_by_country",
         file_path=FIGURES_PATH,
         width=1200,
         height=800,
@@ -248,14 +238,16 @@ fig_oil_production.show(renderer="browser")
 # ----------------------------------------------------------------------------------------
 # 01 - Modern Commodities Markets - The current state - Oil Production and Consumption
 # ----------------------------------------------------------------------------------------
-subplot_titles=("Oil Consumption by Country by Year", "Oil Production by Country by Year")
-title = f"Yearly Oil Consumption and Production by Country (in terawatt-hours) over the time: {start_year} - {end_year}"
-x_axis_title = "Year"
+subplot_titles=(
+    f"Yearly oil consumption by country (in terawatt-hours) over the time: {start_year} - {end_year}",
+    f"Yearly oil production by country (in terawatt-hours) over the time: {start_year} - {end_year}")
+title = f"Yearly oil consumption and production by country (in terawatt-hours) over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
 secondary_y_variable = "World"
 
 fig_oil_consumption_production_combine = data_graphing_instance.get_combined_production_consumption_graph(
         subplot_titles=list(subplot_titles),
-        title=title,
+        title="",
         num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
         x_axis_title=x_axis_title,
         secondary_y_variable=secondary_y_variable,
@@ -267,7 +259,7 @@ fig_oil_consumption_production_combine = data_graphing_instance.get_combined_pro
         fig_production=fig_oil_production,
         fig_consumption=fig_oil_consumption,
         save_fig=False,
-        file_name="oil_consumption_production_combined_graph",
+        file_name="chap_01_yearly_oil_consumption_production_combined_graph",
         file_path=FIGURES_PATH,
         width=1200,
         height=800,
@@ -290,10 +282,10 @@ gas_start_year = max(start_year_consumption, start_year_production)
 start_year = gas_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
 end_year = gas_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
 
-title = f"Gas Consumption by Country per year (in terawatt-hours) over the time: {start_year} - {end_year}"
-x_axis_title = "Year"
-y_axis_title = "Gas Consumption (in terawatt-hours)"
-secondary_y_axis_title = "World Gas Consumption (in terawatt-hours)"
+title = f"Yearly gas consumption by country (in terawatt-hours) over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
+y_axis_title = "Gas consumption (in terawatt-hours)"
+secondary_y_axis_title = "World gas consumption (in terawatt-hours)"
 
 custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
     start_hex="#9b0a7d",
@@ -325,7 +317,7 @@ fig_gas_consumption = data_graphing_instance.get_fig_consumption_production_oil_
         color_mapping_dict=color_mapping,
         num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
         save_fig=False,
-        file_name="gas_consumption_by_country",
+        file_name="chap_01_yearly_gas_consumption_by_country",
         file_path=FIGURES_PATH,
         width=1200,
         height=800,
@@ -344,10 +336,10 @@ end_year = gas_production_df.query("Entity.isin(@variables) or Entity.isin(@seco
 
 gas_production_df = gas_production_df[gas_production_df.Year >= gas_start_year]
 
-title = f"Gas Production by Country per year (in terawatt-hours) over the time: {start_year} - {end_year}"
-x_axis_title = "Year"
-y_axis_title = "Gas Production (in terawatt-hours)"
-secondary_y_axis_title = "World Gas Production (in terawatt-hours)"
+title = f"Yearly gas production by country (in terawatt-hours) over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
+y_axis_title = "Production (in terawatt-hours)"
+secondary_y_axis_title = "World gas production (in terawatt-hours)"
 
 
 custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
@@ -380,7 +372,7 @@ fig_gas_production = data_graphing_instance.get_fig_consumption_production_oil_g
         color_mapping_dict=color_mapping,
         num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
         save_fig=False,
-        file_name="gas_production_by_country",
+        file_name="chap_01_yearly_gas_production_by_country",
         file_path=FIGURES_PATH,
         width=1200,
         height=800,
@@ -391,14 +383,15 @@ fig_gas_production.show(renderer="browser")
 # ----------------------------------------------------------------------------------------
 # 01 - Modern Commodities Markets - The current state - Gas Consumption and Production
 # ----------------------------------------------------------------------------------------
-subplot_titles=("Gas Consumption by Country by Year", "Gas Production by Country by Year")
-title = f"Yearly Gas Consumption and Production by Country (in terawatt-hours) over the time: {start_year} - {end_year}"
-x_axis_title = "Year"
+subplot_titles=(f"Yearly gas consumption by country (in terawatt-hours) over the time: {start_year} - {end_year}",
+                f"Yearly gas production by country (in terawatt-hours) over the time: {start_year} - {end_year}")
+title = f"Yearly gas consumption and production by country (in terawatt-hours) over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
 secondary_y_variable = "World"
 
 fig_gas_consumption_production_combine = data_graphing_instance.get_combined_production_consumption_graph(
         subplot_titles=subplot_titles,
-        title=title,
+        title="",
         num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
         x_axis_title=x_axis_title,
         secondary_y_variable=secondary_y_variable,
@@ -410,7 +403,7 @@ fig_gas_consumption_production_combine = data_graphing_instance.get_combined_pro
         fig_production=fig_gas_production,
         fig_consumption=fig_gas_consumption,
         save_fig=False,
-        file_name="gas_consumption_production_combined_graph",
+        file_name="chap_01_yearly_gas_consumption_production_combined_graph",
         file_path=FIGURES_PATH,
         width=1200,
         height=800,
@@ -419,7 +412,7 @@ fig_gas_consumption_production_combine = data_graphing_instance.get_combined_pro
 # Show the figure
 fig_gas_consumption_production_combine.show(renderer="browser")
 # ----------------------------------------------------------------------------------------
-# 01 - Modern Commodities Markets - The current state - CFTC Commitment of Traders Data
+# 01 - Modern Commodities Markets - The current state - Financial Markets: Oil and Gas OI over time
 # ----------------------------------------------------------------------------------------
 start_date = "1995-01-01"
 end_date = "2025-01-01"
@@ -554,10 +547,10 @@ secondary_y_variables = ["Oil Open Interest USD"]
 start_year = prices_oi_df.index.min().year
 end_year = prices_oi_df.index.max().year
 
-title = f"Oil Open Interest as Total number of Contracts and in USD over the time: {start_year} - {end_year}"
-x_axis_title = "Date"
-y_axis_title = "Open Interest (number of contracts)"
-secondary_y_axis_title = "Open Interest (in USD)"
+title = f"Weekly oil open interest as total number of contracts and in USD over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
+y_axis_title = "Open interest (number of contracts)"
+secondary_y_axis_title = "Open interest (in USD)"
 
 custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
     start_hex="#9b0a7d",
@@ -585,7 +578,7 @@ fig_oil_oi = data_graphing_instance.get_fig_open_interest(
         color_mapping_dict=color_mapping,
         num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
         save_fig=False,
-        file_name="oil_open_interest",
+        file_name="chap_01_weekly_oil_open_interest",
         file_path=FIGURES_PATH,
         width=1200,
         height=800,
@@ -600,10 +593,10 @@ variables = ["Gas"]
 secondary_y_variables = ["Gas Open Interest USD"]
 
 
-title = f"Gas Open Interest as Total number of Contracts and in USD over the time: {start_year} - {end_year}"
-x_axis_title = "Date"
-y_axis_title = "Open Interest (number of contracts)"
-secondary_y_axis_title = "Open Interest (in USD)"
+title = f"Weekly gas open interest as total number of contracts and in USD over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
+y_axis_title = "Open interest (number of contracts)"
+secondary_y_axis_title = "Open interest (in USD)"
 
 custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
     start_hex="#9b0a7d",
@@ -631,7 +624,7 @@ fig_gas_oi = data_graphing_instance.get_fig_open_interest(
         color_mapping_dict=color_mapping,
         num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
         save_fig=False,
-        file_name="gas_open_interest",
+        file_name="chap_01_weekly_gas_open_interest",
         file_path=FIGURES_PATH,
         width=1200,
         height=800,
@@ -642,15 +635,16 @@ fig_gas_oi.show(renderer="browser")
 # ----------------------------------------------------------------------------------------
 # 01 - Modern Commodities Markets - The current state - Oil and Gas Open Interest
 # ----------------------------------------------------------------------------------------
-subplot_titles=("Oil Open Interest as Total number of Contracts and in USD", "Gas Open Interest as Total number of Contracts and in USD")
+subplot_titles=(f"Weekly oil open interest as total number of contracts and in USD over the time: {prices_oi_df.index.min().strftime('%Y')} - {prices_oi_df.index.max().strftime('%Y')}",
+                f"Weekly gas open interest as total number of contracts and in USD over the time: {prices_oi_df.index.min().strftime('%Y')} - {prices_oi_df.index.max().strftime('%Y')}")
 start_year = fig_gas_oi.data[0].x[0]
 end_year = fig_gas_oi.data[0].x[-1]
-title = f"Open Interest of Oil and Gas Products over the time: {pd.Timestamp(start_year).strftime('%Y')} - {pd.Timestamp(end_year).strftime('%Y')}"
-x_axis_title = "Date"
+title = f"Weekly open interest of oil and gas products over the time: {pd.Timestamp(start_year).strftime('%Y')} - {pd.Timestamp(end_year).strftime('%Y')}"
+x_axis_title = "Time"
 
 fig_gas_oil_open_interest_combine = data_graphing_instance.get_combined_open_interest_graph(
         subplot_titles=subplot_titles,
-        title=title,
+        title="",
         num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
         x_axis_title=x_axis_title,
         rows=2,
@@ -661,7 +655,7 @@ fig_gas_oil_open_interest_combine = data_graphing_instance.get_combined_open_int
         fig_oil_oi=fig_oil_oi,
         fig_gas_oi=fig_gas_oi,
         save_fig=False,
-        file_name="open_interest_oil_gas_combined_graph.pdf",
+        file_name="chap_01_weekly_open_interest_oil_gas_combined_graph.pdf",
         file_path=FIGURES_PATH,
         width=1200,
         height=800,
@@ -739,22 +733,22 @@ color_mapping = {
     'Food': "lightgrey",
     'Headline': cpi_color,
 }
-title = f"US CPI: Headline and Component Contributions over the time: {contributions.index[0].year} - {contributions.index[-1].year}"
-x_axis_title = "Date"
-y_axis_title = 'Contribution to Annual Inflation (%)'
+title = f"US CPI: Headline and component contributions over the time: {contributions.index[0].year} - {contributions.index[-1].year}"
+x_axis_title = "Time"
+y_axis_title = 'Contribution to annual inflation (%)'
 
 fig_inflation_decomp_usa = data_graphing_instance.get_fig_inflation_contribution_usa(
         data=contributions,
         data_pct=data_pct,
         cpi_color=cpi_color,
         variables=list(bar_components),
-        title=title,
+        title="",
         secondary_y_variables=[],
         x_axis_title=x_axis_title,
         y_axis_title=y_axis_title,
         color_mapping_dict=color_mapping,
         save_fig=False,
-        file_name="us_cpi_inflation_decomposition",
+        file_name="chap_02_us_cpi_inflation_decomposition",
         file_path=FIGURES_PATH,
         width=1200,
         height=800,
@@ -819,21 +813,21 @@ color_mapping = {
     'Food': "lightgrey",
     'Headline': cpi_color,
 }
-title = f"EU Area CPI: Headline and Component Contributions over the time: {contributions.index[0].year} - {contributions.index[-1].year}"
-x_axis_title = "Date"
-y_axis_title = 'Contribution to Annual Inflation (%)'
+title = f"EU Area CPI: Headline and component contributions over the time: {contributions.index[0].year} - {contributions.index[-1].year}"
+x_axis_title = "Time"
+y_axis_title = 'Contribution to annual inflation (%)'
 
 fig_inflation_decomp_euro_area = data_graphing_instance.get_fig_inflation_contribution_euro_area(
         data=contributions,
         cpi_color=cpi_color,
         variables=variables,
         secondary_y_variables=[],
-        title=title,
+        title="",
         x_axis_title=x_axis_title,
         y_axis_title=y_axis_title,
         color_mapping_dict=color_mapping,
         save_fig=False,
-        file_name="eu_area_cpi_inflation_decomposition",
+        file_name="chap_02_eu_area_cpi_inflation_decomposition",
         file_path=FIGURES_PATH,
         width=1200,
         height=800,
@@ -893,195 +887,28 @@ fig_main_relationships_commodities_fx = data_graphing_instance.get_fig_relations
 # Show the figure
 fig_main_relationships_commodities_fx.show(renderer="browser")
 #----------------------------------------------------------------------------------------
-# 02 - Research Hypothesis - Main Relationships between Oil, Gas and USD Index - Rolling Correlation
-#----------------------------------------------------------------------------------------
-window = 30
-return_type = "log"  # "log" or "pct"
-
-if return_type == "pct":
-    log_return_data = np.log(us_data).diff().dropna()
-    return_data = log_return_data.copy()
-else:
-    pct_return_data = us_data.pct_change().dropna()
-    return_data = pct_return_data.copy()
-
-rolling_corr_data_pct_returns = return_data.rolling(window=window).corr().dropna().unstack().loc[:, [("WTI Oil", "Natural Gas"), ("Natural Gas", "USD Index"), ("WTI Oil", "USD Index"), ]].copy()
-rolling_corr_data_pct_returns.columns = [f"{col[0]} & {col[1]}" for col in rolling_corr_data_pct_returns.columns]
-
-data = rolling_corr_data_pct_returns.copy()
-
-variables = data.columns
-secondary_yaxis_variables = []
-title = f"WTI Oil, Natural Gas and USD Index percentage returns linear Correlation over the time: {data.index[0].year} - {data.index[-1].year} with rolling window of {window} days"
-x_axis_title = "Date"
-y_axis_title = "Linear Correlation"
-secondary_yaxis_title = ""
-
-color_mapping = {
-    'WTI Oil & Natural Gas': "grey",
-    'Natural Gas & USD Index': "black",
-    'WTI Oil & USD Index': "#9b0a7d",
-}
-
-fig_rolling_correlation = data_graphing_instance.get_fig_rolling_correlation(
-        data=data,
-        variables=variables,
-        secondary_y_variables=secondary_yaxis_variables,
-        title=title,
-        secondary_y_axis_title=secondary_yaxis_title,
-        color_discrete_sequence=color_discrete_sequence,
-        x_axis_title=x_axis_title,
-        y_axis_title=y_axis_title,
-        color_mapping_dict=color_mapping,
-        save_fig=False,
-        file_name=f"oil_gas_usd_index_lin_correlation_{window}_pct_returns",
-        file_path=FIGURES_PATH,
-        width=1200,
-        height=800,
-        scale=3
-        )
-# Show the figure
-fig_rolling_correlation.show(renderer="browser")
-#----------------------------------------------------------------------------------------
 # 02 - Research Hypothesis - Main Relationships between Oil, Gas and USD Index - Rolling Volatility and Crisis Periods
 #----------------------------------------------------------------------------------------
-crisis_periods_dict = {
-    "Bretton Woods Breakdown": {
-        "start": "1971-08-15",
-        "end": "1973-03-19"
-    },
-    "Nixon Shock": {
-        "start": "1971-08-15",
-        "end": "1973-03-19"
-    },
-    "Oil Crisis I": {
-        "start": "1973-10-17",
-        "end": "1974-03-01"
-    },
-    "Oil Crisis II": {
-        "start": "1979-01-01",
-        "end": "1981-03-01"
-    },
-    "Black Monday Crash": {
-        "start": "1987-10-19",
-        "end": "1987-10-19"
-    },
-    "Asian Financial Crisis": {
-        "start": "1997-07-02",
-        "end": "1998-12-31"
-    },
-    "Russian Crisis": {
-        "start": "1998-08-17",
-        "end": "1998-09-01"
-    },
-    "Dot-com Bubble": {
-        "start": "2000-03-01",
-        "end": "2002-10-01"
-    },
-    "Global Financial Crisis": {
-        "start": "2007-08-09",
-        "end": "2009-03-09"
-    },
-    "US QE": {
-        "start": "2008-11-25",
-        "end": "2014-12-31"
-    },
-    "US Debt Ceiling Crisis": {
-        "start": "2011-08-20",
-        "end": "2011-08-05"
-    },
-    "US-China Trade War": {
-        "start": "2018-03-22",
-        "end": "2020-01-15"
-    },
-    "European Debt Crisis": {
-        "start": "2009-10-01",
-        "end": "2012-12-31"
-    },
-    "COVID-19 Pandemic": {
-        "start": "2020-02-20",
-        "end": "2021-11-16"
-    },
-    "Russia-Ukraine War": {
-        "start": "2022-02-24",
-        "end": "2022-06-01"
-    },
-}
-
-#  Load additionally all US Recession Periods from FRED
-start_date = '1964-01-01'
-end_date = '2024-12-31'
+with open("/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/crisis_periods_dict.json", "r") as f:
+    crisis_periods_dict = json.load(f)
 
 series_dict_mapping = {
-    "US Recessions": "USREC"
+    'EUR/USD': 'DEXUSEU',
+    'WTI Oil': 'DCOILWTICO',
+    "Natural Gas": "DHHNGSP",
 }
+
+start_date = "1960-01-01"
+end_date = "2025-10-01"
 
 data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_data(
     series_dict_mapping=series_dict_mapping,
     start_date=start_date,
     end_date=end_date
     )
-recession_periods = []
-in_recession = False
-for date, rec in data_dict["US Recessions"].items():
-    if rec == 1 and not in_recession:
-        start = date
-        in_recession = True
-    elif rec == 0 and in_recession:
-        end = date
-        recession_periods.append({"start": start, "end": end})
-        in_recession = False
-# If the last period is still in recession, close it at the last date
-if in_recession:
-    recession_periods.append({"start": start, "end": data_dict["US Recessions"].index[-1]})
-
-# Append US recession periods to crisis_periods_dict
-for period in recession_periods:
-    name = f"US Recession {period['start'].year}-{period['end'].year}"
-    crisis_periods_dict[name] = {
-        "start": period["start"],
-        "end": period["end"]
-    }
-# Transform all Timestamps to a string object
-for key in crisis_periods_dict.keys():
-    if type(crisis_periods_dict[key]["start"]) is not str:
-        crisis_periods_dict[key]["start"] = crisis_periods_dict[key]["start"].strftime("%Y-%m-%d")
-    if type(crisis_periods_dict[key]["end"]) is not str:
-        crisis_periods_dict[key]["end"] = crisis_periods_dict[key]["end"].strftime("%Y-%m-%d")
-
-with open(r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/crisis_periods_dict.json", "w") as f:
-    json.dump(crisis_periods_dict, f)
-
-print(crisis_periods_dict)
+spot_exchange_rate_data_df = pd.concat(list(data_dict.values()), axis=1).dropna()
 
 
-crisis_periods_df = pd.DataFrame(crisis_periods_dict).T
-crisis_periods_df["start"] = pd.to_datetime(crisis_periods_df["start"]).dt.strftime("%Y-%m-%d")
-crisis_periods_df["end"] = pd.to_datetime(crisis_periods_df["end"]).dt.strftime("%Y-%m-%d")
-crisis_periods_df.columns = ["Start-date", "End-date"]
-crisis_periods_df["Event-Type"] = ["US-Recession" if "US Recession" in name else "Major Global Crisis" for name in crisis_periods_df.index]
-crisis_periods_df["Source"] = ["FRED: USREC" if "US Recession" in name else "Various" for name in crisis_periods_df.index]
-crisis_periods_df = crisis_periods_df.sort_values(by="Start-date")
-# Save the crisis_periods_dict as json and the dataframe to an excel file
-file_name = "crisis_periods"
-
-data_loading_instance.export_dataframe(
-    df=crisis_periods_df,
-    file_name=file_name,
-    excel_path=TABLES_PATH,
-    txt_path=TABLES_PATH,
-    pdf_path=FIGURES_PATH,
-    json_path=f"{DATA_PATH}/raw/",
-    figsize=(12, 6),
-    font_size=8,
-    col_widths=[0.2]*len(crisis_periods_df.columns),
-    title="Crisis Periods",
-    style={"edgecolor": "black"},
-    font_family="Arial",
-    font_weight="bold"
-)
-
-# Now load the exchange rate data from BIS - daily data
 country_keys_mapping = {
     "US": "United States",
 }
@@ -1125,103 +952,24 @@ crisis_log_first_diff_data = exchange_rate_log_diff_df.merge(
 data = crisis_volatility_data.copy()
 data_log_first_diff = crisis_log_first_diff_data.copy()
 #----------------------------------------------------------------------------------------
-# 02 - Research Hypothesis - Main Relationships between Oil, Gas and USD Index - Rolling Volatility and Crisis Periods - Raw Vola
+# 02 - Research Hypothesis - Normalized Exchange rate volatilty, wti oil and natural gas with highlighted crisis periods
 #----------------------------------------------------------------------------------------
-fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_highlighted(
-    data=data,
-    crisis_periods_dict=crisis_periods_dict,
-    variables=data.columns,
-    secondary_y_variables=[],
-    recession_shading_color="rgba(155, 10, 125, 0.3)",
-    title=f"Exchange Rate and Oil Volatility with Crisis Periods highlighted over the time: {data.index[0].year} - {data.index[-1].year}",
-    secondary_y_axis_title="WTI Oil & Natural Gas Volatility",
-    x_axis_title="Date",
-    y_axis_title="Exchange Rate Volatility",
-    color_mapping_dict={
-        'US_Nominal effective exchange rate - daily - narrow basket': "grey",
-        'OIL WTI': "black",
-        'Henry Hub Natural Gas Spot Price': "#9b0a7d",
-    },
-    num_years_interval_x_axis=5,
-    showlegend=False,
-    save_fig=False,
-    file_name="exchange_rate_oil_raw_vola_crisis_periods_highlighted",
-    file_path=FIGURES_PATH,
-    width=1200,
-    height=800,
-    scale=3
-    )
-# Show the figure
-fig_crisis_periods_highlighted.show(renderer="browser")
-# Normalize the Volatility Data to compare the levels
-data_normalized = (data - data.min()) / (data.max() - data.min())
-fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_highlighted(
-    data=data_normalized,
-    crisis_periods_dict=crisis_periods_dict,
-    variables=data_normalized.columns,
-    secondary_y_variables=[],
-    recession_shading_color="rgba(155, 10, 125, 0.3)",
-    title=f"Normalized Exchange Rate and Oil Volatility with Crisis Periods highlighted over the time: {data.index[0].year} - {data.index[-1].year}",
-    secondary_y_axis_title="WTI Oil & Natural Gas Volatility (Normalized)",
-    x_axis_title="Date",
-    y_axis_title="Exchange Rate Volatility (Normalized)",
-    color_mapping_dict={
-        'US_Nominal effective exchange rate - daily - narrow basket': "grey",
-        'OIL WTI': "black",
-        'Henry Hub Natural Gas Spot Price': "#9b0a7d",
-    },
-    num_years_interval_x_axis=5,
-    showlegend=False,
-    save_fig=False,
-    file_name="exchange_rate_oil_raw_vola_normalized_crisis_periods_highlighted",
-    file_path=FIGURES_PATH,
-    width=1200,
-    height=800,
-    scale=3
-    )
-# Show the figure
-fig_crisis_periods_highlighted.show(renderer="browser")
-#----------------------------------------------------------------------------------------
-# 02 - Research Hypothesis - Main Relationships between Oil, Gas and USD Index - Rolling Volatility and Crisis Periods - Log Diff Vola
-#----------------------------------------------------------------------------------------
-fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_highlighted(
-    data=data_log_first_diff,
-    crisis_periods_dict=crisis_periods_dict,
-    variables=data_log_first_diff.columns,
-    secondary_y_variables=[],
-    recession_shading_color="rgba(155, 10, 125, 0.3)",
-    title=f"Exchange Rate and Oil Volatility with Crisis Periods highlighted over the time: {data.index[0].year} - {data.index[-1].year}",
-    secondary_y_axis_title="WTI Oil & Natural Gas Volatility",
-    x_axis_title="Date",
-    y_axis_title="Exchange Rate Volatility",
-    color_mapping_dict={
-        'US_Nominal effective exchange rate - daily - narrow basket': "grey",
-        'OIL WTI': "black",
-        'Henry Hub Natural Gas Spot Price': "#9b0a7d",
-    },
-    num_years_interval_x_axis=5,
-    showlegend=False,
-    save_fig=False,
-    file_name="exchange_rate_oil_log_diff_vola_crisis_periods_highlighted",
-    file_path=FIGURES_PATH,
-    width=1200,
-    height=800,
-    scale=3
-    )
-# Show the figure
-fig_crisis_periods_highlighted.show(renderer="browser")
-# Normalize the Volatility Data to compare the levels
 data_log_diff_normalized = (data_log_first_diff - data_log_first_diff.min()) / (data_log_first_diff.max() - data_log_first_diff.min())
+title=f"Daily normalized EUR/USD spot exchange rate, oil and gas log first differences volatility with highlighted crisis periods over the time: {data.index[0].year} - {data.index[-1].year}"
+x_axis_title="Time"
+y_axis_title="Volatility of log first differences (normalized)"
+
+
 fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_highlighted(
     data=data_log_diff_normalized,
     crisis_periods_dict=crisis_periods_dict,
     variables=data_log_diff_normalized.columns,
     secondary_y_variables=[],
     recession_shading_color="rgba(155, 10, 125, 0.3)",
-    title=f"Normalized Exchange Rate and Oil Volatility with Crisis Periods highlighted over the time: {data.index[0].year} - {data.index[-1].year}",
+    title="",
     secondary_y_axis_title="WTI Oil & Natural Gas Volatility (Normalized)",
-    x_axis_title="Date",
-    y_axis_title="Exchange Rate Volatility (Normalized)",
+    x_axis_title=x_axis_title,
+    y_axis_title=y_axis_title,
     color_mapping_dict={
         'US_Nominal effective exchange rate - daily - narrow basket': "grey",
         'OIL WTI': "black",
@@ -1230,7 +978,7 @@ fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_h
     num_years_interval_x_axis=5,
     showlegend=False,
     save_fig=False,
-    file_name="exchange_rate_oil_log_diff_vola_normalized_crisis_periods_highlighted",
+    file_name="chap_02_daily_exchange_rate_oil_log_diff_vola_normalized_crisis_periods_highlighted",
     file_path=FIGURES_PATH,
     width=1200,
     height=800,
@@ -1238,3 +986,637 @@ fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_h
     )
 # Show the figure
 fig_crisis_periods_highlighted.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 02 - Research Hypothesis - Rolling correlation of exchange rates, wti oil and natural gas with highlighted crisis periods
+#----------------------------------------------------------------------------------------
+series_dict_mapping = {
+    'EUR/USD': 'DEXUSEU',
+    'WTI Oil': 'DCOILWTICO',
+    "Natural Gas": "DHHNGSP",
+}
+
+start_date = "1960-01-01"
+end_date = "2025-10-01"
+
+data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_data(
+    series_dict_mapping=series_dict_mapping,
+    start_date=start_date,
+    end_date=end_date
+    )
+spot_exchange_rate_data_df = pd.concat(list(data_dict.values()), axis=1).dropna()
+window = 30
+return_type = "log"  # "log" or "pct"
+
+if return_type == "pct":
+    log_return_data = np.log(spot_exchange_rate_data_df).diff().dropna()
+    return_data = log_return_data.copy()
+else:
+    pct_return_data = spot_exchange_rate_data_df.pct_change().dropna()
+    return_data = pct_return_data.copy()
+
+rolling_corr_data_pct_returns = return_data.rolling(window=window).corr().dropna().unstack().loc[:, [("WTI Oil", "Natural Gas"), ("Natural Gas", "EUR/USD"), ("WTI Oil", "EUR/USD"), ]].copy()
+rolling_corr_data_pct_returns.columns = [f"{col[0]} & {col[1]}" for col in rolling_corr_data_pct_returns.columns]
+
+data = rolling_corr_data_pct_returns.copy()
+with open("/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/crisis_periods_dict.json", "r") as f:
+    crisis_periods_dict = json.load(f)
+
+title=f"Daily rolling correlation between EUR/USD spot exchange rate, oil and gas log first differences with highlighted crisis periods over the time: {data.index[0].year} - {data.index[-1].year}"
+x_axis_title="Time"
+y_axis_title="Rolling correlation"
+
+
+fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_highlighted(
+    data=data,
+    crisis_periods_dict=crisis_periods_dict,
+    variables=data.columns,
+    secondary_y_variables=[],
+    recession_shading_color="rgba(155, 10, 125, 0.3)",
+    title="",
+    secondary_y_axis_title="WTI Oil & Natural Gas Volatility (Normalized)",
+    x_axis_title=x_axis_title,
+    y_axis_title=y_axis_title,
+    color_mapping_dict={
+        'WTI Oil & Natural Gas': "grey",
+        'Natural Gas & EUR/USD': "black",
+        'WTI Oil & EUR/USD': "#9b0a7d",
+    },
+    num_years_interval_x_axis=5,
+    showlegend=True,
+    save_fig=False,
+    file_name="chap_02_rolling_correlation_exchange_rate_oil_log_diff_crisis_periods_highlighted",
+    file_path=FIGURES_PATH,
+    width=1200,
+    height=800,
+    scale=3
+    )
+# Show the figure
+fig_crisis_periods_highlighted.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Spot exchange rate distributions (raw data - normalized)
+#----------------------------------------------------------------------------------------
+series_dict_mapping = {
+    'EUR/USD': 'DEXUSEU',
+    'WTI Oil': 'DCOILWTICO',
+    "Nat Gas": "DHHNGSP",
+}
+
+start_date = "1960-01-01"
+end_date = "2025-10-01"
+
+data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_data(
+    series_dict_mapping=series_dict_mapping,
+    start_date=start_date,
+    end_date=end_date
+    )
+spot_exchange_rate_data_df = pd.concat(list(data_dict.values()), axis=1).dropna()
+# Transform to log values and take first difference
+log_spot_exchange_rate_data_df = np.log(spot_exchange_rate_data_df)
+log_diff_spot_exchange_rate_data_df = log_spot_exchange_rate_data_df.diff().dropna()
+window = 30
+spot_exchange_rate_vola_df = log_diff_spot_exchange_rate_data_df.rolling(window=window).std().dropna()
+# Normalize the data
+spot_exchange_rate_data_df_normed = (spot_exchange_rate_data_df - spot_exchange_rate_data_df.mean()) / spot_exchange_rate_data_df.std()
+start_year = spot_exchange_rate_data_df_normed.index.min().strftime('%Y')
+end_year = spot_exchange_rate_data_df_normed.index.max().strftime('%Y')
+color_mapping_dict = {
+    'EUR/USD': 'grey',
+    "WTI Oil": 'black',
+    "Nat Gas": 'lightgrey'
+}
+title=f"Normalized daily EUR/USD spot exchange rate, oil and gas over the time range: {start_year} - {end_year}"
+x_axis_title="Daily Observations (Normalized)"
+y_axis_title="Probability density"
+
+fig = data_graphing_instance.get_fig_histogram(
+    data=spot_exchange_rate_data_df_normed,
+    variables=spot_exchange_rate_data_df.columns.tolist(),
+    title="",
+    x_axis_title=x_axis_title,
+    y_axis_title=y_axis_title,
+    color_discrete_sequence=CAU_COLOR_SCALE,
+    color_mapping_dict=color_mapping_dict,
+    histnorm="probability density",
+    draw_vertical_line_at_0=True,
+    showlegend=False,
+    save_fig=False,
+    file_path=FIGURES_PATH,
+    file_name="chap_06_raw_data_normalized_histogram",
+    margin_dict=dict(
+        l=20,  # Left margin
+        r=20,  # Right margin
+        t=100,  # Top margin
+        b=10   # Bottom margin
+    )
+)
+fig.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Spot exchange rate distributions (log first differences)
+#----------------------------------------------------------------------------------------
+start_year = log_diff_spot_exchange_rate_data_df.index.min().strftime('%Y')
+end_year = log_diff_spot_exchange_rate_data_df.index.max().strftime('%Y')
+color_mapping_dict = {
+    'EUR/USD': 'grey',
+    "WTI Oil": 'black',
+    "Nat Gas": 'lightgrey'
+}
+title=f"Daily log first differences of EUR/USD spot exchange rate, oil and gas over the time range: {start_year} - {end_year}",
+x_axis_title="Daily observations (log first differences)"
+y_axis_title="Probability density"
+
+fig = data_graphing_instance.get_fig_histogram(
+    data=log_diff_spot_exchange_rate_data_df,
+    variables=log_diff_spot_exchange_rate_data_df.columns.tolist(),
+    title="",
+    x_axis_title=x_axis_title,
+    y_axis_title=y_axis_title,
+    color_discrete_sequence=CAU_COLOR_SCALE,
+    color_mapping_dict=color_mapping_dict,
+    histnorm="probability density",
+    draw_vertical_line_at_0=True,
+    showlegend=False,
+    save_fig=False,
+    file_path=FIGURES_PATH,
+    file_name="chap_06_log_first_diff_histogram",
+    margin_dict=dict(
+        l=20,  # Left margin
+        r=20,  # Right margin
+        t=100,  # Top margin
+        b=10   # Bottom margin
+    )
+)
+fig.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Tests for Normality (raw data)
+#----------------------------------------------------------------------------------------
+normality_test_results = test_data_for_normality(
+    data=spot_exchange_rate_data_df,
+    variables=spot_exchange_rate_data_df.columns.tolist(),
+    significance_level=0.05,
+    test_shapiro_wilks=True,
+    test_anderson_darling=False,
+    test_kolmogorov_smirnov=True,
+    test_dagostino_k2=True
+)
+# Export results
+data_loading_instance.export_dataframe(
+        df=normality_test_results,
+        file_name="norm_test_raw_series",
+        excel_sheet_name="ADF Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+        save_excel=True,
+        save_index=False,
+        )
+# Also export to Latex
+data_loading_instance.export_dataframe(
+        df=normality_test_results.round(3),
+        file_name="norm_test_raw_series",
+        latex_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables",
+        save_latex=True,
+        save_index=False,
+        )
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Tests for Stationarity - ADF Tests (raw data)
+#----------------------------------------------------------------------------------------
+adf_test_df = pd.DataFrame()
+regression_type_list = ["c", "ct", "ctt", "n"]
+for variable in spot_exchange_rate_data_df.columns:
+    for regression_type in regression_type_list:
+        test_result = adf_test(
+            data=spot_exchange_rate_data_df,
+            variable=variable,
+            title=f"ADF Test for {variable} with regression type {regression_type}",
+            significance_level=0.05,
+            return_regression_summary=False,
+            regression_type=regression_type,
+        )
+        adf_test_df = pd.concat([adf_test_df, test_result], axis=0)
+
+adf_test_df = adf_test_df.reset_index(drop=True)
+adf_test_df["Significance-level"] = 0.05
+adf_test_df["p-value < 0.05"] = adf_test_df["p-value"] < 0.05
+adf_test_df["Result"] = np.where(adf_test_df["p-value"] < 0.05, "Stationary", "Non-Stationary")
+# Export results
+data_loading_instance.export_dataframe(
+        df=adf_test_df,
+        file_name="adf_test_raw_series",
+        excel_sheet_name="ADF Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+        save_excel=True,
+        save_index=False,
+        )
+# Also export to Latex
+data_loading_instance.export_dataframe(
+        df=adf_test_df[['ADF Statistic', 'p-value', 'Start Time:', 'End Time:', 'Regression Type', 'Observations:', "Variable", "Result"]].round(3),
+        file_name="adf_test_raw_series",
+        latex_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables",
+        save_latex=True,
+        save_index=False,
+        )
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Tests for Stationarity - ADF Tests (log first differences)
+#----------------------------------------------------------------------------------------
+# Test again after taking first difference of the log values
+spot_exchange_rate_data_df_log_diff = np.log(spot_exchange_rate_data_df).diff().dropna()
+adf_test_df = pd.DataFrame()
+for variable in spot_exchange_rate_data_df_log_diff.columns:
+    for regression_type in regression_type_list:
+        test_result = adf_test(
+            data=spot_exchange_rate_data_df_log_diff,
+            variable=variable,
+            title=f"ADF Test for {variable} with regression type {regression_type}",
+            significance_level=0.05,
+            return_regression_summary=False,
+            regression_type=regression_type,
+        )
+        adf_test_df = pd.concat([adf_test_df, test_result], axis=0)
+
+adf_test_df = adf_test_df.reset_index(drop=True)
+adf_test_df["Significance-level"] = 0.05
+adf_test_df["p-value < 0.05"] = adf_test_df["p-value"] < 0.05
+adf_test_df["Result"] = np.where(adf_test_df["p-value"] < 0.05, "Stationary", "Non-Stationary")
+# Export results
+data_loading_instance.export_dataframe(
+        df=adf_test_df,
+        file_name="adf_test_log_diff",
+        # excel_sheet_name="ADF Test Results Log Diff",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+        save_excel=True,
+        save_index=False,
+        )
+# Also export to Latex
+data_loading_instance.export_dataframe(
+        df=adf_test_df[['ADF Statistic', 'p-value', 'Start Time:', 'End Time:', 'Regression Type', 'Observations:', "Variable", "Result"]].round(3),
+        file_name="adf_test_log_diff",
+        latex_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables",
+        save_latex=True,
+        save_index=False,
+        )
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Tests for Stationarity - Tests for Cointegration (raw data)
+#----------------------------------------------------------------------------------------
+trend_type_list = ["c", "ct", "ctt", "n"]
+variable_y_list = ["WTI Oil", "Nat Gas"]
+cointegration_test_df = pd.DataFrame()
+for variable_y in variable_y_list:
+    for trend in trend_type_list:
+        cointegration_test_result_df = cointegration_test(
+            data=spot_exchange_rate_data_df,
+            variable_x='EUR/USD',
+            variable_y=variable_y,
+            significance_level=0.05,
+            trend=trend,
+        )
+        cointegration_test_df = pd.concat([cointegration_test_df, cointegration_test_result_df], axis=0)
+cointegration_test_df = cointegration_test_df.reset_index(drop=True)
+cointegration_test_df["Significance-level"] = 0.05
+cointegration_test_df["p-value < 0.05"] = cointegration_test_df["p-value"] < 0.05
+cointegration_test_df["Result"] = np.where(cointegration_test_df["p-value"] < 0.05, "Cointegrated", "Not Cointegrated")
+# Export results
+data_loading_instance.export_dataframe(
+        df=cointegration_test_df,
+        file_name="cointegration_test_raw_series",
+        excel_sheet_name="Granger Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+        save_excel=True,
+        save_index=False,
+        )
+# Also export to Latex
+data_loading_instance.export_dataframe(
+        df=cointegration_test_df[['Cointegration Score', 'p-value', 'Start Time', 'End Time', 'Observations', 'Trend','Variable X', 'Variable Y', 'Result']].round(3),
+        file_name="cointegration_test_raw_series",
+        latex_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables",
+        save_latex=True,
+        save_index=False,
+        )
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Tests for Stationarity - Tests for Cointegration (log differences)
+#----------------------------------------------------------------------------------------
+trend_type_list = ["c", "ct", "ctt", "n"]
+variable_y_list = ["WTI Oil", "Nat Gas"]
+cointegration_test_df = pd.DataFrame()
+for variable_y in variable_y_list:
+    for trend in trend_type_list:
+        cointegration_test_result_df = cointegration_test(
+            data=spot_exchange_rate_vola_df,
+            variable_x='EUR/USD',
+            variable_y=variable_y,
+            significance_level=0.05,
+            trend=trend,
+        )
+        cointegration_test_df = pd.concat([cointegration_test_df, cointegration_test_result_df], axis=0)
+cointegration_test_df = cointegration_test_df.reset_index(drop=True)
+cointegration_test_df["Significance-level"] = 0.05
+cointegration_test_df["p-value < 0.05"] = cointegration_test_df["p-value"] < 0.05
+cointegration_test_df["Result"] = np.where(cointegration_test_df["p-value"] < 0.05, "Cointegrated", "Not Cointegrated")
+# Export results
+data_loading_instance.export_dataframe(
+        df=cointegration_test_df,
+        file_name="coint_test_log_diff_rolvol",
+        # excel_sheet_name="Granger Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+        save_excel=True,
+        save_index=False,
+        )
+# Also export to Latex
+data_loading_instance.export_dataframe(
+        df=cointegration_test_df[['Cointegration Score', 'p-value', 'Start Time', 'End Time', 'Observations', 'Trend','Variable X', 'Variable Y', 'Result']].round(3),
+        file_name="cointegration_test_log_diff",
+        latex_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables",
+        save_latex=True,
+        save_index=False,
+        )
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Tests for Autocorrelation (raw data)
+#----------------------------------------------------------------------------------------
+title = f"ACF values for daily observations of the EUR/USD spot exchange rate, oil and gas over the time: {spot_exchange_rate_data_df.index.min().strftime('%Y')} - {spot_exchange_rate_data_df.index.max().strftime('%Y')}"
+x_axis_title = "Lags"
+y_axis_title = "ACF value"
+
+acf_fig = data_graphing_instance.get_fig_acf(
+    data=spot_exchange_rate_data_df,
+    variables=spot_exchange_rate_data_df.columns.tolist(),
+    title="",
+    x_axis_title=x_axis_title,
+    y_axis_title=y_axis_title,
+    save_fig=False,
+    file_name="chap_06_acf_plot_raw_series",
+    file_path=FIGURES_PATH,
+    nlags=30
+    )
+acf_fig.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Tests for Autocorrelation (log first differences)
+#----------------------------------------------------------------------------------------
+title = f"ACF values for daily observations (log first differences) of the spot exchange rate EUR/USD, oil and gas over the time: {spot_exchange_rate_data_df_log_diff.index.min().strftime('%Y')} - {spot_exchange_rate_data_df_log_diff.index.max().strftime('%Y')}"
+x_axis_title = "Lags"
+y_axis_title = "ACF value"
+
+acf_fig = data_graphing_instance.get_fig_acf(
+    data=spot_exchange_rate_data_df_log_diff,
+    variables=spot_exchange_rate_data_df_log_diff.columns.tolist(),
+    title="",
+    x_axis_title=x_axis_title,
+    y_axis_title=y_axis_title,
+    save_fig=False,
+    file_name="chap_06_acf_plot_log_diff",
+    file_path=FIGURES_PATH,
+    nlags=30
+    )
+acf_fig.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Tests for Partial Autocorrelation (raw data)
+#----------------------------------------------------------------------------------------
+title = f"PACF values for daily observations of the spot exchange rate EUR/USD, oil and gas over the time: {spot_exchange_rate_data_df.index.min().strftime('%Y')} - {spot_exchange_rate_data_df.index.max().strftime('%Y')}"
+x_axis_title = "Lags"
+y_axis_title = "PACF value"
+
+pacf_fig = data_graphing_instance.get_fig_pacf(
+    data=spot_exchange_rate_data_df,
+    variables=spot_exchange_rate_data_df.columns.tolist(),
+    title="",
+    x_axis_title=x_axis_title,
+    y_axis_title=y_axis_title,
+    save_fig=False,
+    file_name="chap_06_pacf_plot_raw_series",
+    file_path=FIGURES_PATH,
+    nlags=30
+    )
+pacf_fig.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Tests for Partial Autocorrelation (log first differences)
+#----------------------------------------------------------------------------------------
+title = f"PACF values for daily observations (log first differences) of the spot exchange rate EUR/USD, oil and gas over the time: {spot_exchange_rate_data_df_log_diff.index.min().strftime('%Y')} - {spot_exchange_rate_data_df_log_diff.index.max().strftime('%Y')}"
+x_axis_title = "Lags"
+y_axis_title = "PACF value"
+
+pacf_fig = data_graphing_instance.get_fig_pacf(
+    data=spot_exchange_rate_data_df_log_diff,
+    variables=spot_exchange_rate_data_df_log_diff.columns.tolist(),
+    title="",
+    x_axis_title=x_axis_title,
+    y_axis_title=y_axis_title,
+    save_fig=False,
+    file_name="chap_06_pacf_plot_log_diff",
+    file_path=FIGURES_PATH,
+    nlags=30
+    )
+pacf_fig.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Granger Causality Tests - EUR/USD and WTI Oil (raw data)
+#----------------------------------------------------------------------------------------
+exchange_rate_pairs = [col for col in spot_exchange_rate_data_df.columns if col.endswith("/USD")]
+# for variable_y in exchange_rate_pairs:
+granger_test_result, granger_test_result_df_oil = granger_causality_test(
+    data=spot_exchange_rate_data_df,
+    variable_x='WTI Oil',
+    variable_y='EUR/USD',
+    max_lag=10,
+    significance_level=0.05
+)
+granger_test_result_df_oil["Significance-level"] = 0.05
+granger_test_result_df_oil["p-value < 0.05"] = granger_test_result_df_oil["p-value"] < 0.05
+granger_test_result_df_oil["Result"] = np.where(granger_test_result_df_oil["p-value"] < 0.05, "Granger Causality", "No Granger Causality")
+# Export results
+data_loading_instance.export_dataframe(
+        df=granger_test_result_df_oil,
+        file_name="granger_causality_test_oil_raw_series",
+        excel_sheet_name="Granger Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+        save_excel=True,
+        save_index=False,
+        )
+# Plotting the results
+variables = granger_test_result_df_oil['Metric'].unique()
+secondary_y_variables = ["p-value"]
+color_mapping_dict = {
+    'p-value': 'red',
+    "ssr_ftest": 'darkgrey',
+    "ssr_chi2test": 'grey',
+    "lrtest": 'black',
+    "params_ftest": 'lightgrey',
+}
+title=f"Granger causality test results testing granger causality of daily observations of oil for EUR/USD over the time: {spot_exchange_rate_data_df.index.min().strftime('%Y')} - {spot_exchange_rate_data_df.index.max().strftime('%Y')}"
+secondary_y_axis_title="p-value"
+
+granger_causality_test_plot = data_graphing_instance.plot_granger_test_results(
+    data=granger_test_result_df_oil,
+    variables=variables,
+    secondary_y_variables=secondary_y_variables,
+    color_discrete_sequence=["#9b0a7d", "grey", "black", "darkgrey", "lightgrey"],
+    title="",
+    secondary_y_axis_title=secondary_y_axis_title,
+    x_axis_title="Lag",
+    y_axis_title="Test-Statistic",
+    color_mapping_dict=color_mapping_dict,
+    significance_level=0.05,
+    margin_dict=dict(
+            l=20,  # Left margin
+            r=20,  # Right margin
+            t=50,  # Top margin
+            b=10   # Bottom margin
+            ),
+    showlegend=False,
+    save_fig=False,
+    file_name="chap_06_granger_causality_test_oil_raw_series",
+    file_path=FIGURES_PATH
+    )
+granger_causality_test_plot.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Granger Causality Tests - EUR/USD and Nat Gas (raw data)
+#----------------------------------------------------------------------------------------
+granger_test_result, granger_test_result_df_gas = granger_causality_test(
+    data=spot_exchange_rate_data_df,
+    variable_x='Nat Gas',
+    variable_y='EUR/USD',
+    max_lag=10,
+    significance_level=0.05
+)
+granger_test_result_df_gas["Significance-level"] = 0.05
+granger_test_result_df_gas["p-value < 0.05"] = granger_test_result_df_gas["p-value"] < 0.05
+granger_test_result_df_gas["Result"] = np.where(granger_test_result_df_gas["p-value"] < 0.05, "Granger Causality", "No Granger Causality")
+# Export results
+data_loading_instance.export_dataframe(
+        df=granger_test_result_df_gas,
+        file_name="granger_causality_test_gas_raw_series",
+        excel_sheet_name="Granger Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+        save_excel=True,
+        save_index=False,
+        )
+# Plotting the results
+variables = granger_test_result_df_gas['Metric'].unique()
+secondary_y_variables = ["p-value"]
+title=f"Granger causality test results testing granger causality of daily observations of gas for EUR/USD over the time: {spot_exchange_rate_data_df.index.min().strftime('%Y')} - {spot_exchange_rate_data_df.index.max().strftime('%Y')}"
+
+granger_causality_test_plot = data_graphing_instance.plot_granger_test_results(
+    data=granger_test_result_df_gas,
+    variables=variables,
+    secondary_y_variables=secondary_y_variables,
+    color_discrete_sequence=["#9b0a7d", "grey", "black", "darkgrey", "lightgrey"],
+    title="",
+    secondary_y_axis_title="p-value",
+    x_axis_title="Lag",
+    y_axis_title="Test-Statistic",
+    color_mapping_dict=color_mapping_dict,
+    significance_level=0.05,
+    margin_dict=dict(
+            l=20,  # Left margin
+            r=20,  # Right margin
+            t=50,  # Top margin
+            b=10   # Bottom margin
+            ),
+    showlegend=False,
+    save_fig=False,
+    file_name="chap_06_granger_causality_test_gas_raw_series",
+    file_path=FIGURES_PATH
+    )
+granger_causality_test_plot.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Granger Causality Tests - EUR/USD and WTI Oil (log first differences)
+#----------------------------------------------------------------------------------------
+granger_test_result, granger_test_result_df_oil = granger_causality_test(
+    data=spot_exchange_rate_data_df_log_diff,
+    variable_x='WTI Oil',
+    variable_y='EUR/USD',
+    max_lag=10,
+    significance_level=0.05
+)
+granger_test_result_df_oil["Significance-level"] = 0.05
+granger_test_result_df_oil["p-value < 0.05"] = granger_test_result_df_oil["p-value"] < 0.05
+granger_test_result_df_oil["Result"] = np.where(granger_test_result_df_oil["p-value"] < 0.05, "Granger Causality", "No Granger Causality")
+# Export results
+data_loading_instance.export_dataframe(
+        df=granger_test_result_df_oil,
+        file_name="granger_causality_test_oil_log_diff",
+        excel_sheet_name="Granger Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+        save_excel=True,
+        save_index=False,
+        )
+# Plotting the results
+variables = granger_test_result_df_oil['Metric'].unique()
+secondary_y_variables = ["p-value"]
+color_mapping_dict = {
+    'p-value': 'red',
+    "ssr_ftest": 'darkgrey',
+    "ssr_chi2test": 'grey',
+    "lrtest": 'black',
+    "params_ftest": 'lightgrey',
+}
+title=f"Granger causality test results testing granger causality of daily observations (log first differences) of oil for EUR/USD over the time: {spot_exchange_rate_data_df_log_diff.index.min().strftime('%Y')} - {spot_exchange_rate_data_df_log_diff.index.max().strftime('%Y')}"
+secondary_y_axis_title="p-value"
+
+granger_causality_test_plot = data_graphing_instance.plot_granger_test_results(
+    data=granger_test_result_df_oil,
+    variables=variables,
+    secondary_y_variables=secondary_y_variables,
+    color_discrete_sequence=["#9b0a7d", "grey", "black", "darkgrey", "lightgrey"],
+    title="",
+    secondary_y_axis_title=secondary_y_axis_title,
+    x_axis_title="Lag",
+    y_axis_title="Test-Statistic",
+    color_mapping_dict=color_mapping_dict,
+    significance_level=0.05,
+    margin_dict=dict(
+            l=20,  # Left margin
+            r=20,  # Right margin
+            t=50,  # Top margin
+            b=10   # Bottom margin
+            ),
+    showlegend=False,
+    save_fig=False,
+    file_name="chap_06_granger_causality_test_oil_log_diff",
+    file_path=FIGURES_PATH
+    )
+granger_causality_test_plot.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Granger Causality Tests - EUR/USD and Nat Gas (log first differences)
+#----------------------------------------------------------------------------------------
+granger_test_result, granger_test_result_df_gas = granger_causality_test(
+    data=spot_exchange_rate_data_df_log_diff,
+    variable_x='Nat Gas',
+    variable_y='EUR/USD',
+    max_lag=10,
+    significance_level=0.05
+)
+granger_test_result_df_gas["Significance-level"] = 0.05
+granger_test_result_df_gas["p-value < 0.05"] = granger_test_result_df_gas["p-value"] < 0.05
+granger_test_result_df_gas["Result"] = np.where(granger_test_result_df_gas["p-value"] < 0.05, "Granger Causality", "No Granger Causality")
+# Export results
+data_loading_instance.export_dataframe(
+        df=granger_test_result_df_gas,
+        file_name="granger_causality_test_gas_log_diff",
+        excel_sheet_name="Granger Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+        save_excel=True,
+        save_index=False,
+        )
+# Plotting the results
+variables = granger_test_result_df_gas['Metric'].unique()
+secondary_y_variables = ["p-value"]
+title=f"Granger causality test results testing granger causality of daily observations (log first differences) of gas for EUR/USD over the time: {spot_exchange_rate_data_df_log_diff.index.min().strftime('%Y')} - {spot_exchange_rate_data_df_log_diff.index.max().strftime('%Y')}"
+
+granger_causality_test_plot = data_graphing_instance.plot_granger_test_results(
+    data=granger_test_result_df_gas,
+    variables=variables,
+    secondary_y_variables=secondary_y_variables,
+    color_discrete_sequence=["#9b0a7d", "grey", "black", "darkgrey", "lightgrey"],
+    title="",
+    secondary_y_axis_title="p-value",
+    x_axis_title="Lag",
+    y_axis_title="Test-Statistic",
+    color_mapping_dict=color_mapping_dict,
+    significance_level=0.05,
+    margin_dict=dict(
+            l=20,  # Left margin
+            r=20,  # Right margin
+            t=50,  # Top margin
+            b=10   # Bottom margin
+            ),
+    showlegend=False,
+    save_fig=False,
+    file_name="chap_06_granger_causality_test_gas_log_diff",
+    file_path=FIGURES_PATH
+    )
+granger_causality_test_plot.show(renderer="browser")

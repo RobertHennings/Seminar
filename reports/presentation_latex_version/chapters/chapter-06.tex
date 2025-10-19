@@ -21,8 +21,274 @@
         \begin{minipage}{0.6\textwidth} % Adjust the width of the block
             \begin{block}{} % Empty block title
                 \centering
-                {\large \textbf{Used Data}} % Slightly smaller text
+                {\large \textbf{Data Characteristics and Stylized Facts}} % Slightly smaller text
             \end{block}
         \end{minipage}
     \end{center}
+\end{frame}
+%----------------------------------------------------------------------------------------
+\subsection{Spot exchange rate distributions}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Spot exchange rate distributions (raw data - normalized)}
+    \begin{figure}
+		\includegraphics[width=0.7\linewidth]{chap_06_raw_data_normalized_histogram.pdf}
+		\caption{\tiny Figure: Normalized daily EUR/USD spot exchange rate, oil and gas over the time range: 1999 - 2025.\footnote{Own Illustration based on XYZ (2000), page 7 and data accessed 10.09.25.}\label{fig:chap_06_raw_data_normalized_histogram}}
+	\end{figure}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Spot exchange rate distributions (log first differences)}
+    \begin{figure}
+		\includegraphics[width=0.7\linewidth]{chap_06_log_first_diff_histogram.pdf}
+		\caption{\tiny Figure: Log first differences of daily EUR/USD spot exchange rate, oil and gas over the time range: 1999 - 2025.\footnote{Own Illustration based on XYZ (2000), page 7 and data accessed 10.09.25.}\label{fig:chap_06_log_first_diff_histogram}}
+	\end{figure}
+\end{frame}
+%----------------------------------------------------------------------------------------
+\subsection{Tests for Normality}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+    \frametitle{Tests for Normality (raw data)}
+    \scriptsize
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{
+            \begin{tabular}{llrrrrl}
+                \toprule
+                \textbf{Variable} & \textbf{Test} & \textbf{Statistic} & \textbf{p-value} & \textbf{Significance-level} & \textbf{p-value < 0.05} & \textbf{Result} \\
+                \midrule
+                EUR/USD & Shapiro-Wilk & 0.989 & 0.000 & 0.050 & True & Not-Normal \\
+                EUR/USD & Kolmogorov-Smirnov & 0.799 & 0.000 & 0.050 & True & Not-Normal \\
+                EUR/USD & D'Agostino's $K^2$ & 55.280 & 0.000 & 0.050 & True & Not-Normal \\
+                \midrule
+                WTI Oil & Shapiro-Wilk & 0.981 & 0.000 & 0.050 & True & Not-Normal \\
+                WTI Oil & Kolmogorov-Smirnov & 1.000 & 0.000 & 0.050 & True & Not-Normal \\
+                WTI Oil & D'Agostino's $K^2$ & 340.085 & 0.000 & 0.050 & True & Not-Normal \\
+                \midrule
+                Nat Gas & Shapiro-Wilk & 0.8640 & 0.000 & 0.050 & True & Not-Normal \\
+                Nat Gas & Kolmogorov-Smirnov & 0.938 & 0.000 & 0.050 & True & Not-Normal \\
+                Nat Gas & D'Agostino's $K^2$ & 2130.008 & 0.000 & 0.050 & True & Not-Normal \\
+                \bottomrule
+            \end{tabular}
+        }
+        \caption{\tiny Table: Shapiro-Wilks, Kolmogorov-Smirnov, D'Agostino's $K^2$ test for normality for the EUR/USD spot exchange rate, WTI Oil and Natural Gas daily observations over the time 1999 - 2025.\footnote{See: XXX}}
+    \end{table}
+\end{frame}
+%----------------------------------------------------------------------------------------
+\subsection{Tests for Stationarity - ADF Tests}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+    \frametitle{Tests for Stationarity - ADF Tests (raw data)}
+    \scriptsize
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{
+        \begin{tabular}{rrlllrll}
+            \toprule
+            \textbf{ADF Statistic} & \textbf{p-value} & \textbf{Start Time} & \textbf{End Time} & \textbf{Regression Type} & \textbf{Observations} & \textbf{Variable} & \textbf{Result} \\
+            \midrule
+            -1.847 & 0.357 & 04-01-1999 & 04-01-1999 & c & 6640 & EUR/USD & Non-Stationary \\
+            -1.846 & 0.682 & 04-01-1999 & 04-01-1999 & ct & 6640 & EUR/USD & Non-Stationary \\
+            -2.655 & 0.480 & 04-01-1999 & 04-01-1999 & ctt & 6640 & EUR/USD & Non-Stationary \\
+            -0.254 & 0.594 & 04-01-1999 & 04-01-1999 & n & 6640 & EUR/USD & Non-Stationary \\
+            \midrule
+            -2.789 & 0.059 & 04-01-1999 & 04-01-1999 & c & 6624 & WTI Oil & Non-Stationary \\
+            -2.770 & 0.208 & 04-01-1999 & 04-01-1999 & ct & 6624 & WTI Oil & Non-Stationary \\
+            -3.060 & 0.267 & 04-01-1999 & 04-01-1999 & ctt & 6624 & WTI Oil & Non-Stationary \\
+            -0.697 & 0.413 & 04-01-1999 & 04-01-1999 & n & 6624 & WTI Oil & Non-Stationary \\
+            \midrule
+            -4.341 & 0.000 & 04-01-1999 & 04-01-1999 & c & 6633 & Nat Gas & Stationary \\
+            -4.743 & 0.001 & 04-01-1999 & 04-01-1999 & ct & 6633 & Nat Gas & Stationary \\
+            -4.742 & 0.003 & 04-01-1999 & 04-01-1999 & ctt & 6633 & Nat Gas & Stationary \\
+            -1.897 & 0.055 & 04-01-1999 & 04-01-1999 & n & 6633 & Nat Gas & Non-Stationary \\
+            \bottomrule
+        \end{tabular}
+        }
+        \caption{\tiny Table: Augmented-Dickey-Fuller (ADF) test for stationarity in various variants for the EUR/USD spot exchange rate, WTI Oil and Natural Gas daily observations over the time 1999 - 2025.\footnote{See: XXX}}
+    \end{table}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+    \frametitle{Tests for Stationarity - ADF Tests (log first differences)}
+    \scriptsize
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{
+        \begin{tabular}{rrlllrll}
+            \toprule
+            \textbf{ADF Statistic} & \textbf{p-value} & \textbf{Start Time} & \textbf{End Time} & \textbf{Regression Type} & \textbf{Observations} & \textbf{Variable} & \textbf{Result} \\
+            \midrule
+            -80.613 & 0.000 & 05-01-1999 & 05-01-1999 & c & 6637 & EUR/USD & Stationary \\
+            -80.607 & 0.000 & 05-01-1999 & 05-01-1999 & ct & 6637 & EUR/USD & Stationary \\
+            -80.601 & 0.000 & 05-01-1999 & 05-01-1999 & ctt & 6637 & EUR/USD & Stationary \\
+            -80.619 & 0.000 & 05-01-1999 & 05-01-1999 & n & 6637 & EUR/USD & Stationary \\
+            \midrule
+            -14.504 & 0.000 & 05-01-1999 & 05-01-1999 & c & 6603 & WTI Oil & Stationary \\
+            -14.525 & 0.000 & 05-01-1999 & 05-01-1999 & ct & 6603 & WTI Oil & Stationary \\
+            -14.547 & 0.000 & 05-01-1999 & 05-01-1999 & ctt & 6603 & WTI Oil & Stationary \\
+            -14.463 & 0.000 & 05-01-1999 & 05-01-1999 & n & 6603 & WTI Oil & Stationary \\
+            \midrule
+            -20.094 & 0.000 & 05-01-1999 & 05-01-1999 & c & 6616 & Nat Gas & Stationary \\
+            -20.102 & 0.000 & 05-01-1999 & 05-01-1999 & ct & 6616 & Nat Gas & Stationary \\
+            -20.121 & 0.000 & 05-01-1999 & 05-01-1999 & ctt & 6616 & Nat Gas & Stationary \\
+            -20.095 & 0.000 & 05-01-1999 & 05-01-1999 & n & 6616 & Nat Gas & Stationary \\
+            \bottomrule
+        \end{tabular}
+        }
+        \caption{\tiny Table: Augmented-Dickey-Fuller (ADF) test for stationarity in various variants for the EUR/USD spot exchange rate, WTI Oil and Natural Gas daily observations (log first differences) over the time 1999 - 2025.\footnote{See: XXX}}
+    \end{table}
+\end{frame}
+%----------------------------------------------------------------------------------------
+\subsection{Tests for Cointegration - Engle and Granger Cointegration Tests}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Tests for Cointegration (raw data)}
+    \scriptsize
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{
+        \begin{tabular}{rrllrllll}
+        \toprule
+        \textbf{Cointegration Score} & \textbf{p-value} & \textbf{Start Time} & \textbf{End Time} & \textbf{Observations} & \textbf{Trend} & \textbf{Variable X} & \textbf{Variable Y} & \textbf{Result} \\
+        \midrule
+        -2.967000 & 0.118000 & 04-01-1999 & 01-10-2025 & 6641 & c & EUR/USD & WTI Oil & Not Cointegrated \\
+        -3.364000 & 0.134000 & 04-01-1999 & 01-10-2025 & 6641 & ct & EUR/USD & WTI Oil & Not Cointegrated \\
+        -3.635000 & 0.167000 & 04-01-1999 & 01-10-2025 & 6641 & ctt & EUR/USD & WTI Oil & Not Cointegrated \\
+        -3.268000 & 0.013000 & 04-01-1999 & 01-10-2025 & 6641 & n & EUR/USD & WTI Oil & Cointegrated \\
+        \midrule
+        -2.416000 & 0.317000 & 04-01-1999 & 01-10-2025 & 6641 & c & EUR/USD & Nat Gas & Not Cointegrated \\
+        -2.634000 & 0.446000 & 04-01-1999 & 01-10-2025 & 6641 & ct & EUR/USD & Nat Gas & Not Cointegrated \\
+        -3.530000 & 0.204000 & 04-01-1999 & 01-10-2025 & 6641 & ctt & EUR/USD & Nat Gas & Not Cointegrated \\
+        -4.182000 & 0.001000 & 04-01-1999 & 01-10-2025 & 6641 & n & EUR/USD & Nat Gas & Cointegrated \\
+        \bottomrule
+        \end{tabular}
+        }
+        \caption{\tiny Table: Engle and Granger Cointegration test for the EUR/USD spot exchange rate, WTI Oil and Natural Gas daily observations over the time 1999 - 2025.\footnote{See: XXX}}
+    \end{table}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Tests for Cointegration (log differences)}
+    \scriptsize
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{
+        \begin{tabular}{rrllrllll}
+        \toprule
+        \textbf{Cointegration Score} & \textbf{p-value} & \textbf{Start Time} & \textbf{End Time} & \textbf{Observations} & \textbf{Trend} & \textbf{Variable X} & \textbf{Variable Y} & \textbf{Result} \\
+        \midrule
+        -4.293000 & 0.003000 & 17-02-1999 & 01-10-2025 & 6609 & c & EUR/USD & WTI Oil & Cointegrated \\
+        -4.805000 & 0.002000 & 17-02-1999 & 01-10-2025 & 6609 & ct & EUR/USD & WTI Oil & Cointegrated \\
+        -4.830000 & 0.006000 & 17-02-1999 & 01-10-2025 & 6609 & ctt & EUR/USD & WTI Oil & Cointegrated \\
+        -5.724000 & 0.000000 & 17-02-1999 & 01-10-2025 & 6609 & n & EUR/USD & WTI Oil & Cointegrated \\
+        \midrule
+        -4.001000 & 0.007000 & 17-02-1999 & 01-10-2025 & 6609 & c & EUR/USD & Nat Gas & Cointegrated \\
+        -4.348000 & 0.009000 & 17-02-1999 & 01-10-2025 & 6609 & ct & EUR/USD & Nat Gas & Cointegrated \\
+        -4.341000 & 0.030000 & 17-02-1999 & 01-10-2025 & 6609 & ctt & EUR/USD & Nat Gas & Cointegrated \\
+        -4.246000 & 0.000000 & 17-02-1999 & 01-10-2025 & 6609 & n & EUR/USD & Nat Gas & Cointegrated \\
+        \bottomrule
+    \end{tabular}
+    }
+    \caption{\tiny Table: Engle and Granger Cointegration test for the EUR/USD spot exchange rate, WTI Oil and Natural Gas daily observations (log first differences) over the time 1999 - 2025.\footnote{See: XXX}}
+    \end{table}
+\end{frame}
+%----------------------------------------------------------------------------------------
+\subsection{Tests for Autocorrelation - ACF Plot}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Tests for Autocorrelation (raw data)}
+    \begin{figure}
+		\includegraphics[width=0.7\linewidth]{chap06_acf_plot_raw_series.pdf}
+		\caption{\tiny Figure: ACF values for daily observations of the EUR/USD spot exchange rate, oil and gas over the time: 1999 - 2025.\footnote{Own Illustration based on XYZ (2000), page 7 and data accessed 10.09.25.}\label{fig:chap06_acf_plot_raw_series}}
+	\end{figure}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Tests for Autocorrelation (log first differences)}
+    \begin{figure}
+		\includegraphics[width=0.7\linewidth]{chap06_acf_plot_log_diff.pdf}
+		\caption{\tiny Figure: ACF values for daily observations (log first differences) of the EUR/USD spot exchange rate, WTI Oil and Natural Gas over the time: 1999 - 2025.\footnote{Own Illustration based on XYZ (2000), page 7 and data accessed 10.09.25.}\label{fig:chap06_acf_plot_log_diff}}
+	\end{figure}
+\end{frame}
+%----------------------------------------------------------------------------------------
+\subsection{Tests for Partial Autocorrelation - PACF Plot}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Tests for Partial Autocorrelation (raw data)}
+    \begin{figure}
+		\includegraphics[width=0.7\linewidth]{chap06_pacf_plot_raw_series.pdf}
+		\caption{\tiny Figure: PACF values for daily observations of the EUR/USD spot exchange rate, WTI Oil and Natural Gas over the time: 1999 - 2025.\footnote{Own Illustration based on XYZ (2000), page 7 and data accessed 10.09.25.}\label{fig:chap06_pacf_plot_raw_series}}
+	\end{figure}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Tests for Partial Autocorrelation (log first differences)}
+    \begin{figure}
+		\includegraphics[width=0.7\linewidth]{chap06_pacf_plot_log_diff.pdf}
+		\caption{\tiny Figure: PACF values for daily observations (log first differences) of the EUR/USD spot exchange rate, WTI Oil and Natural Gas over the time: 1999 - 2025.\footnote{Own Illustration based on XYZ (2000), page 7 and data accessed 10.09.25.}\label{fig:chap06_pacf_plot_log_diff}}
+	\end{figure}
+\end{frame}
+%----------------------------------------------------------------------------------------
+\subsection{Granger Causality Tests}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Granger Causality Tests - EUR/USD and oil (raw data)}
+    \begin{figure}
+		\includegraphics[width=0.6\linewidth]{chap06_granger_causality_test_oil_raw_series.pdf}
+		\caption{\tiny Figure: Granger causality test results testing granger causality of daily observations of oil for EUR/USD spot exchange rate over the time: 1999 - 2025.\footnote{Own Illustration based on XYZ (2000), page 7 and data accessed 10.09.25.}\label{fig:chap06_granger_causality_test_oil_raw_series}}
+	\end{figure}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Granger Causality Tests - EUR/USD and gas (raw data)}
+    \begin{figure}
+		\includegraphics[width=0.6\linewidth]{chap06_granger_causality_test_gas_raw_series.pdf}
+		\caption{\tiny Figure: Granger causality test results testing granger causality of daily observations of gas for EUR/USD over the time: 1999 - 2025.\footnote{Own Illustration based on XYZ (2000), page 7 and data accessed 10.09.25.}\label{fig:chap06_granger_causality_test_gas_raw_series}}
+	\end{figure}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Granger Causality Tests - EUR/USD and oil (log first differences)}
+    \begin{figure}
+		\includegraphics[width=0.6\linewidth]{chap06_granger_causality_test_oil_log_diff.pdf}
+		\caption{\tiny Figure: Granger causality test results testing granger causality of daily observations (log first differences) of WTI Oil for EUR/USD over the time: 1999 - 2025.\footnote{Own Illustration based on XYZ (2000), page 7 and data accessed 10.09.25.}\label{fig:chap06_granger_causality_test_oil_log_diff}}
+	\end{figure}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Granger Causality Tests - EUR/USD and gas (log first differences)}
+    \begin{figure}
+		\includegraphics[width=0.6\linewidth]{chap06_granger_causality_test_gas_log_diff.pdf}
+		\caption{\tiny Figure: Granger causality test results testing granger causality of daily observations (log first differences) of Natural Gas for EUR/USD over the time: 1999 - 2025.\footnote{Own Illustration based on XYZ (2000), page 7 and data accessed 10.09.25.}\label{fig:chap06_granger_causality_test_gas_log_diff}}
+	\end{figure}
 \end{frame}
