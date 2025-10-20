@@ -42,10 +42,103 @@ Formal guidelines for the $\LaTeX$ format offered by the CAU can be found [here]
 
 ### To Do
 - [ ] Read through papers and identify all major global crisis periods as these will be the theoretical regimes that modles should be able to identify
-- [ ] Clearly identify what data/variables have been used so far (what exact exchange rate and why?, what driving variables?)
+
+#### Chapter 00
+Intro: The PPP puzzle and Commodity Currencies
+- [ ] Find source for figure
+#### Chapter 01
+Oil: Global Production and Consumption over time
+- [ ] Find source for figure, add data reference appropriately
+Gas: Global Production and Consumption over time
+- [ ] Find source for figure, add data reference appropriately
+Financial Markets: Oil and Gas OI over time
+- [ ] Find source for figure, add data reference appropriately
+#### Chapter 02
+Energy Price Contributions to Inflation - USA
+- [ ] Find source for figure, add data reference appropriately
+Energy Price Contributions to Inflation - EU area
+- [ ] Find source for figure, add data reference appropriately
+Formulated Research Hypothesis
+- [ ] Sharpen and reduce the research hypotheses
+#### Chapter 03
+Systematic Literature Overview: Main Approaches
+- [ ] Finalize the schematic figure in PPTX and include, find source
+#### Chapter 04
+Definitions - prices and measurements
+- [ ] Find source and include the single formulae in Appendix/Definitions
+A simple model of exchange rates and commodity
+prices
+- [ ] Finalize the schematic figure in PPTX and include, find source, include the derived proxy variables into modelling
+Theoretical Framework (I)
+- [ ] Finalize the schematic figure in PPTX and include, find source, include the derived proxy variables into modelling
+Theoretical Framework (II)
+- [ ] Finalize the schematic figure in PPTX and include, find source, include the derived proxy variables into modelling
+#### Chapter 05
+Systematic Methodology Overview: Linear vs.
+Non-linear approaches
+- [ ] Finalize the schematic figure in PPTX and include, find source
+(Financial) Market Distress: Important periods and
+their characteristics
+- [ ] Finalize the schematic figure in PPTX and include, find source
+#### Chapter 06
+Spot exchange rate distributions (raw data -
+normalized)
+- [ ] Find source for figure, add data reference appropriately
+Spot exchange rate distributions (log first differences)
+- [ ] Find source for figure, add data reference appropriately, edit the x-axis title (shorten) for better fit
+Tests for Normality (raw data)
+- [ ] Find source, add test reference, add Jaque-Berra Test
+Tests for Stationarity - ADF Tests (raw data)
+- [ ] Find source, add test reference
+Tests for Stationarity - ADF Tests (log first differences)
+- [ ] Find source, add test reference
+Tests for Cointegration (raw data)
+- [ ] Find source, add test reference
+Tests for Cointegration (log differences)
+- [ ] Find source, add test reference
+Tests for Autocorrelation (raw data)
+- [ ] Find source, add test reference
+Tests for Autocorrelation (log first differences)
+- [ ] Find source, add test reference
+Tests for Partial Autocorrelation (raw data)
+- [ ] Find source, add test reference
+Tests for Partial Autocorrelation (log first differences)
+- [ ] Find source, add test reference
+Granger Causality Tests - EUR/USD and oil (raw data)
+- [ ] Find source, add test reference
+Granger Causality Tests - EUR/USD and gas (raw
+data)
+- [ ] Find source, add test reference
+Granger Causality Tests - EUR/USD and oil (log first
+differences)
+- [ ] Find source, add test reference
+Granger Causality Tests - EUR/USD and gas (log first
+differences)
+- [ ] Find source, add test reference
+#### Chapter 07
 - [ ] Set up benchmark models to identify the regimes like the commonly used Markov-Switching and/or STR/STAR models
 - [ ] Train these benchmark models and compare against our versions
 - [ ] After regimes have been identified properly, compare all the in-regime characteristics using the classical econometric approaches
+#### Chapter 08
+
+#### Appendix - Figures and Tables
+- [ ] move figures, tables here if necessary
+#### Appendix - Data
+- [ ] move figures, tables here if necessary
+#### Appendix - Definitions
+- [ ] define all used metrics, scores, tests, algorithms, exchange rate types here for clarifications, find sources
+#### References - Literature
+- [ ] add all used literature here
+#### References - Data
+- [ ] add all used data sources here
+#### List of Figures
+- [ ] add all used figures here, use the automated label logic for self referencing with page number
+#### List of Tables
+- [ ] add all used tables here, use the automated label logic for self referencing with page number
+#### Further Material for Illustrations - Questions
+- [ ] prepare material for questions/further illustrations
+#### Else
+- [X] Clearly identify what data/variables have been used so far (what exact exchange rate and why?, what driving variables?)
 
 ## Repository Structure
 ```zsh
