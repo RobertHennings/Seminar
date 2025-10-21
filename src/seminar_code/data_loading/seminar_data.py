@@ -219,7 +219,6 @@ data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_dat
 data_us_df = pd.concat(list(data_dict.values()), axis=1).dropna()
 data_us_full_info_table = pd.DataFrame(data_full_info_dict).T
 
-<<<<<<< HEAD
 # Crisis Periods
 crisis_periods_dict = {
     "Bretton Woods Breakdown": {
@@ -339,9 +338,20 @@ crisis_periods_df.columns = ["Start-date", "End-date"]
 crisis_periods_df["Event-Type"] = ["US-Recession" if "US Recession" in name else "Major Global Crisis" for name in crisis_periods_df.index]
 crisis_periods_df["Source"] = ["FRED: USREC" if "US Recession" in name else "Various" for name in crisis_periods_df.index]
 crisis_periods_df = crisis_periods_df.sort_values(by="Start-date")
+crisis_periods_df = crisis_periods_df.reset_index(drop=False).rename(columns={"index": "Event"})
+column_order = ["Start-date", "End-date", "Event-Type", "Event", "Source"]
+crisis_periods_df = crisis_periods_df[column_order]
+
 # Save the crisis_periods_dict as json and the dataframe to an excel file
 file_name = "crisis_periods"
 
+# Export the dataframe to excel
+data_loading_instance.export_dataframe(
+    df=crisis_periods_df,
+    file_name=file_name,
+    excel_path=f"{DATA_PATH}/raw/",
+)
+# Export the dataframe to pdf
 data_loading_instance.export_dataframe(
     df=crisis_periods_df,
     file_name=file_name,
@@ -359,8 +369,6 @@ data_loading_instance.export_dataframe(
 )
 ############################### Regime Switching Analysis ###############################
 
-=======
->>>>>>> 64e6c7a98bbcf7aa3985e71a792d24dbcd297185
 
 
 # For the regime switching analysis, first provide a benchmark model: Markov-Switching for the selected interest rate

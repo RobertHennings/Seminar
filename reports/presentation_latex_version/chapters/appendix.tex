@@ -125,11 +125,21 @@
 %	NEW SLIDE
 %----------------------------------------------------------------------------------------
 \begin{frame}
-	\frametitle{Appendix - Definitions}
-    \underline{Calculation deviations of USD Spot-Rate from PPP-values (Slide 4):}
-    \begin{equation*}
-        \text{PPP Deviation} = \frac{\text{Actual Exchange Rate} - \text{PPP Exchange Rate}}{\text{PPP Exchange Rate}} \times 100\footnote{See: https://www.investopedia.com/terms/p/ppp.asp}
-    \end{equation*}
+    \frametitle{Appendix - Definitions}
+    
+    \begin{block}{PPP Deviation Calculation}
+        \begin{equation*}
+            \text{PPP Deviation} = \frac{\text{Actual Exchange Rate} - \text{PPP Exchange Rate}}{\text{PPP Exchange Rate}} \times 100
+        \end{equation*}
+        \footnotesize{Source: \url{https://www.investopedia.com/terms/p/ppp.asp}}
+    \end{block}
+    
+    \begin{block}{Clustering Metrics: Silhouette Score}
+        \begin{equation*}
+            \text{Silhouette Score} = \frac{b - a}{\max\left(a, b\right)}
+        \end{equation*}
+        \footnotesize{Source: \url{https://scikit-learn.org/stable/modules/generated/sklearn.metrics.silhouette_score.html}}
+    \end{block}
 \end{frame}
 %----------------------------------------------------------------------------------------
 %	NEW SLIDE

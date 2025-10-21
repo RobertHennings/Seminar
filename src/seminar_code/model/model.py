@@ -217,8 +217,7 @@ data_list = [
     log_diff_rolling_vola_df, # 6) The log first difference of the spot exchange rate EUR/US and rolling volatility of WTI Oil and Nat Gas as external variables
 ]
 # Perform GridSearch like approach to find the best model and data combination
-from sklearn.model_selection import ParameterGrid
-
+from sklearn.model_selection import ParameterGrid, GridSearchCV, TimeSeriesSplit
 param_grids = {
     "KMeans": {
         "n_clusters": [2, 3, 4],
@@ -308,18 +307,68 @@ param_grids = {
         "reassignment_ratio": [0.01, 0.1]
     }
 }
+model_class = {
+        "MarkovRegression": MarkovRegression,
+        "KMeans": KMeans,
+        "AgglomerativeClustering": AgglomerativeClustering,
+        "DBSCAN": DBSCAN,
+        "MeanShift": MeanShift,
+        "GaussianMixture": GaussianMixture,
+        "Birch": Birch,
+        "AffinityPropagation": AffinityPropagation,
+        "OPTICS": OPTICS,
+        "MiniBatchKMeans": MiniBatchKMeans,
+    }
+results = []
+for model_name, cls in model_class.items():
+    print(f"Model: {model_name}, Class: {cls}")
+    for data in data_list:
+        if type(data) == pd.Series:
+            data = data.to_frame()
+        endog_col_name = [col for col in data.columns if spot_rate[0] in col][0]
+        endog = data[endog_col_name]
+        # First determine if the input data has multiple features or is univariate
+        if data.shape[1] > 1: # we have external variables
+            exog_col_names = [col for col in data.columns if spot_rate[0] not in col]
+            exog = data[exog_col_names]
+        else:
+            exog = None
+        if model_name == "MarkovRegression":
+            cls_instance = cls(
+                endog=endog,
+                exog=exog,
+                k_regimes=N_REGIMES,
+                trend='c',  # or 'nc' for no constant
+                switching_trend=True,
+                switching_exog=True,
+                switching_variance=True,
+            )
+        else:
+            cls_instance = cls()
+        try:
+            clf = GridSearchCV(estimator=cls_instance,
+                            param_grid=param_grids[model_name]
+                            )
+            clf.fit(data)
+            clf_results = clf.cv_results_
+            results.append(clf_results)
+        except Exception as e:
+            print(f"Model {model_name} failed to fit: {e}")
+            continue
 
-
+len(results)
+len(results[0])
+# purged k-fold cross validation with embargoing
 
 results = []
 for model_name, param_grid in param_grids.items():
     grid = ParameterGrid(param_grid)
     model_class = {
-        # "KMeans": KMeans,
-        # "AgglomerativeClustering": AgglomerativeClustering,
-        # "DBSCAN": DBSCAN,
-        # "MeanShift": MeanShift,
-        # "MarkovRegression": MarkovRegression,
+        "KMeans": KMeans,
+        "AgglomerativeClustering": AgglomerativeClustering,
+        "DBSCAN": DBSCAN,
+        "MeanShift": MeanShift,
+        "MarkovRegression": MarkovRegression,
         "GaussianMixture": GaussianMixture,
         "Birch": Birch,
         "AffinityPropagation": AffinityPropagation,

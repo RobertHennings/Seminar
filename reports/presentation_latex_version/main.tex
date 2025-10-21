@@ -184,10 +184,10 @@
         \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.5ex,dp=1ex,center]{footline}%
             \insertshortauthor
         \end{beamercolorbox}%
-        \begin{beamercolorbox}[wd=.52\paperwidth,ht=2.5ex,dp=1ex,center]{footline}%
+        \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.5ex,dp=1ex,center]{footline}%
             \insertshorttitle
         \end{beamercolorbox}%
-        \begin{beamercolorbox}[wd=.15\paperwidth,ht=2.5ex,dp=1ex,center]{footline}%
+        \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.5ex,dp=1ex,center]{footline}%
             \insertframenumber{} / \inserttotalframenumber
         \end{beamercolorbox}%
     }%
@@ -196,8 +196,7 @@
 %----------------------------------------------------------------------------------------
 %	PRESENTATION INFORMATION
 %----------------------------------------------------------------------------------------
-\title{Non-linear effects of energy commodities on the EUR/USD spot exchange rate: \\ An oil and gas perspective.}% The short title in the optional parameter appears at the bottom of every slide, the full title in the main parameter is only on the title page
-
+\title[Energy Commodities and the EUR/USD]{Non-linear effects of energy commodities on the EUR/USD spot exchange rate: \\ An Oil and Gas Perspective on Parity Conditions.} % The part in the [] is the shorttitle displayed in the middle bottom section of every slide
 \subtitle{\tiny Seminar in Applied Financial Economics: Applied Econometrics of FX Markets - Professor Reitz} % Presentation subtitle, remove this command if a subtitle isn't required
 
 \author[Josef Fella and Robert Hennings]{Josef Fella and Robert Hennings} % Presenter name(s), the optional parameter can contain a shortened version to appear on the bottom of every slide, while the main parameter will appear on the title slide
@@ -215,11 +214,11 @@
 \begin{frame}[plain]
     \titlepage{}
     \begin{tikzpicture}[remember picture, overlay]
-        \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
+        \node[anchor=north east, xshift=-0.5cm, yshift=-0.5cm] at (current page.north east) {
             \includegraphics[width=1.7cm]{wiso_logo.png}
         };
 		% Add the .pdf graph as a lightly shaded background
-        \node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
+        \node[anchor=center, xshift=5.5cm, yshift=-2.3cm] at (current page.center) {
             \tikz\node[opacity=0.15] {
                 \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
             };
