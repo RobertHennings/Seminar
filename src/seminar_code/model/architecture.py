@@ -8,7 +8,6 @@ import numpy as np
 import joblib
 import json
 
-MARKOV_REGIME_PROB = 0.5
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -9,9 +9,6 @@ warnings.filterwarnings("ignore", category=UserWarning)
 MODELS_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models"
 FIGURES_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/figures"
 
-#----------------------------------------------------------------------------------------
-# 07 - Econometric Modelling - Benchmark Models for Regime Identification - Basic Full time UIP Regression
-#----------------------------------------------------------------------------------------
 print(os.getcwd())
 os.chdir(r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code")
 print(os.getcwd())
@@ -35,6 +32,9 @@ data_loading_instance = DataLoading(
     credential_path=r"/Users/Robert_Hennings/Projects/SettingsPackages",
     credential_file_name=r"credentials.json"
 )
+#----------------------------------------------------------------------------------------
+# 07 - Econometric Modelling - Benchmark Models for Regime Identification - Basic Full time UIP Regression - BIS Central Bank Policy Rates
+#----------------------------------------------------------------------------------------
 # Load the BIS Central Bank Policy Rate data for the relevant countries as a proxy for the interest rates
 country_keys_mapping = {
     "US": "United States",
@@ -114,10 +114,76 @@ for currency, model in full_sample_uip_results.items():
     print(f"Full Sample UIP Regression Results for {currency}/USD:")
     print(model.summary())
     print("\n")
+# The correct Hypothesis for the tested parameters are:
+# H0: β0 = 0 (no constant term), ß1 = 1 (interest rate differential fully explains exchange rate changes)
+# H1: β0 ≠ 0, ß1 ≠ 1
+estimated_params_df = pd.DataFrame(model.summary().tables[1].data)
+estimated_params_df.columns = estimated_params_df.iloc[0]
+estimated_params_df = estimated_params_df[1:]
+# Transfer all columns to numeric where possible
+estimated_params_df = estimated_params_df.apply(pd.to_numeric, errors='ignore')
+# Therefore we have to adjust the t-test and p-values accordingly
+from scipy import stats
+corrected_t_i_diff = (estimated_params_df["coef"][2] - 1.0) / estimated_params_df["std err"][2]
+corrected_p_i_diff = 2 * (1 - stats.t.cdf(np.abs(corrected_t_i_diff), df=model.df_resid))
+# Save the model summary
+model_object_instance = ModelObject()
+model_object_instance.save_model_summary(
+    model_summary=model.summary(),
+    save_txt=True,
+    save_latex=True,
+    file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+    file_name="chap_07_standard_full_time_uip_regression_central_bank_policy_rates",
+)
+#----------------------------------------------------------------------------------------
+# 07 - Econometric Modelling - Benchmark Models for Regime Identification - Basic Full time UIP Regression - 3M Interbank Lending Rates
+#----------------------------------------------------------------------------------------
+interbank_rates_df = pd.read_csv(r"/Users/Robert_Hennings/Uni/Master/Applied_Econometrics_of_Foreign_Exchange_Markets/Data/irates3m.csv", sep=";")
+interbank_rates_df["Date"] = interbank_rates_df["Year"].astype(str) + "-" + interbank_rates_df["Month"].astype(str).str.zfill(2) + "-" + interbank_rates_df["Day"].astype(str).str.zfill(2)
+interbank_rates_df = interbank_rates_df.set_index(pd.to_datetime(interbank_rates_df["Date"]))
+interbank_rates_df = interbank_rates_df[["USD", "EUR"]]
+# Since these are the 3M rates but published in an annual term, we have to convert them by dividing by 4
+interbank_rates_df = interbank_rates_df / 4
+interbank_rates_df["i_diff_EUR"] = interbank_rates_df["USD"] - interbank_rates_df["EUR"]
 
+uip_data_df = pd.concat([log_spot_rate_diff_df, interbank_rates_df["i_diff_EUR"]], axis=1).dropna()
+
+full_sample_uip_results = {}
+currency_pairs = ['EUR']
+for currency in currency_pairs:
+    dep_var = f'{currency}'
+    indep_var = f'i_diff_{currency}'
+    model = run_uip_regression(dep_var, indep_var, uip_data_df)
+    full_sample_uip_results[currency] = model
+# Print the summary of the full sample UIP regressions
+for currency, model in full_sample_uip_results.items():
+    print(f"Full Sample UIP Regression Results for {currency}/USD:")
+    print(model.summary())
+    print("\n")
+# The correct Hypothesis for the tested parameters are:
+# H0: β0 = 0 (no constant term), ß1 = 1 (interest rate differential fully explains exchange rate changes)
+# H1: β0 ≠ 0, ß1 ≠ 1
+estimated_params_df = pd.DataFrame(model.summary().tables[1].data)
+estimated_params_df.columns = estimated_params_df.iloc[0]
+estimated_params_df = estimated_params_df[1:]
+# Transfer all columns to numeric where possible
+estimated_params_df = estimated_params_df.apply(pd.to_numeric, errors='ignore')
+# Therefore we have to adjust the t-test and p-values accordingly
+from scipy import stats
+corrected_t_i_diff = (estimated_params_df["coef"][2] - 1.0) / estimated_params_df["std err"][2]
+corrected_p_i_diff = 2 * (1 - stats.t.cdf(np.abs(corrected_t_i_diff), df=model.df_resid))
+# Save the model summary
+model_object_instance = ModelObject()
+model_object_instance.save_model_summary(
+    model_summary=model.summary(),
+    save_txt=True,
+    save_latex=True,
+    file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+    file_name="chap_07_standard_full_time_uip_regression_3m_interbank_lending_rates",
+)
 # Observe the error terms with Durbin-Watson and Ljung-Box tests for autocorrelated error terms
 #----------------------------------------------------------------------------------------
-# 07 - Econometric Modelling - Benchmark Models for Regime Identification - Markov Switching Model - Standard
+# 07 - Econometric Modelling - Benchmark Models for Regime Identification - Markov Switching Model - Standard - Central Bank Policy Rates - Model B1
 #----------------------------------------------------------------------------------------
 from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
 msm = MarkovRegression(
@@ -132,29 +198,79 @@ msm = MarkovRegression(
 msm_fit = msm.fit(em_iter=10, search_reps=20)
 print("Markov-Switching UIP Regression Results for EUR/USD:")
 print(msm_fit.summary())
+# Save the model summary
+model_object_instance = ModelObject()
+model_object_instance.save_model_summary(
+    model_summary=model.summary(),
+    save_txt=True,
+    save_latex=True,
+    file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+    file_name="chap_07_msm_central_bank_policy_rates_model_b1",
+)
 #----------------------------------------------------------------------------------------
-# 07 - Econometric Modelling - Benchmark Models for Regime Identification - Markov Switching Model - Oil, Gas added
+# 07 - Econometric Modelling - Benchmark Models for Regime Identification - Markov Switching Model - Oil, Gas added - Central Bank Policy Rates - Model B1
 #----------------------------------------------------------------------------------------
+# Additionally to the EUR/USD spot exchange rate and the interest rate differential load the oil and gas data 
 series_dict_mapping = {
     'EUR/USD': 'DEXUSEU',
     'WTI Oil': 'DCOILWTICO',
     "Nat Gas": "DHHNGSP",
 }
-
-start_date = "1960-01-01"
-end_date = "2025-10-01"
+start_date = central_bank_policy_rate_df.index.min().strftime('%Y-%m-%d')
+end_date = central_bank_policy_rate_df.index.max().strftime('%Y-%m-%d')
 
 data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_data(
     series_dict_mapping=series_dict_mapping,
     start_date=start_date,
     end_date=end_date
     )
-
 spot_exchange_rate_data_df = pd.concat(list(data_dict.values()), axis=1).dropna()
 spot_exchange_rate_data_df_log_diff = np.log(spot_exchange_rate_data_df).diff().dropna()
+# Next we need the rolling volatility of the energy commodities
+window = 30
+spot_exchange_rate_data_df_log_diff_rolling = spot_exchange_rate_data_df_log_diff.rolling(window=window).std().dropna()
+# Compute the interest rate differentials
+interest_rate_diff_df = pd.DataFrame()
+for country in country_keys_mapping.keys():
+    if country == "US":
+        continue
+    interest_rate_diff_df[f'i_diff_{country}'] = central_bank_policy_rate_df['US_CBPR'] - central_bank_policy_rate_df[f'{country}_CBPR']
+interest_rate_diff_df = interest_rate_diff_df.rename(
+    columns={
+        "i_diff_XM": "i_diff_EUR",
+    })
+# Now combine both datasets
+uip_data_df = pd.concat([spot_exchange_rate_data_df_log_diff["EUR/USD"], interest_rate_diff_df, spot_exchange_rate_data_df_log_diff_rolling[["WTI Oil", "Nat Gas"]]], axis=1).dropna()
 
+from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
+msm = MarkovRegression(
+    endog=uip_data_df['EUR/USD'],
+    exog=uip_data_df[['i_diff_EUR', 'WTI Oil', 'Nat Gas']],
+    k_regimes=2,
+    trend='c',  # or 'nc' for no constant
+    switching_trend=True,
+    switching_exog=True,
+    switching_variance=True,
+)
+msm_fit = msm.fit(em_iter=10, search_reps=20)
+print("Markov-Switching UIP Regression Results for EUR/USD:")
+print(msm_fit.summary())
+# Save the model summary
+model_object_instance = ModelObject()
+model_object_instance.save_model_summary(
+    model_summary=msm_fit.summary(),
+    save_txt=True,
+    save_latex=True,
+    file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+    file_name="chap_07_msm_central_bank_policy_rates_oil_gas_rol_vol_model_b1",
+)
+#----------------------------------------------------------------------------------------
+# 07 - Econometric Modelling - Benchmark Models for Regime Identification - Markov Switching Model - Standard - 3M Interbank rates - Model B2
+#----------------------------------------------------------------------------------------
 
-
+#----------------------------------------------------------------------------------------
+# 07 - Econometric Modelling - Benchmark Models for Regime Identification - Markov Switching Model - Oil, Gas added - 3M Interbank rates - Model B2
+#----------------------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------------------
 # 07 - Econometric Modelling - Own Models for Regime Identification
@@ -178,251 +294,11 @@ from sklearn.cluster import MiniBatchKMeans
 from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
 from sklearn.metrics import silhouette_score
 
-series_dict_mapping = {
-    'EUR/USD': 'DEXUSEU',
-    'WTI Oil': 'DCOILWTICO',
-    "Nat Gas": "DHHNGSP",
-}
+# Read in the optimised hyperparameters from the grid search
+# optimised_fit_kwargs_dict = 
 
-start_date = "1960-01-01"
-end_date = "2025-10-01"
-
-data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_data(
-    series_dict_mapping=series_dict_mapping,
-    start_date=start_date,
-    end_date=end_date
-    )
-
-spot_exchange_rate_data_df = pd.concat(list(data_dict.values()), axis=1).dropna()
-spot_exchange_rate_data_df_log_diff = np.log(spot_exchange_rate_data_df).diff().dropna()
-# Iterate through different data that shall be used
-# Next after the benchmark has been trained on just the Spot rate itself, we try the rolling vola of the log first differences
-window = 30
-exchange_rates_vola_df = spot_exchange_rate_data_df_log_diff.rolling(window=window).std().dropna()
 
 N_REGIMES = 2
-spot_rate = ["EUR/USD"]
-
-# Rename the data columns accordingly
-spot_exchange_rate_data_df_log_diff.columns = [f"{col}_log_diff" for col in spot_exchange_rate_data_df_log_diff.columns]
-exchange_rates_vola_df.columns = [f"{col}_log_diff_rol_vol" for col in exchange_rates_vola_df.columns]
-log_diff_rolling_vola_df = pd.concat([spot_exchange_rate_data_df_log_diff, exchange_rates_vola_df], axis=1).dropna().drop(columns=["EUR/USD_log_diff_rol_vol", "WTI Oil_log_diff", "Nat Gas_log_diff"])
-
-data_list = [
-    spot_exchange_rate_data_df[spot_rate], # 1) Only the raw spot exchange rate itself
-    spot_exchange_rate_data_df_log_diff[f"{spot_rate[0]}_log_diff"], # 2) The log first difference of the spot exchange rate
-    exchange_rates_vola_df[f"{spot_rate[0]}_log_diff_rol_vol"], # 3) The rolling volatility of the log first difference of the spot exchange rate
-    spot_exchange_rate_data_df, # 4) The raw oil and gas prices as external variables
-    exchange_rates_vola_df, # 5) The rolling volatility of WTI Oil and Nat Gas as external variables
-    log_diff_rolling_vola_df, # 6) The log first difference of the spot exchange rate EUR/US and rolling volatility of WTI Oil and Nat Gas as external variables
-]
-# Perform GridSearch like approach to find the best model and data combination
-from sklearn.model_selection import ParameterGrid, GridSearchCV, TimeSeriesSplit
-param_grids = {
-    "KMeans": {
-        "n_clusters": [2, 3, 4],
-        "init": ["k-means++", "random"],
-        "n_init": [10, 20],
-        "max_iter": [300, 500],
-        "tol": [1e-4, 1e-3],
-        "random_state": [42],
-        "algorithm": ["lloyd", "elkan"]
-    },
-    "AgglomerativeClustering": {
-        "n_clusters": [2, 3, 4],
-        "linkage": ["ward", "complete", "average", "single"],
-        "metric": ["euclidean", "l1", "l2", "manhattan", "cosine"],
-        "compute_full_tree": ["auto", True, False],
-        "distance_threshold": [None]
-    },
-    "DBSCAN": {
-        "eps": [0.5, 1.0, 1.5, 2.0],
-        "min_samples": [3, 5, 8, 10],
-        "metric": ["euclidean", "manhattan", "cosine"],
-        "algorithm": ["auto", "ball_tree", "kd_tree", "brute"],
-        "leaf_size": [20, 30, 40],
-        "p": [1, 2]
-    },
-    "MeanShift": {
-        "bandwidth": [None, 0.5, 1.0, 2.0],
-        "seeds": [None],
-        "bin_seeding": [True, False],
-        "cluster_all": [True, False],
-        "max_iter": [300, 500]
-    },
-    "MarkovRegression": {
-        "k_regimes": [2, 3],
-        "trend": ["n", "c", "ct", "t"],
-        "switching_trend": [True, False],
-        "switching_exog": [True, False],
-        "switching_variance": [True, False],
-        "em_iter": [10, 20, 30],
-        "cov_type": ["diag", "unstructured"]
-    },
-    "GaussianMixture": {
-        "n_components": [2, 3, 4],
-        "covariance_type": ["full", "tied", "diag", "spherical"],
-        "tol": [1e-3, 1e-4],
-        "max_iter": [100, 200],
-        "n_init": [1, 5, 10],
-        "init_params": ["kmeans", "random"],
-        "random_state": [42],
-        "reg_covar": [1e-6, 1e-5]
-    },
-    "Birch": {
-        "n_clusters": [None, 2, 3, 4],
-        "threshold": [0.3, 0.5, 1.0, 1.5],
-        "branching_factor": [25, 50, 100],
-        "copy": [True, False],
-        "compute_labels": [True, False]
-    },
-    "AffinityPropagation": {
-        "damping": [0.5, 0.7, 0.9],
-        "max_iter": [200, 500],
-        "convergence_iter": [15, 30, 50],
-        "preference": [-50, -10, None],
-        "affinity": ["euclidean", "precomputed"],
-        "verbose": [False]
-    },
-    "OPTICS": {
-        "min_samples": [5, 10],
-        "max_eps": [np.inf, 1.5, 2.0],
-        "metric": ["euclidean", "manhattan", "cosine"],
-        "p": [2],
-        "xi": [0.05, 0.1, 0.2],
-        "min_cluster_size": [0.05, 0.1],
-        "algorithm": ["auto", "ball_tree", "kd_tree", "brute"],
-        "leaf_size": [20, 30, 40]
-    },
-    "MiniBatchKMeans": {
-        "n_clusters": [2, 3, 4],
-        "init": ["k-means++", "random"],
-        "n_init": [10, 20],
-        "batch_size": [50, 100, 200],
-        "max_iter": [100, 300],
-        "tol": [1e-4, 1e-3],
-        "max_no_improvement": [5, 10],
-        "init_size": [None, 100, 300],
-        "random_state": [42],
-        "reassignment_ratio": [0.01, 0.1]
-    }
-}
-model_class = {
-        "MarkovRegression": MarkovRegression,
-        "KMeans": KMeans,
-        "AgglomerativeClustering": AgglomerativeClustering,
-        "DBSCAN": DBSCAN,
-        "MeanShift": MeanShift,
-        "GaussianMixture": GaussianMixture,
-        "Birch": Birch,
-        "AffinityPropagation": AffinityPropagation,
-        "OPTICS": OPTICS,
-        "MiniBatchKMeans": MiniBatchKMeans,
-    }
-results = []
-for model_name, cls in model_class.items():
-    print(f"Model: {model_name}, Class: {cls}")
-    for data in data_list:
-        if type(data) == pd.Series:
-            data = data.to_frame()
-        endog_col_name = [col for col in data.columns if spot_rate[0] in col][0]
-        endog = data[endog_col_name]
-        # First determine if the input data has multiple features or is univariate
-        if data.shape[1] > 1: # we have external variables
-            exog_col_names = [col for col in data.columns if spot_rate[0] not in col]
-            exog = data[exog_col_names]
-        else:
-            exog = None
-        if model_name == "MarkovRegression":
-            cls_instance = cls(
-                endog=endog,
-                exog=exog,
-                k_regimes=N_REGIMES,
-                trend='c',  # or 'nc' for no constant
-                switching_trend=True,
-                switching_exog=True,
-                switching_variance=True,
-            )
-        else:
-            cls_instance = cls()
-        try:
-            clf = GridSearchCV(estimator=cls_instance,
-                            param_grid=param_grids[model_name]
-                            )
-            clf.fit(data)
-            clf_results = clf.cv_results_
-            results.append(clf_results)
-        except Exception as e:
-            print(f"Model {model_name} failed to fit: {e}")
-            continue
-
-len(results)
-len(results[0])
-# purged k-fold cross validation with embargoing
-
-results = []
-for model_name, param_grid in param_grids.items():
-    grid = ParameterGrid(param_grid)
-    model_class = {
-        "KMeans": KMeans,
-        "AgglomerativeClustering": AgglomerativeClustering,
-        "DBSCAN": DBSCAN,
-        "MeanShift": MeanShift,
-        "MarkovRegression": MarkovRegression,
-        "GaussianMixture": GaussianMixture,
-        "Birch": Birch,
-        "AffinityPropagation": AffinityPropagation,
-        "OPTICS": OPTICS,
-        "MiniBatchKMeans": MiniBatchKMeans,
-    }[model_name]
-    for params in grid:
-        for data in data_list:
-            if type(data) == pd.Series:
-                data = data.to_frame()
-            endog_col_name = [col for col in data.columns if spot_rate[0] in col][0]
-            endog = data[endog_col_name]
-            # First determine if the input data has multiple features or is univariate
-            if data.shape[1] > 1: # we have external variables
-                exog_col_names = [col for col in data.columns if spot_rate[0] not in col]
-                exog = data[exog_col_names]
-            else:
-                exog = None
-            model = model_class(**params)
-            model_object_instance = ModelObject()
-            model_object_instance.set_model_object(model_object=model)
-            model_object_instance.set_data(training_data=data, testing_data=data)
-            try:
-                model_object_instance.fit()
-                predicted_labels = model_object_instance.predict()
-                evaluation_score = model_object_instance.evaluate(metric_function_list=[silhouette_score])
-                results.append({
-                    "model_type": model_name,
-                    "params": params,
-                    "score": evaluation_score,
-                    "labels": predicted_labels,
-                    "endog": endog,
-                    "exog": exog
-                })
-            except Exception as e:
-                print(f"Model {model_name} with params {params} failed to fit: {e}")
-                continue
-scores_list = [item["score"] for item in results]
-extracted_scores_list = []
-for item in scores_list:
-    try:
-        score = item["silhouette_score"]
-        extracted_scores_list.append(score)
-    except Exception as e:
-        extracted_scores_list.append(0)
-        print(f"Error extracting score: {e}")
-
-best_score = np.nanmax(extracted_scores_list)
-best_index = np.argmax(extracted_scores_list)
-# Pick the model with the index
-best_result = results[best_index]
-print("Best model:", best_result["model_type"], "Params:", best_result["params"], "Score:", best_result["score"])
-best_result["endog"]
-best_result["exog"]
 
 for data in data_list:
     if type(data) == pd.Series:
