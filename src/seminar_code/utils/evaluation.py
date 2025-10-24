@@ -528,3 +528,35 @@ def test_data_for_normality(
     normality_test_results[f"p-value < {significance_level}"] = normality_test_results["p-value"] < significance_level
     normality_test_results["Result"] = np.where(normality_test_results["p-value"] < significance_level, "Not-Normal", "Normal")
     return normality_test_results
+
+
+def extract_best_params(
+    results_list: List[Dict[str, Any]],
+    score_name: str = "silhouette"
+    ) -> List[Dict[str, Any]]:
+    """Extract best parameters from GridSearchCV results."""
+    best_params_list = []
+
+    for i, result in enumerate(results_list):
+        results_df = pd.DataFrame(result)
+        # Find best parameters
+        rank_col = f'rank_test_{score_name}'
+        mean_score_col = f'mean_test_{score_name}'
+
+        if rank_col in results_df.columns:
+            best_row = results_df[results_df[rank_col] == 1].iloc[0]
+        else:
+            # Fallback to highest score
+            best_idx = results_df[mean_score_col].idxmax()
+            best_row = results_df.loc[best_idx]
+
+        best_params_list.append({
+            'data_index': i,
+            'best_params': best_row['params'],
+            'best_score': best_row[mean_score_col],
+            'score_std': best_row[f'std_test_{score_name}'],
+            'feature_names_in': best_row['feature_names_in'],
+            'model_name': best_row['model_name']
+        })
+
+    return best_params_list

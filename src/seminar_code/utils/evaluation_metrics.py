@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.metrics import silhouette_score
 # The regime classification measure (RCM) of Ang and Bekaert (2002) is used
 # to determine the accuracy of the Markov-switching models. This statistic is computed using the following formula:
 # The RCM is computed as the average of the product of smoothed probabilities p~; where S is the number of
@@ -26,3 +27,19 @@ def compute_rcm(S: int, smoothed_probs: pd.Series, threshold: float=0.5) -> floa
     regime_classification = (smoothed_probs >= threshold).astype(int)
     rcm = 100 * S**2 * (1 - (1 / len(smoothed_probs)) * np.sum(regime_classification * smoothed_probs + (1 - regime_classification) * (1 - smoothed_probs)))
     return rcm
+
+
+def silhouette_scorer(estimator, X, y=None):
+    # get labels (prefer fit_predict for clustering)
+    if hasattr(estimator, "fit_predict"):
+        labels = estimator.fit_predict(X)
+    elif hasattr(estimator, "predict"):
+        # some estimators require fit first
+        estimator.fit(X)
+        labels = estimator.predict(X)
+    else:
+        raise AttributeError("Estimator has no fit_predict/predict")
+    # require at least 2 clusters
+    if len(np.unique(labels)) < 2:
+        return -1.0
+    return silhouette_score(X, labels)

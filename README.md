@@ -117,6 +117,7 @@ differences)
 - [ ] Find source, add test reference
 #### Chapter 07
 - [ ] Set up benchmark models to identify the regimes like the commonly used Markov-Switching and/or STR/STAR models
+- [ ] Data: Try to get the Interbank Lending rates 3M EUR/USD for the interest rate differentials, also include a proxy for financialisation -> Pull the VET Open Interest and Trading Volume and factor this into the Model Optimisation for finding clusters
 - [ ] Train these benchmark models and compare against our versions
 - [ ] After regimes have been identified properly, compare all the in-regime characteristics using the classical econometric approaches
 #### Chapter 08
