@@ -2,7 +2,7 @@
 %	NEW CHAPTER TITLE SLIDE
 %----------------------------------------------------------------------------------------
 \begin{frame}
-	\frametitle{Chapter X)}
+	\frametitle{~}
 	\begin{tikzpicture}[remember picture, overlay]
         \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
             \includegraphics[width=1.7cm]{wiso_logo.png}
@@ -29,10 +29,96 @@
 %----------------------------------------------------------------------------------------
 \subsection{Appendix - Figures and Tables}
 %----------------------------------------------------------------------------------------
+%	NEW CHAPTER TITLE SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{~}
+	\begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
+            \includegraphics[width=1.7cm]{wiso_logo.png}
+        };
+		\node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
+            \tikz\node[opacity=0.15] {
+                \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
+            };
+        };
+    \end{tikzpicture}
+	% \begin{block}{} % Empty block title % Set background color (adjust 'blue!20' as needed)
+    %     \centering
+    %     {\large \textbf{Modern Energy Commodity Markets - The current state}} % Slightly smaller text
+    % \end{block}
+	\begin{center}
+        \begin{minipage}{0.6\textwidth} % Adjust the width of the block
+            \begin{block}{} % Empty block title
+                \centering
+                {\large \textbf{Appendix - Figures and Tables}} % Slightly smaller text
+            \end{block}
+        \end{minipage}
+    \end{center}
+\end{frame}
+%----------------------------------------------------------------------------------------
 %	NEW SLIDE
 %----------------------------------------------------------------------------------------
 \begin{frame}
 	\frametitle{Appendix - Figures and Tables}
+    \scriptsize
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{
+        \begin{tabular}{|c|l|l|l|l|l|l|l|l|l|}
+            \hline
+            \textbf{No.} & \textbf{Exchange Rate} & \textbf{Basket} & \textbf{Data Frequency} & \textbf{Data Availability} & \textbf{Exchange Rate Type} & \textbf{Bilateral/Multilateral} & \textbf{Source} & \textbf{Data ID} & \textbf{Link} \\
+            \hline
+            1 & Real effective exchange rate & broad & monthly & 1994-01 & REER & Multilateral & BIS & M.R.B.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/M.R.B.US}{Link} \\
+            \hline
+            2 & Real effective exchange rate & narrow & monthly & 1964-01 & REER & Multilateral & BIS & M.R.N.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/M.R.N.US}{Link} \\
+            \hline
+            3 & Nominal effective exchange rate & broad & monthly & 1994-01 & NEER & Multilateral & BIS & M.N.B.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/M.N.B.US}{Link} \\
+            \hline
+            4 & Nominal effective exchange rate & narrow & monthly & 1964-01 & NEER & Multilateral & BIS & M.N.N.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/M.N.N.US}{Link} \\
+            \hline
+            5 & Nominal effective exchange rate & narrow & daily & 1983-10-03 & NEER & Multilateral & BIS & D.N.N.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/D.N.N.US}{Link} \\
+            \hline
+            6 & Nominal effective exchange rate & broad & daily & 1996-04-11 & NEER & Multilateral & BIS & D.N.B.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/D.N.B.US}{Link} \\
+            \hline
+            7 & USD-EUR Spot Rate & - & daily & 1999-01-04 & NER & Bilateral & FRED & DEXUSEU & \href{https://fred.stlouisfed.org/series/DEXUSEU}{Link} \\
+            \hline
+            8 & Nominal Broad U.S. Dollar Index & broad & daily & 2006-01-02 & NEER & Multilateral & FRED & DTWEXBGS & \href{https://fred.stlouisfed.org/series/DTWEXBGS}{Link} \\
+            \hline
+            9 & Real Broad Dollar Index & broad & monthly & 2006-01-01 & REER & Multilateral & FRED & RTWEXBGS & \href{https://fred.stlouisfed.org/series/RTWEXBGS}{Link} \\
+            \hline
+        \end{tabular}
+        }
+        \caption{\tiny Table: Various exemplary exchange rate data sources for the USD.\footnote{See: XXX}}
+    \end{table}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW CHAPTER TITLE SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{~}
+	\begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
+            \includegraphics[width=1.7cm]{wiso_logo.png}
+        };
+		\node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
+            \tikz\node[opacity=0.15] {
+                \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
+            };
+        };
+    \end{tikzpicture}
+	% \begin{block}{} % Empty block title % Set background color (adjust 'blue!20' as needed)
+    %     \centering
+    %     {\large \textbf{Modern Energy Commodity Markets - The current state}} % Slightly smaller text
+    % \end{block}
+	\begin{center}
+        \begin{minipage}{0.6\textwidth} % Adjust the width of the block
+            \begin{block}{} % Empty block title
+                \centering
+                {\large \textbf{Appendix - Data and Definitions}} % Slightly smaller text
+            \end{block}
+        \end{minipage}
+    \end{center}
 \end{frame}
 %----------------------------------------------------------------------------------------
 \subsection{Appendix - Data and Definitions}
@@ -40,7 +126,7 @@
 %	NEW CHAPTER TITLE SLIDE
 %----------------------------------------------------------------------------------------
 \begin{frame}
-	\frametitle{Chapter X)}
+	\frametitle{~}
 	\begin{tikzpicture}[remember picture, overlay]
         \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
             \includegraphics[width=1.7cm]{wiso_logo.png}
@@ -75,7 +161,7 @@
 %	NEW CHAPTER TITLE SLIDE
 %----------------------------------------------------------------------------------------
 \begin{frame}
-	\frametitle{Chapter X)}
+	\frametitle{~}
 	\begin{tikzpicture}[remember picture, overlay]
         \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
             \includegraphics[width=1.7cm]{wiso_logo.png}
@@ -131,7 +217,7 @@
         \begin{equation*}
             \text{PPP Deviation} = \frac{\text{Actual Exchange Rate} - \text{PPP Exchange Rate}}{\text{PPP Exchange Rate}} \times 100
         \end{equation*}
-        \footnotesize{Source: \url{https://www.investopedia.com/terms/p/ppp.asp}}
+        \footnotesize{Source: \cite{oecd_2025_purchasing_power_parities}}
     \end{block}
     
     \begin{block}{Clustering Metrics: Silhouette Score}
@@ -148,9 +234,9 @@
 	\frametitle{Appendix - Definitions}
     \underline{Calculation of main exchange rate types (Slide XX):}
     \begin{itemize}
-        \item Nominal effective exchange rate (NEER): Calculated as geometric trade-weighted averages of bilateral exchange rates.\footnote{See: https://data.bis.org/topics/EER}
-        \item Real effective exchange rates (REER): Derived by adjusting the NEER by relative consumer prices.\footnote{See: https://data.bis.org/topics/EER}
-        \item Nominal exchange rates (NER): The exchange rate between two currencies without adjustment for inflation.\footnote{See: }
-        \item Real exchange rates (RER): The nominal exchange rate adjusted for differences in price levels between countries.\footnote{See: }
+        \item Nominal effective exchange rate (NEER): Calculated as geometric trade-weighted averages of bilateral exchange rates.\footnote{Definition taken from \cite{bis_2025_effective_exchange_rates}.}
+        \item Real effective exchange rates (REER): Derived by adjusting the NEER by relative consumer prices.\footnote{Definition taken from \cite{bis_2025_effective_exchange_rates}.}
+        \item Nominal exchange rates (NER): The exchange rate between two currencies without adjustment for inflation.\footnote{Definition taken from \cite{ca_zorzi_2018_exchange_rate_forecasting}, page 5.}
+        \item Real exchange rates (RER): The nominal exchange rate adjusted for differences in price levels between countries.\footnote{Definition taken from \cite{ca_zorzi_2018_exchange_rate_forecasting}, page 5.}
     \end{itemize}
 \end{frame}

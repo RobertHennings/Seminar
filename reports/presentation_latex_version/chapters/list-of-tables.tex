@@ -2,7 +2,7 @@
 %	NEW CHAPTER TITLE SLIDE
 %----------------------------------------------------------------------------------------
 \begin{frame}
-	\frametitle{Chapter 3)}
+	\frametitle{~}
 	\begin{tikzpicture}[remember picture, overlay]
         \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
             \includegraphics[width=1.7cm]{wiso_logo.png}
@@ -15,28 +15,29 @@
     \end{tikzpicture}
 	% \begin{block}{} % Empty block title % Set background color (adjust 'blue!20' as needed)
     %     \centering
-    %     {\large \textbf{Literature Review}} % Slightly smaller text
+    %     {\large \textbf{References}} % Slightly smaller text
     % \end{block}
 	\begin{center}
         \begin{minipage}{0.6\textwidth} % Adjust the width of the block
             \begin{block}{} % Empty block title
                 \centering
-                {\large \textbf{Literature Review}} % Slightly smaller text
+                {\large \textbf{List of Tables}} % Slightly smaller text
             \end{block}
         \end{minipage}
     \end{center}
 \end{frame}
 %----------------------------------------------------------------------------------------
-\subsection{Systematic Literature Overview: Main Approaches}
-%----------------------------------------------------------------------------------------
 %	NEW SLIDE
 %----------------------------------------------------------------------------------------
 \begin{frame}
-	\frametitle{Systematic Literature Overview: Main Approaches}
-	
-    \hypertarget{fig:chap_03_literature_systematic_overview}{}
-    \begin{figure}
-		\includegraphics[width=1.0\linewidth]{chap_03_literature_systematic_overview.pdf}
-		\caption{\tiny Figure: Systematic Overview about main theoretical approaches.\footnote{Own Illustration based on \cite{oberndorfer_2020_oil_prices_exchange_rates}, Figure 5, page 5.}\label{fig:chap_03_literature_systematic_overview}}
-    \end{figure}
+    \frametitle{List of tables}
+    \begin{itemize}
+        \listtable{tab:chap_06_normality_tests_raw_data}{Normality Tests for Raw Data}
+		\listtable{tab:chap_06_adf_tests_raw_data}{ADF Tests for Raw Data}
+		\listtable{tab:chap_06_adf_tests_log_first_differences}{ADF Tests for Log First Differences}
+		\listtable{tab:chap_06_cointegration_test_raw_data}{Cointegration Tests for Raw Data}
+		\listtable{tab:chap_06_cointegration_test_log_differences}{Cointegration Tests for Log First Differences}
+		% \listtable{}
+		% \listtable{}
+    \end{itemize}
 \end{frame}

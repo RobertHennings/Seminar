@@ -492,6 +492,10 @@ def test_data_for_normality(
     test_kolmogorov_smirnov: bool = True,
     test_dagostino_k2: bool = True
     ) -> pd.DataFrame:
+    """Test data for normality using various statistical tests.
+    from scipy.stats import shapiro, anderson, kstest, normaltest"""
+    from scipy.stats import shapiro, anderson, kstest, normaltest
+
     normality_test_results = pd.DataFrame(columns=["Variable", "Test", "Statistic", "p-value"])
     for variable in variables:
         # logging.info(f"Testing normality for variable: {variable}")

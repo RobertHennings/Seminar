@@ -1,0 +1,38 @@
+\begin{frame}[plain] % The optional argument 'plain' hides the headline and footline
+	\begin{center}
+		{\Huge Thank you for your attention!}
+		
+		\bigskip\bigskip % Vertical whitespace
+
+		{\LARGE We await your Questions and/or Comments.}
+		\begin{tikzpicture}[remember picture, overlay]
+			\node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
+				\includegraphics[width=1.7cm]{wiso_logo.png}
+			};
+			\node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
+			    \tikz\node[opacity=0.15] {
+			        \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
+			    };
+			};
+		\end{tikzpicture}
+
+		\bigskip\bigskip % Vertical whitespace
+		\bigskip\bigskip % Vertical whitespace
+		\bigskip\bigskip % Vertical whitespace
+
+		\begin{columns}[t] % The "t" option specifies top vertical alignment
+			\begin{column}{0.50\textwidth} % Left column width
+				\centering % Center the content
+				\textbf{Josef Fella} \\ % Name in bold
+				{\small\textit{josef.fella@stu.uni-kiel.de}} % Email in italic and smaller font
+			\end{column}
+			\begin{column}{0.50\textwidth} % Right column width
+				\centering % Center the content
+				\textbf{Robert Hennings} \\ % Name in bold
+				{\small\textit{robert.hennings@stu.uni-kiel.de}} % Email in italic and smaller font
+			\end{column}
+		\end{columns}
+		\bigskip
+		\tiny\textit{Public GitHub Project Repository: https://github.com/RobertHennings}
+	\end{center}
+\end{frame}

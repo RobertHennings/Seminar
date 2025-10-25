@@ -1,0 +1,70 @@
+%----------------------------------------------------------------------------------------
+%	NEW CHAPTER TITLE SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{~}
+	\begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
+            \includegraphics[width=1.7cm]{wiso_logo.png}
+        };
+		\node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
+            \tikz\node[opacity=0.15] {
+                \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
+            };
+        };
+    \end{tikzpicture}
+	% \begin{block}{} % Empty block title % Set background color (adjust 'blue!20' as needed)
+    %     \centering
+    %     {\large \textbf{References}} % Slightly smaller text
+    % \end{block}
+	\begin{center}
+        \begin{minipage}{0.6\textwidth} % Adjust the width of the block
+            \begin{block}{} % Empty block title
+                \centering
+                {\large \textbf{List of Figures}} % Slightly smaller text
+            \end{block}
+        \end{minipage}
+    \end{center}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+    \frametitle{List of figures}
+    \begin{itemize}
+		% Chapter 00
+        \listfigure{fig:chap_00_deviations_of_usd_spotrates_from_ppp_values}{Monthly deviations of USD spot rates from PPP values}
+		% Chapter 01
+		\listfigure{fig:chap_01_yearly_oil_consumption_production_combined_graph}{Yearly oil consumption and production by country}
+		\listfigure{fig:chap_01_yearly_gas_consumption_production_combined_graph}{Yearly natural gas consumption and production by country}
+		\listfigure{fig:chap_01_weekly_open_interest_oil_gas_combined_graph}{Weekly open interest in oil and natural gas futures contracts}
+		% Chapter 02
+		\listfigure{fig:chap_02_exchange_rate_oil_raw_vola_normalized_crisis_periods_highlighted}{Normalized oil price volatility and EUR/USD exchange rate with crisis periods highlighted}
+		% Chapter 03
+		\listfigure{fig:chap_03_literature_systematic_overview}{Systematic Literature Overview}
+		% Chapter 04
+		\listfigure{fig:chap_04_theo_framework_prices_measures}{Theoretical Framework: Price Measures}
+		\listfigure{fig:chap_04_theo_framework_simple_model}{Theoretical Framework: Simple Model}
+		\listfigure{fig:chap_04_theo_framework_theoretical_framework_I}{Theoretical Framework: Model I}
+		\listfigure{fig:chap_04_theo_framework_theoretical_framework_II}{Theoretical Framework: Model II}
+		\listfigure{fig:chap_04_theo_framework_theoretical_framework_III}{Theoretical Framework: Model III}
+		% Chapter 05
+		% \listfigure{}
+		% Chapter 06		
+		\listfigure{fig:chap_06_raw_data_normalized_histogram}{Normalized Histograms of Raw Data}
+		\listfigure{fig:chap_06_log_first_diff_histogram}{Histograms of Log First Differences}
+		\listfigure{fig:chap_06_acf_plot_raw_series}{ACF Plots of Raw Series}
+		\listfigure{fig:chap_06_acf_plot_log_diff}{ACF Plots of Log First Differences}
+		\listfigure{fig:chap_06_pacf_plot_raw_series}{PACF Plots of Raw Series}
+		\listfigure{fig:chap_06_pacf_plot_log_diff}{PACF Plots of Log First Differences}
+		\listfigure{fig:chap_06_granger_causality_test_oil_raw_series}{Granger Causality Test Results - Oil Raw Series}
+		\listfigure{fig:chap_06_granger_causality_test_gas_raw_series}{Granger Causality Test Results - Gas Raw Series}
+		\listfigure{fig:chap_06_granger_causality_test_oil_log_diff}{Granger Causality Test Results - Oil Log First Differences}
+		\listfigure{fig:chap_06_granger_causality_test_gas_log_diff}{Granger Causality Test Results - Gas Log First Differences}
+		% Chapter 07
+		\listfigure{fig:chap_07_model_comparison_bar_plot}{Model Comparison Bar Plot}
+		\listfigure{fig:chap_07_predicted_model_regimes_with_crisis_periods_highlighted}{Predicted Model Regimes with Crisis Periods Highlighted}
+		% \listfigure{}
+		% \listfigure{}
+    \end{itemize}
+\end{frame}
