@@ -60,15 +60,14 @@
 %	NEW SLIDE
 %----------------------------------------------------------------------------------------
 \begin{frame}[allowframebreaks]
-        \frametitle{References - Literature}
-        % \tiny % or \scriptsize, \footnotesize
+        \frametitle{References — Literature}
         \tiny{
             \setlength{\bibitemsep}{0pt}
             \setlength{\bibhang}{1em}
-            \printbibliography[type=article,title={}]
-            \printbibliography[type=book,title={}]
-            \printbibliography[type=unpublished,title={Lecture notes / Unpublished}]
-        }
+            \printbibliography[type=article,title={Articles}]
+            \printbibliography[type=book,title={Books}]
+            \printbibliography[type=unpublished,title={Unpublished / Lecture notes}]
+            }
 \end{frame}
 %----------------------------------------------------------------------------------------
 \subsection{Data}
@@ -104,8 +103,12 @@
 %	NEW SLIDE
 %----------------------------------------------------------------------------------------
 \begin{frame}[allowframebreaks]
-        \frametitle{References - Data}
-        \printbibliography[type=dataset,title={}]
+    \frametitle{References — Data}
+    \tiny{
+        \setlength{\bibitemsep}{0pt}
+        \setlength{\bibhang}{1em}
+        \printbibliography[type=online,title={Datasets / Online sources}]
+    }
 \end{frame}
 %----------------------------------------------------------------------------------------
 % \subsection{Software}

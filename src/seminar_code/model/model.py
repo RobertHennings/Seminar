@@ -98,11 +98,11 @@ interest_rate_diff_df = interest_rate_diff_df.rename(
 # Now combine both datasets
 uip_data_df = pd.concat([log_spot_rate_diff_df, interest_rate_diff_df], axis=1).dropna()
 
-def run_uip_regression(dep_var: str, indep_var: str, data: pd.DataFrame):
+def run_uip_regression(dep_var: str, indep_var: str, data: pd.DataFrame, cov_type: str="nonrobust", use_t: bool=True):
     import statsmodels.api as sm
     X = sm.add_constant(data[indep_var])
     y = data[dep_var]
-    model = sm.OLS(y, X).fit()
+    model = sm.OLS(y, X).fit(cov_type=cov_type, use_t=use_t)
     return model
 
 # First run the UIP regression on the full sample
@@ -130,12 +130,13 @@ estimated_params_df = estimated_params_df.apply(pd.to_numeric, errors='ignore')
 from scipy import stats
 corrected_t_i_diff = (estimated_params_df["coef"][2] - 1.0) / estimated_params_df["std err"][2]
 corrected_p_i_diff = 2 * (1 - stats.t.cdf(np.abs(corrected_t_i_diff), df=model.df_resid))
-# Save the model summary
+# Save the model summary - save as .csv so later all summary files can be parsed for a better comparison
 model_object_instance = ModelObject()
 model_object_instance.save_model_summary(
     model_summary=model.summary(),
-    save_txt=True,
-    save_latex=True,
+    save_txt=False,
+    save_csv=True,
+    save_latex=False,
     file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
     file_name="chap_07_standard_full_time_uip_regression_central_bank_policy_rates",
 )
@@ -180,8 +181,9 @@ corrected_p_i_diff = 2 * (1 - stats.t.cdf(np.abs(corrected_t_i_diff), df=model.d
 model_object_instance = ModelObject()
 model_object_instance.save_model_summary(
     model_summary=model.summary(),
-    save_txt=True,
-    save_latex=True,
+    save_txt=False,
+    save_latex=False,
+    save_csv=True,
     file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
     file_name="chap_07_standard_full_time_uip_regression_3m_interbank_lending_rates",
 )
@@ -205,9 +207,10 @@ print(msm_fit.summary())
 # Save the model summary
 model_object_instance = ModelObject()
 model_object_instance.save_model_summary(
-    model_summary=model.summary(),
-    save_txt=True,
-    save_latex=True,
+    model_summary=msm_fit.summary(),
+    save_txt=False,
+    save_latex=False,
+    save_csv=True,
     file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
     file_name="chap_07_msm_central_bank_policy_rates_model_b1",
 )
@@ -216,7 +219,7 @@ model_object_instance.save_model_summary(
 #----------------------------------------------------------------------------------------
 # Additionally to the EUR/USD spot exchange rate and the interest rate differential load the oil and gas data 
 series_dict_mapping = {
-    'EUR/USD': 'DEXUSEU',
+    'USD/EUR': 'DEXUSEU',
     'WTI Oil': 'DCOILWTICO',
     "Nat Gas": "DHHNGSP",
 }
@@ -229,6 +232,10 @@ data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_dat
     end_date=end_date
     )
 spot_exchange_rate_data_df = pd.concat(list(data_dict.values()), axis=1).dropna()
+# Compute the EUR/USD rate
+spot_exchange_rate_data_df["EUR/USD"] = 1 / spot_exchange_rate_data_df["USD/EUR"]
+spot_exchange_rate_data_df = spot_exchange_rate_data_df.drop(columns=["USD/EUR"])
+
 spot_exchange_rate_data_df_log_diff = np.log(spot_exchange_rate_data_df).diff().dropna()
 # Next we need the rolling volatility of the energy commodities
 window = 30
@@ -250,14 +257,79 @@ oi_tv_oil_gas_reuters_df = oi_tv_oil_gas_reuters_df.set_index("Date", drop=True)
 # Separate out the Open-Interest
 oi_columns = [col for col in oi_tv_oil_gas_reuters_df.columns if "open interest" in col.lower()]
 tv_columns = [col for col in oi_tv_oil_gas_reuters_df.columns if "volume" in col.lower()]
-oi_tv_oil_gas_reuters_df[tv_columns].dropna()
+tv_oil_gas_reuters_df = oi_tv_oil_gas_reuters_df[tv_columns].dropna().copy()
+tv_oil_gas_reuters_df.columns = ["WTI Oil TV", "Nat Gas TV"]
 # Now combine both datasets
-uip_data_df = pd.concat([spot_exchange_rate_data_df_log_diff["EUR/USD"], interest_rate_diff_df, spot_exchange_rate_data_df_log_diff_rolling[["WTI Oil", "Nat Gas"]]], axis=1).dropna()
+uip_data_df = pd.concat([
+    spot_exchange_rate_data_df_log_diff["EUR/USD"],
+    interest_rate_diff_df,
+    spot_exchange_rate_data_df_log_diff_rolling[["WTI Oil", "Nat Gas"]],
+    tv_oil_gas_reuters_df
+    ], axis=1).dropna()
 
 from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
 msm = MarkovRegression(
     endog=uip_data_df['EUR/USD'],
-    exog=uip_data_df[['i_diff_EUR', 'WTI Oil', 'Nat Gas']],
+    exog=uip_data_df[['i_diff_EUR', 'WTI Oil', 'Nat Gas', "WTI Oil TV", "Nat Gas TV"]],
+    k_regimes=2,
+    trend='c',  # or 'nc' for no constant
+    switching_trend=True,
+    switching_exog=True,
+    switching_variance=True,
+)
+msm_fit = msm.fit(em_iter=100, search_reps=200)
+print("Markov-Switching UIP Regression Results for EUR/USD:")
+print(msm_fit.summary())
+# Save the model summary
+model_object_instance = ModelObject()
+model_object_instance.save_model_summary(
+    model_summary=msm_fit.summary(),
+    save_txt=True,
+    save_latex=True,
+    file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+    file_name="chap_07_msm_central_bank_policy_rates_oil_gas_rol_vol_model_b1",
+)
+#----------------------------------------------------------------------------------------
+# 07 - Econometric Modelling - Benchmark Models for Regime Identification - Markov Switching Model - Standard - 3M Interbank rates - Model B2
+#----------------------------------------------------------------------------------------
+series_dict_mapping = {
+    'USD/EUR': 'DEXUSEU',
+}
+
+start_date = central_bank_policy_rate_df.index.min().strftime('%Y-%m-%d')
+end_date = central_bank_policy_rate_df.index.max().strftime('%Y-%m-%d')
+
+data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_data(
+    series_dict_mapping=series_dict_mapping,
+    start_date=start_date,
+    end_date=end_date
+    )
+data_spot_rates_df = pd.concat(list(data_dict.values()), axis=1).dropna()
+# Compute the EUR/USD rate
+data_spot_rates_df["EUR/USD"] = 1 / data_spot_rates_df["USD/EUR"]
+data_spot_rates_df = data_spot_rates_df.drop(columns=["USD/EUR"])
+
+data_us_full_info_table = pd.DataFrame(data_full_info_dict).T
+
+# 1) Compute the log differentials of the spot exchange rates
+log_spot_rate_diff_df = (np.log(data_spot_rates_df.shift(1)) - np.log(data_spot_rates_df)).dropna()
+# log_spot_rate_diff_df.columns = [col.split('/')[0] for col in log_spot_rate_diff_df.columns]
+
+
+interbank_rates_df = pd.read_csv(r"/Users/Robert_Hennings/Uni/Master/Applied_Econometrics_of_Foreign_Exchange_Markets/Data/irates3m.csv", sep=";")
+interbank_rates_df["Date"] = interbank_rates_df["Year"].astype(str) + "-" + interbank_rates_df["Month"].astype(str).str.zfill(2) + "-" + interbank_rates_df["Day"].astype(str).str.zfill(2)
+interbank_rates_df = interbank_rates_df.set_index(pd.to_datetime(interbank_rates_df["Date"]))
+interbank_rates_df = interbank_rates_df[["USD", "EUR"]]
+# Since these are the 3M rates but published in an annual term, we have to convert them by dividing by 4
+interbank_rates_df = interbank_rates_df / 4
+interbank_rates_df["i_diff_EUR"] = interbank_rates_df["USD"] - interbank_rates_df["EUR"]
+
+uip_data_df = pd.concat([log_spot_rate_diff_df, interbank_rates_df["i_diff_EUR"]], axis=1).dropna()
+
+from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
+msm = MarkovRegression(
+    endog=uip_data_df['EUR/USD'],
+    exog=uip_data_df[['i_diff_EUR']],
     k_regimes=2,
     trend='c',  # or 'nc' for no constant
     switching_trend=True,
@@ -274,16 +346,51 @@ model_object_instance.save_model_summary(
     save_txt=True,
     save_latex=True,
     file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
-    file_name="chap_07_msm_central_bank_policy_rates_oil_gas_rol_vol_model_b1",
+    file_name="chap_07_msm_3m_interbank_lending_rates_model_b2",
 )
-#----------------------------------------------------------------------------------------
-# 07 - Econometric Modelling - Benchmark Models for Regime Identification - Markov Switching Model - Standard - 3M Interbank rates - Model B2
-#----------------------------------------------------------------------------------------
-
 #----------------------------------------------------------------------------------------
 # 07 - Econometric Modelling - Benchmark Models for Regime Identification - Markov Switching Model - Oil, Gas added - 3M Interbank rates - Model B2
 #----------------------------------------------------------------------------------------
+# Also add the Trading Volume - Reuters Data
+oi_tv_oil_gas_reuters_df = pd.read_excel(r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/open_interest_trading_volume_oil_gas_reuters.xlsx")
+oi_tv_oil_gas_reuters_df["Date"] = pd.to_datetime(oi_tv_oil_gas_reuters_df["Date"], format="%Y-%m-%d")
+oi_tv_oil_gas_reuters_df = oi_tv_oil_gas_reuters_df.set_index("Date", drop=True)
+# Separate out the Open-Interest
+oi_columns = [col for col in oi_tv_oil_gas_reuters_df.columns if "open interest" in col.lower()]
+tv_columns = [col for col in oi_tv_oil_gas_reuters_df.columns if "volume" in col.lower()]
+tv_oil_gas_reuters_df = oi_tv_oil_gas_reuters_df[tv_columns].dropna().copy()
+tv_oil_gas_reuters_df.columns = ["WTI Oil TV", "Nat Gas TV"]
 
+uip_data_df = pd.concat([
+    log_spot_rate_diff_df,
+    interbank_rates_df["i_diff_EUR"],
+    tv_oil_gas_reuters_df,
+    spot_exchange_rate_data_df_log_diff_rolling[["WTI Oil", "Nat Gas"]]
+    ],
+    axis=1).dropna()
+
+from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
+msm = MarkovRegression(
+    endog=uip_data_df['EUR/USD'],
+    exog=uip_data_df[['i_diff_EUR', "WTI Oil", "Nat Gas", 'WTI Oil TV', 'Nat Gas TV']],
+    k_regimes=2,
+    trend='c',  # or 'nc' for no constant
+    switching_trend=True,
+    switching_exog=True,
+    switching_variance=True,
+)
+msm_fit = msm.fit(em_iter=10, search_reps=20)
+print("Markov-Switching UIP Regression Results for EUR/USD:")
+print(msm_fit.summary())
+# Save the model summary
+model_object_instance = ModelObject()
+model_object_instance.save_model_summary(
+    model_summary=msm_fit.summary(),
+    save_txt=True,
+    save_latex=True,
+    file_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+    file_name="chap_07_msm_3m_interbank_lending_rates_oil_gas_rol_vol_model_b2",
+)
 #----------------------------------------------------------------------------------------
 # 07 - Econometric Modelling - Own Models for Regime Identification
 #----------------------------------------------------------------------------------------
