@@ -62,7 +62,7 @@ central_bank_policy_rate_df = central_bank_policy_rate_df.dropna()
 # Therefore we need the exchange rates for these currencies as well
 # Load the Spot Exchange rates from FRED for the currency pairs
 series_dict_mapping = {
-    'EUR/USD': 'DEXUSEU',
+    'USD/EUR': 'DEXUSEU',
 }
 
 start_date = central_bank_policy_rate_df.index.min().strftime('%Y-%m-%d')
@@ -74,6 +74,10 @@ data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_dat
     end_date=end_date
     )
 data_spot_rates_df = pd.concat(list(data_dict.values()), axis=1).dropna()
+# Compute the EUR/USD rate
+data_spot_rates_df["EUR/USD"] = 1 / data_spot_rates_df["USD/EUR"]
+data_spot_rates_df = data_spot_rates_df.drop(columns=["USD/EUR"])
+
 data_us_full_info_table = pd.DataFrame(data_full_info_dict).T
 
 # Relevel both datasets to have the same length
@@ -239,6 +243,14 @@ interest_rate_diff_df = interest_rate_diff_df.rename(
     columns={
         "i_diff_XM": "i_diff_EUR",
     })
+# Also add the Trading Volume - Reuters Data
+oi_tv_oil_gas_reuters_df = pd.read_excel(r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/open_interest_trading_volume_oil_gas_reuters.xlsx")
+oi_tv_oil_gas_reuters_df["Date"] = pd.to_datetime(oi_tv_oil_gas_reuters_df["Date"], format="%Y-%m-%d")
+oi_tv_oil_gas_reuters_df = oi_tv_oil_gas_reuters_df.set_index("Date", drop=True)
+# Separate out the Open-Interest
+oi_columns = [col for col in oi_tv_oil_gas_reuters_df.columns if "open interest" in col.lower()]
+tv_columns = [col for col in oi_tv_oil_gas_reuters_df.columns if "volume" in col.lower()]
+oi_tv_oil_gas_reuters_df[tv_columns].dropna()
 # Now combine both datasets
 uip_data_df = pd.concat([spot_exchange_rate_data_df_log_diff["EUR/USD"], interest_rate_diff_df, spot_exchange_rate_data_df_log_diff_rolling[["WTI Oil", "Nat Gas"]]], axis=1).dropna()
 
