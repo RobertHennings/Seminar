@@ -1,17 +1,20 @@
 [0] Config.pm:311> INFO - This is Biber 2.16
 [0] Config.pm:314> INFO - Logfile is 'main.blg'
-[159] biber-darwin:340> INFO - === Sat Oct 25, 2025, 03:11:32
-[193] Biber.pm:415> INFO - Reading 'main.bcf'
-[418] Biber.pm:952> INFO - Found 19 citekeys in bib section 0
-[444] Biber.pm:4340> INFO - Processing section 0
-[458] Biber.pm:4531> INFO - Looking for bibtex format file 'references.bib' for section 0
-[461] bibtex.pm:1689> INFO - LaTeX decoding ...
-[497] bibtex.pm:1494> INFO - Found BibTeX data source 'references.bib'
-[672] Utils.pm:395> WARN - I didn't find a database entry for 'oecd_2025_purchasing_power_parities' (section 0)
-[715] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
-[715] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
-[715] Biber.pm:4168> INFO - Sorting list 'anyt/global//global/global' of type 'entry' with template 'anyt' and locale 'en-US'
-[715] Biber.pm:4174> INFO - No sort tailoring available for locale 'en-US'
-[745] bbl.pm:654> INFO - Writing 'main.bbl' with encoding 'UTF-8'
-[759] bbl.pm:757> INFO - Output to main.bbl
-[759] Biber.pm:128> INFO - WARNINGS: 1
+[111] biber-darwin:340> INFO - === Tue Oct 28, 2025, 01:07:16
+[141] Biber.pm:415> INFO - Reading 'main.bcf'
+[297] Biber.pm:952> INFO - Found 29 citekeys in bib section 0
+[320] Biber.pm:4340> INFO - Processing section 0
+[343] Biber.pm:4531> INFO - Looking for bibtex format file 'references.bib' for section 0
+[348] bibtex.pm:1689> INFO - LaTeX decoding ...
+[410] bibtex.pm:1494> INFO - Found BibTeX data source 'references.bib'
+[628] Utils.pm:395> WARN - legacy month field 'October' in entry 'martins2023events' is not an integer - this will probably not sort properly.
+[634] Utils.pm:395> WARN - legacy month field 'March' in entry 'martinez2025equilibrium' is not an integer - this will probably not sort properly.
+[639] Utils.pm:395> WARN - legacy month field 'July' in entry 'chandan2025currency' is not an integer - this will probably not sort properly.
+[660] Utils.pm:395> WARN - I didn't find a database entry for 'fred_2024_us_recession_indicator' (section 0)
+[722] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[722] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[722] Biber.pm:4168> INFO - Sorting list 'anyt/global//global/global' of type 'entry' with template 'anyt' and locale 'en-US'
+[722] Biber.pm:4174> INFO - No sort tailoring available for locale 'en-US'
+[776] bbl.pm:654> INFO - Writing 'main.bbl' with encoding 'UTF-8'
+[803] bbl.pm:757> INFO - Output to main.bbl
+[803] Biber.pm:128> INFO - WARNINGS: 4

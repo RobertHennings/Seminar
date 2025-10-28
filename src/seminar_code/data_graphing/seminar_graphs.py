@@ -1055,7 +1055,10 @@ fig_crisis_periods_highlighted.show(renderer="browser")
 #----------------------------------------------------------------------------------------
 # 06 - Data Characteristics and Stylized Facts - Interest Rate Comparison: BIS Central Bank Policy Rates vs. 3M Interbank rates
 #----------------------------------------------------------------------------------------
-interbank_rates_df = pd.read_csv(r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/irates3m.csv")
+interbank_rates_df = pd.read_csv(r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/irates3m.csv", sep=";")
+interbank_rates_df["Date"] = interbank_rates_df["Year"].astype(str) + "-" + interbank_rates_df["Month"].astype(str).str.zfill(2) + "-" + interbank_rates_df["Day"].astype(str).str.zfill(2)
+interbank_rates_df = interbank_rates_df.set_index(pd.to_datetime(interbank_rates_df["Date"]))
+interbank_rates_df = interbank_rates_df[["USD", "EUR"]]
 # Load the BIS Central Bank Policy Rate data for the relevant countries as a proxy for the interest rates
 country_keys_mapping = {
     "US": "United States",
@@ -1076,9 +1079,10 @@ interest_rate_comparison_df = interbank_rates_df.merge(
     right_index=True,
     how="inner"
 ).dropna()
+interest_rate_comparison_df.columns = ["USD 3M", "EUR 3M", "USD CBPR", "EUR CBPR"]
 
 data = interest_rate_comparison_df.copy()
-variables = ["USD Index", "WTI Oil"]
+variables = interest_rate_comparison_df.columns.tolist()
 secondary_yaxis_variables = []
 color_discrete_sequence = ["grey", "black", "#9b0a7d"]
 title = f"Daily BIS Central Bank Policy Rate and 3M Interbank Rates over the time: {data.index[0].year} - {data.index[-1].year}"
@@ -1086,29 +1090,93 @@ x_axis_title = "Date"
 y_axis_title = "Interest Rate (%)"
 secondary_yaxis_title = ""
 color_mapping = {
-    'USD Index': "grey",
-    'WTI Oil': "black",
-    'Natural Gas': "#9b0a7d",
+    'USD 3M': "grey",
+    'EUR 3M': "black",
+    'USD CBPR': "#9b0a7d",
+    'EUR CBPR': "lightgrey",
 }
-fig_main_relationships_commodities_fx = data_graphing_instance.get_fig_relationship_main_vars(
+fig_interest_rate_comp = data_graphing_instance.get_fig_relationship_main_vars(
         data=data,
         variables=variables,
         secondary_y_variables=secondary_yaxis_variables,
-        title=title,
+        title="",
         secondary_y_axis_title=secondary_yaxis_title,
         color_discrete_sequence=color_discrete_sequence,
         x_axis_title=x_axis_title,
         y_axis_title=y_axis_title,
         color_mapping_dict=color_mapping,
         save_fig=False,
-        file_name="oil_gas_usd_index",
+        file_name="chap_06_interest_rate_comparison_bis_cbpr_vs_3m_interbank",
         file_path=FIGURES_PATH,
         width=1200,
         height=800,
         scale=3
         )
 # Show the figure
-fig_main_relationships_commodities_fx.show(renderer="browser")
+fig_interest_rate_comp.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Interest Rate Comparison: BIS Central Bank Policy Rates vs. 3M Interbank rates - Interest Rate Differentials
+#----------------------------------------------------------------------------------------
+interbank_rates_df = pd.read_csv(r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/irates3m.csv", sep=";")
+interbank_rates_df["Date"] = interbank_rates_df["Year"].astype(str) + "-" + interbank_rates_df["Month"].astype(str).str.zfill(2) + "-" + interbank_rates_df["Day"].astype(str).str.zfill(2)
+interbank_rates_df = interbank_rates_df.set_index(pd.to_datetime(interbank_rates_df["Date"]))
+interbank_rates_df = interbank_rates_df[["USD", "EUR"]]
+# Load the BIS Central Bank Policy Rate data for the relevant countries as a proxy for the interest rates
+country_keys_mapping = {
+    "US": "United States",
+    "XM": "Euro area",
+}
+central_bank_policy_rate_df = data_loading_instance.get_bis_central_bank_policy_rate_data(
+        country_keys_mapping=country_keys_mapping,
+        exchange_rate_type_list=["Central bank policy rate - daily"],
+        )
+# Rename the columns
+central_bank_policy_rate_df.columns = [f"{country}_CBPR" for country in country_keys_mapping.keys()]
+central_bank_policy_rate_df = central_bank_policy_rate_df.dropna()
+
+# Merge the both interest rate data sets
+interest_rate_comparison_df = interbank_rates_df.merge(
+    right=central_bank_policy_rate_df,
+    left_index=True,
+    right_index=True,
+    how="inner"
+).dropna()
+interest_rate_comparison_df.columns = ["USD 3M", "EUR 3M", "USD CBPR", "EUR CBPR"]
+# Construct the differentials
+interest_rate_comparison_df["USD-EUR CBPR"] = interest_rate_comparison_df["USD CBPR"] - interest_rate_comparison_df["EUR CBPR"]
+interest_rate_comparison_df["USD-EUR 3M"] = interest_rate_comparison_df["USD 3M"] - interest_rate_comparison_df["EUR 3M"]
+
+variables = ["USD-EUR CBPR", "USD-EUR 3M"]
+data = interest_rate_comparison_df.copy()[variables]
+secondary_yaxis_variables = []
+color_discrete_sequence = ["grey", "black", "#9b0a7d"]
+title = f"Daily BIS Central Bank Policy Rate and 3M Interbank Rates differentials (USD-EUR) over the time: {data.index[0].year} - {data.index[-1].year}"
+x_axis_title = "Date"
+y_axis_title = "Interest Rate differential (%) (USD-EUR)"
+secondary_yaxis_title = ""
+color_mapping = {
+    'USD-EUR CBPR': "black",
+    'USD-EUR 3M': "#9b0a7d",
+}
+fig_interest_rate_diffs_comp = data_graphing_instance.get_fig_relationship_main_vars(
+        data=data,
+        variables=variables,
+        secondary_y_variables=secondary_yaxis_variables,
+        title="",
+        secondary_y_axis_title=secondary_yaxis_title,
+        color_discrete_sequence=color_discrete_sequence,
+        x_axis_title=x_axis_title,
+        y_axis_title=y_axis_title,
+        color_mapping_dict=color_mapping,
+        save_fig=False,
+        file_name="chap_06_interest_rate_comparison_bis_cbpr_vs_3m_interbank_diffs",
+        file_path=FIGURES_PATH,
+        width=1200,
+        height=800,
+        scale=3
+        )
+# Show the figure
+fig_interest_rate_diffs_comp.show(renderer="browser")
 #----------------------------------------------------------------------------------------
 # 06 - Data Characteristics and Stylized Facts - Spot exchange rate distributions (raw data - normalized)
 #----------------------------------------------------------------------------------------
@@ -1677,3 +1745,8 @@ granger_causality_test_plot = data_graphing_instance.plot_granger_test_results(
     file_path=FIGURES_PATH
     )
 granger_causality_test_plot.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 08 - Appendix - Data and Definitions - Crisis Periods
+#----------------------------------------------------------------------------------------
+crisi_periods_df = pd.read_excel(r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables/crisis_periods.xlsx", header=0, index_col=0)
+crisi_periods_df.to_latex(r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables/crisis_periods.tex")

@@ -2,7 +2,7 @@
 %	NEW CHAPTER TITLE SLIDE
 %----------------------------------------------------------------------------------------
 \begin{frame}
-	\frametitle{Chapter 6)}
+	\frametitle{Appendix - Figures and Tables}
 	\begin{tikzpicture}[remember picture, overlay]
         \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
             \includegraphics[width=1.7cm]{wiso_logo.png}
@@ -27,19 +27,33 @@
     \end{center}
 \end{frame}
 %----------------------------------------------------------------------------------------
-\subsection{Interest Rate Benchmarks}
+% \subsection{Interest Rate Benchmarks}
 %----------------------------------------------------------------------------------------
 %	NEW SLIDE
 %----------------------------------------------------------------------------------------
 \begin{frame}
-	\frametitle{Interest Rate Benchmarks}
-    % \begin{figure}
-	% 	\includegraphics[width=0.7\linewidth]{chap_06_raw_data_normalized_histogram.pdf}
-	% 	\caption{\tiny Figure: Normalized daily EUR/USD spot exchange rate, oil and gas over the time range: 1999 - 2025.\footnote{Own Illustration based on XYZ (2000), page 7 and data accessed 10.09.25.}\label{fig:chap_06_raw_data_normalized_histogram}}
-	% \end{figure}
+	\frametitle{Interest Rate Benchmarks - Absolute Levels}
+    
+    \hypertarget{fig:chap_06_interest_rate_comparison_bis_cbpr_vs_3m_interbank}{}
+    \begin{figure}
+		\includegraphics[width=0.8\linewidth]{chap_06_interest_rate_comparison_bis_cbpr_vs_3m_interbank.pdf}
+		\caption{\tiny Figure: Daily BIS Central Bank Policy Rate and 3M Interbank Rates over the time: 1999 - 2019.\footnote{Own Illustration based on XYZ (2000), page 7 and data taken from \cite{bis_2025_effective_exchange_rates} and \cite{reitz_2025_applied_econometrics_fx}, last accessed 24.10.25.}\label{fig:chap_06_interest_rate_comparison_bis_cbpr_vs_3m_interbank}}
+	\end{figure}
 \end{frame}
 %----------------------------------------------------------------------------------------
-\subsection{Main variables distributions}
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Interest Rate Benchmarks - Relative Levels}
+    
+    \hypertarget{fig:chap_06_interest_rate_comparison_bis_cbpr_vs_3m_interbank_diffs}{}
+    \begin{figure}
+		\includegraphics[width=0.8\linewidth]{chap_06_interest_rate_comparison_bis_cbpr_vs_3m_interbank_diffs.pdf}
+		\caption{\tiny Figure: Daily BIS Central Bank Policy Rate and 3M Interbank Rates differentials (USD-EUR) over the time: 1999 - 2019.\footnote{Own Illustration based on XYZ (2000), page 7 and data taken from \cite{bis_2025_effective_exchange_rates} and \cite{reitz_2025_applied_econometrics_fx}, last accessed 24.10.25.}\label{fig:chap_06_interest_rate_comparison_bis_cbpr_vs_3m_interbank_diffs}}
+	\end{figure}
+\end{frame}
+%----------------------------------------------------------------------------------------
+% \subsection{Main variables distributions}
 %----------------------------------------------------------------------------------------
 %	NEW SLIDE
 %----------------------------------------------------------------------------------------
@@ -65,7 +79,7 @@
 	\end{figure}
 \end{frame}
 %----------------------------------------------------------------------------------------
-\subsection{Tests for Normality}
+% \subsection{Tests for Normality}
 %----------------------------------------------------------------------------------------
 %	NEW SLIDE
 %----------------------------------------------------------------------------------------
@@ -99,7 +113,7 @@
     \end{table}
 \end{frame}
 %----------------------------------------------------------------------------------------
-\subsection{Tests for Stationarity - ADF Tests}
+% \subsection{Tests for Stationarity - ADF Tests}
 %----------------------------------------------------------------------------------------
 %	NEW SLIDE
 %----------------------------------------------------------------------------------------
@@ -171,7 +185,7 @@
     \end{table}
 \end{frame}
 %----------------------------------------------------------------------------------------
-\subsection{Tests for Cointegration - Engle and Granger Cointegration Tests}
+% \subsection{Tests for Cointegration - Engle and Granger Cointegration Tests}
 %----------------------------------------------------------------------------------------
 %	NEW SLIDE
 %----------------------------------------------------------------------------------------
@@ -233,7 +247,7 @@
     \end{table}
 \end{frame}
 %----------------------------------------------------------------------------------------
-\subsection{Tests for Autocorrelation - ACF Plot}
+% \subsection{Tests for Autocorrelation - ACF Plot}
 %----------------------------------------------------------------------------------------
 %	NEW SLIDE
 %----------------------------------------------------------------------------------------
@@ -259,7 +273,7 @@
 	\end{figure}
 \end{frame}
 %----------------------------------------------------------------------------------------
-\subsection{Tests for Partial Autocorrelation - PACF Plot}
+% \subsection{Tests for Partial Autocorrelation - PACF Plot}
 %----------------------------------------------------------------------------------------
 %	NEW SLIDE
 %----------------------------------------------------------------------------------------
@@ -285,7 +299,7 @@
 	\end{figure}
 \end{frame}
 %----------------------------------------------------------------------------------------
-\subsection{Granger Causality Tests}
+% \subsection{Granger Causality Tests}
 %----------------------------------------------------------------------------------------
 %	NEW SLIDE
 %----------------------------------------------------------------------------------------

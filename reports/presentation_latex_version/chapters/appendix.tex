@@ -27,7 +27,7 @@
     \end{center}
 \end{frame}
 %----------------------------------------------------------------------------------------
-\subsection{Appendix - Figures and Tables}
+\subsection{Figures and Tables}
 %----------------------------------------------------------------------------------------
 %	NEW CHAPTER TITLE SLIDE
 %----------------------------------------------------------------------------------------
@@ -59,8 +59,17 @@
 %----------------------------------------------------------------------------------------
 %	NEW SLIDE
 %----------------------------------------------------------------------------------------
+\input{chapters/chapter-01}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\input{chapters/chapter-06}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
 \begin{frame}
 	\frametitle{Appendix - Figures and Tables}
+    \hypertarget{tab:exemplary_exchange_rates}{}
     \scriptsize
     \begin{table}
         \centering
@@ -69,27 +78,27 @@
             \hline
             \textbf{No.} & \textbf{Exchange Rate} & \textbf{Basket} & \textbf{Data Frequency} & \textbf{Data Availability} & \textbf{Exchange Rate Type} & \textbf{Bilateral/Multilateral} & \textbf{Source} & \textbf{Data ID} & \textbf{Link} \\
             \hline
-            1 & Real effective exchange rate & broad & monthly & 1994-01 & REER & Multilateral & BIS & M.R.B.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/M.R.B.US}{Link} \\
+            1 & Real effective exchange rate & broad & monthly & 1994-01 & REER & Multilateral & \cite{bis_2025_effective_exchange_rates} & M.R.B.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/M.R.B.US}{Link} \\
             \hline
-            2 & Real effective exchange rate & narrow & monthly & 1964-01 & REER & Multilateral & BIS & M.R.N.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/M.R.N.US}{Link} \\
+            2 & Real effective exchange rate & narrow & monthly & 1964-01 & REER & Multilateral & \cite{bis_2025_effective_exchange_rates} & M.R.N.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/M.R.N.US}{Link} \\
             \hline
-            3 & Nominal effective exchange rate & broad & monthly & 1994-01 & NEER & Multilateral & BIS & M.N.B.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/M.N.B.US}{Link} \\
+            3 & Nominal effective exchange rate & broad & monthly & 1994-01 & NEER & Multilateral & \cite{bis_2025_effective_exchange_rates} & M.N.B.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/M.N.B.US}{Link} \\
             \hline
-            4 & Nominal effective exchange rate & narrow & monthly & 1964-01 & NEER & Multilateral & BIS & M.N.N.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/M.N.N.US}{Link} \\
+            4 & Nominal effective exchange rate & narrow & monthly & 1964-01 & NEER & Multilateral & \cite{bis_2025_effective_exchange_rates} & M.N.N.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/M.N.N.US}{Link} \\
             \hline
-            5 & Nominal effective exchange rate & narrow & daily & 1983-10-03 & NEER & Multilateral & BIS & D.N.N.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/D.N.N.US}{Link} \\
+            5 & Nominal effective exchange rate & narrow & daily & 1983-10-03 & NEER & Multilateral & \cite{bis_2025_effective_exchange_rates} & D.N.N.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/D.N.N.US}{Link} \\
             \hline
-            6 & Nominal effective exchange rate & broad & daily & 1996-04-11 & NEER & Multilateral & BIS & D.N.B.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/D.N.B.US}{Link} \\
+            6 & Nominal effective exchange rate & broad & daily & 1996-04-11 & NEER & Multilateral & \cite{bis_2025_effective_exchange_rates} & D.N.B.US & \href{https://data.bis.org/topics/EER/BIS,WS_EER,1.0/D.N.B.US}{Link} \\
             \hline
-            7 & USD-EUR Spot Rate & - & daily & 1999-01-04 & NER & Bilateral & FRED & DEXUSEU & \href{https://fred.stlouisfed.org/series/DEXUSEU}{Link} \\
+            7 & USD-EUR Spot Rate & - & daily & 1999-01-04 & NER & Bilateral & \cite{fred_2025_federal_reserve_data} & DEXUSEU & \href{https://fred.stlouisfed.org/series/DEXUSEU}{Link} \\
             \hline
-            8 & Nominal Broad U.S. Dollar Index & broad & daily & 2006-01-02 & NEER & Multilateral & FRED & DTWEXBGS & \href{https://fred.stlouisfed.org/series/DTWEXBGS}{Link} \\
+            8 & Nominal Broad U.S. Dollar Index & broad & daily & 2006-01-02 & NEER & Multilateral & \cite{fred_2025_federal_reserve_data} & DTWEXBGS & \href{https://fred.stlouisfed.org/series/DTWEXBGS}{Link} \\
             \hline
-            9 & Real Broad Dollar Index & broad & monthly & 2006-01-01 & REER & Multilateral & FRED & RTWEXBGS & \href{https://fred.stlouisfed.org/series/RTWEXBGS}{Link} \\
+            9 & Real Broad Dollar Index & broad & monthly & 2006-01-01 & REER & Multilateral & \cite{fred_2025_federal_reserve_data} & RTWEXBGS & \href{https://fred.stlouisfed.org/series/RTWEXBGS}{Link} \\
             \hline
         \end{tabular}
         }
-        \caption{\tiny Table: Various exemplary exchange rate data sources for the USD.\footnote{See: XXX}}
+        \caption{\tiny Table: Various exemplary exchange rate data sources for the USD.\footnote{Own illustration based on }\label{tab:exemplary_exchange_rates}}
     \end{table}
 \end{frame}
 %----------------------------------------------------------------------------------------
@@ -121,42 +130,42 @@
     \end{center}
 \end{frame}
 %----------------------------------------------------------------------------------------
-\subsection{Appendix - Data and Definitions}
-%----------------------------------------------------------------------------------------
-%	NEW CHAPTER TITLE SLIDE
-%----------------------------------------------------------------------------------------
-\begin{frame}
-	\frametitle{~}
-	\begin{tikzpicture}[remember picture, overlay]
-        \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
-            \includegraphics[width=1.7cm]{wiso_logo.png}
-        };
-		\node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
-            \tikz\node[opacity=0.15] {
-                \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
-            };
-        };
-    \end{tikzpicture}
-	% \begin{block}{} % Empty block title % Set background color (adjust 'blue!20' as needed)
-    %     \centering
-    %     {\large \textbf{Modern Energy Commodity Markets - The current state}} % Slightly smaller text
-    % \end{block}
-	\begin{center}
-        \begin{minipage}{0.6\textwidth} % Adjust the width of the block
-            \begin{block}{} % Empty block title
-                \centering
-                {\large \textbf{Appendix - Data}} % Slightly smaller text
-            \end{block}
-        \end{minipage}
-    \end{center}
-\end{frame}
-%----------------------------------------------------------------------------------------
-%	NEW SLIDE
-%----------------------------------------------------------------------------------------
-\begin{frame}
-	\frametitle{Appendix - Data}
+\subsection{Data and Definitions}
+% %----------------------------------------------------------------------------------------
+% %	NEW CHAPTER TITLE SLIDE
+% %----------------------------------------------------------------------------------------
+% \begin{frame}
+% 	\frametitle{~}
+% 	\begin{tikzpicture}[remember picture, overlay]
+%         \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
+%             \includegraphics[width=1.7cm]{wiso_logo.png}
+%         };
+% 		\node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
+%             \tikz\node[opacity=0.15] {
+%                 \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
+%             };
+%         };
+%     \end{tikzpicture}
+% 	% \begin{block}{} % Empty block title % Set background color (adjust 'blue!20' as needed)
+%     %     \centering
+%     %     {\large \textbf{Modern Energy Commodity Markets - The current state}} % Slightly smaller text
+%     % \end{block}
+% 	\begin{center}
+%         \begin{minipage}{0.6\textwidth} % Adjust the width of the block
+%             \begin{block}{} % Empty block title
+%                 \centering
+%                 {\large \textbf{Appendix - Data}} % Slightly smaller text
+%             \end{block}
+%         \end{minipage}
+%     \end{center}
+% \end{frame}
+% %----------------------------------------------------------------------------------------
+% %	NEW SLIDE
+% %----------------------------------------------------------------------------------------
+% \begin{frame}
+% 	\frametitle{Appendix - Data}
 
-\end{frame}
+% \end{frame}
 %----------------------------------------------------------------------------------------
 %	NEW CHAPTER TITLE SLIDE
 %----------------------------------------------------------------------------------------
@@ -190,41 +199,20 @@
 %----------------------------------------------------------------------------------------
 \begin{frame}
 	\frametitle{Appendix - Definitions}
-    \underline{Major global crisis periods (theoretical regimes) (Slide X):}
-    \begin{table}
-        \tiny
-		\begin{tabular}{l l l l}
-			\toprule
-			\textbf{No.} & \textbf{Period} & \textbf{Event} & \textbf{Source}\\
-			\midrule
-			1 & 2007 – 2009 & Global Financial Crisis & How Exchange Rate Volatility Shapes Commodity Derivatives Market: Lessons from Five Global Shocks (2007–2023), page: 2. \\
-			2 & 2010 – 2012 & European Debt Crisis & How Exchange Rate Volatility Shapes Commodity Derivatives Market: Lessons from Five Global Shocks (2007–2023), page: 2. \\
-			3 & 2014 – 2016 & Oil Price Crash & How Exchange Rate Volatility Shapes Commodity Derivatives Market: Lessons from Five Global Shocks (2007–2023), page: 2. \\
-            4 & 2020 – 2021 & COVID-19 Pandemic & How Exchange Rate Volatility Shapes Commodity Derivatives Market: Lessons from Five Global Shocks (2007–2023), page: 2. \\
-            5 & 2022 – present & Russia-Ukraine Conflict & How Exchange Rate Volatility Shapes Commodity Derivatives Market: Lessons from Five Global Shocks (2007–2023), page: 2. \\
-			\bottomrule
-		\end{tabular}
-		\caption{Table caption\footnote{See: XXX}}
-	\end{table}
-\end{frame}
-%----------------------------------------------------------------------------------------
-%	NEW SLIDE
-%----------------------------------------------------------------------------------------
-\begin{frame}
-    \frametitle{Appendix - Definitions}
-    
+    % \underline{Calculation of deviations of USD Spot Rate from PPP-values (Slide 04):}
     \begin{block}{PPP Deviation Calculation}
-        \begin{equation*}
-            \text{PPP Deviation} = \frac{\text{Actual Exchange Rate} - \text{PPP Exchange Rate}}{\text{PPP Exchange Rate}} \times 100
-        \end{equation*}
-        \footnotesize{Source: \cite{oecd_2025_purchasing_power_parities}}
+        \begin{equation}
+            \text{PPP Deviation} = \log(REER_{country} - REER_{USD})
+        \end{equation}
+        \footnotesize{Source: \cite{oecd_2025_purchasing_power_parities}, data taken from \cite{fred_2025_federal_reserve_data}, last accessed 24.10.25.}
     \end{block}
-    
-    \begin{block}{Clustering Metrics: Silhouette Score}
-        \begin{equation*}
-            \text{Silhouette Score} = \frac{b - a}{\max\left(a, b\right)}
-        \end{equation*}
-        \footnotesize{Source: \url{https://scikit-learn.org/stable/modules/generated/sklearn.metrics.silhouette_score.html}}
+
+    % \underline{Calculation of component distributions of the CPI (Slide 06, 07):}
+    \begin{block}{CPI Component Distribution Calculation}
+        \begin{equation}
+            \text{CPI Component Distribution} = \frac{\text{CPI}_{component}}{\text{CPI}_{total}} \times 100
+        \end{equation}
+        \footnotesize{Source: Data taken from \cite{fred_2025_federal_reserve_data} and \cite{ecb_2025_data_portal}, last accessed 24.10.25.}
     \end{block}
 \end{frame}
 %----------------------------------------------------------------------------------------
@@ -232,11 +220,135 @@
 %----------------------------------------------------------------------------------------
 \begin{frame}
 	\frametitle{Appendix - Definitions}
-    \underline{Calculation of main exchange rate types (Slide XX):}
-    \begin{itemize}
-        \item Nominal effective exchange rate (NEER): Calculated as geometric trade-weighted averages of bilateral exchange rates.\footnote{Definition taken from \cite{bis_2025_effective_exchange_rates}.}
-        \item Real effective exchange rates (REER): Derived by adjusting the NEER by relative consumer prices.\footnote{Definition taken from \cite{bis_2025_effective_exchange_rates}.}
-        \item Nominal exchange rates (NER): The exchange rate between two currencies without adjustment for inflation.\footnote{Definition taken from \cite{ca_zorzi_2018_exchange_rate_forecasting}, page 5.}
-        \item Real exchange rates (RER): The nominal exchange rate adjusted for differences in price levels between countries.\footnote{Definition taken from \cite{ca_zorzi_2018_exchange_rate_forecasting}, page 5.}
-    \end{itemize}
+    % \underline{Calculation of rolling (30-day) volatility (Slide 08):}
+    \begin{block}{Rolling Volatility Calculation}
+        \begin{equation}
+            \text{Rolling Volatility} = \sqrt{\frac{1}{N} \sum_{t=1}^{N} (x_t - \bar{x})^2}
+        \end{equation}
+        \footnotesize{Source: Data taken from \cite{fred_2025_federal_reserve_data}, last accessed 24.10.25.}
+    \end{block}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Appendix - Definitions}
+    % \underline{Major global crisis periods (theoretical regimes) (Slide 08, 17):}
+    \hypertarget{tab:major_global_crisis_periods}{}
+    \begin{table}
+        \footnotesize
+		\begin{tabular}{l|lllll}
+        \toprule
+        & \textbf{Event} & \textbf{Start-date} & \textbf{End-date} & \textbf{Event-Type} & \textbf{Source} \\
+        \midrule
+        1 & US Recession 1970-1970 & 1970-01-01 & 1970-12-01 & US-Recession & \cite{fred_usrec} \\
+        2 & Bretton Woods Breakdown & 1971-08-15 & 1973-03-19 & Major Global Crisis & \cite{corzo2025exchange} \\
+        3 & Nixon Shock & 1971-08-15 & 1973-03-19 & Major Global Crisis & \cite{ehrmann2004exchange} \\
+        4 & Oil Crisis I & 1973-10-17 & 1974-03-01 & Major Global Crisis & \cite{trancoso2023beyond} \\
+        5 & US Recession 1973-1975 & 1973-12-01 & 1975-04-01 & US-Recession & \cite{fred_usrec} \\
+        6 & Oil Crisis II & 1979-01-01 & 1981-03-01 & Major Global Crisis & \cite{trancoso2023beyond} \\
+        7 & US Recession 1980-1980 & 1980-02-01 & 1980-08-01 & US-Recession & \cite{fred_usrec} \\
+        8 & US Recession 1981-1982 & 1981-08-01 & 1982-12-01 & US-Recession & \cite{fred_usrec} \\
+        9 & Black Monday Crash & 1987-10-19 & 1987-10-19 & Major Global Crisis & \cite{ehrmann2004exchange} \\
+        10 & US Recession 1990-1991 & 1990-08-01 & 1991-04-01 & US-Recession & \cite{fred_usrec} \\
+        11 & Asian Financial Crisis & 1997-07-02 & 1998-12-31 & Major Global Crisis & \cite{martins2023events} \\
+        12 & Russian Crisis & 1998-08-17 & 1998-09-01 & Major Global Crisis & \cite{martins2023events} \\
+        13 & Dot-com Bubble & 2000-03-01 & 2002-10-01 & Major Global Crisis & \cite{martinez2025equilibrium} \\
+        14 & US Recession 2001-2001 & 2001-04-01 & 2001-12-01 & US-Recession & \cite{fred_usrec} \\
+        15 & Global Financial Crisis & 2007-08-09 & 2009-03-09 & Major Global Crisis & \cite{martinez2025equilibrium} \\
+        16 & US Recession 2008-2009 & 2008-01-01 & 2009-07-01 & US-Recession & \cite{fred_usrec} \\
+        17 & US QE & 2008-11-25 & 2014-12-31 & Major Global Crisis & \cite{martinez2025equilibrium} \\
+        18 & European Debt Crisis & 2009-10-01 & 2012-12-31 & Major Global Crisis & \cite{martinez2025equilibrium} \\
+        19 & US Debt Ceiling Crisis & 2011-08-20 & 2011-08-05 & Major Global Crisis & \cite{martinez2025equilibrium} \\
+        20 & US-China Trade War & 2018-03-22 & 2020-01-15 & Major Global Crisis & Various \\
+        21 & COVID-19 Pandemic & 2020-02-20 & 2021-11-16 & Major Global Crisis & \cite{martins2023events} \\
+        22 & US Recession 2020-2020 & 2020-03-01 & 2020-05-01 & US-Recession & \cite{fred_usrec} \\
+        23 & Russia-Ukraine War & 2022-02-24 & 2022-06-01 & Major Global Crisis & \cite{chandan2025currency} \\
+        \bottomrule
+        \end{tabular}
+		\caption{\footnotesize Table: Major global crisis periods (theoretical regimes).\footnote{Own illustration based on and data taken from \cite{fred_2024_us_recession_indicator}, last accessed 24.10.25.}\label{tab:major_global_crisis_periods}}
+	\end{table}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+% \begin{frame}
+% 	\frametitle{Appendix - Definitions}
+%     \underline{Major global crisis periods (theoretical regimes highlighted) (Slide 08):}
+%     \begin{itemize}
+%         \item Nominal effective exchange rate (NEER): Calculated as geometric trade-weighted averages of bilateral exchange rates.\footnote{Definition taken from \cite{bis_2025_effective_exchange_rates}.}
+%         \item Real effective exchange rates (REER): Derived by adjusting the NEER by relative consumer prices.\footnote{Definition taken from \cite{bis_2025_effective_exchange_rates}.}
+%         \item Nominal exchange rates (NER): The exchange rate between two currencies without adjustment for inflation.\footnote{Definition taken from \cite{ca_zorzi_2018_exchange_rate_forecasting}, page 5.}
+%         \item Real exchange rates (RER): The nominal exchange rate adjusted for differences in price levels between countries.\footnote{Definition taken from \cite{ca_zorzi_2018_exchange_rate_forecasting}, page 5.}
+%     \end{itemize}
+% \end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+    \frametitle{Appendix - Definitions}
+
+    % \underline{Calculation of main exchange rate types (Slide 13):}
+
+    \begin{block}{Nominal effective exchange rate (NEER) (Slide 13):}
+        \begin{equation*}
+            \text{NEER} = \frac{1}{N} \sum_{i=1}^{N} \text{NER}_{i}
+        \end{equation*}
+        \footnotesize{Source: Definition taken from \cite{bis_2025_effective_exchange_rates}.}
+    \end{block}
+
+    \begin{block}{Real effective exchange rate (REER) (Slide 13):}
+        \begin{equation*}
+            \text{REER} = \text{NEER} \times \frac{\text{CPI}_{domestic}}{\text{CPI}_{foreign}}
+        \end{equation*}
+        \footnotesize{Source: Definition taken from \cite{bis_2025_effective_exchange_rates}.}
+    \end{block}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+    \frametitle{Appendix - Definitions}
+
+    \begin{block}{Nominal exchange rate (NER) (Slide 13):}
+        \begin{equation}
+            \text{NER} = \frac{\text{Units of Domestic Currency}}{\text{Units of Foreign Currency}}
+        \end{equation}
+        \footnotesize{Source: Definition taken from \cite{ca_zorzi_2018_exchange_rate_forecasting}, page 5.}
+    \end{block}
+
+    \begin{block}{Real exchange rate (RER) (Slide 13):}
+        \begin{equation}
+            \text{RER} = \text{NER} \times \frac{\text{CPI}_{domestic}}{\text{CPI}_{foreign}}
+        \end{equation}
+        \footnotesize{Source: Definition taken from \cite{ca_zorzi_2018_exchange_rate_forecasting}, page 5.}
+    \end{block}
+    
+    \begin{block}{Clustering Metrics: Silhouette Score (Slide 17):}
+        \begin{equation}
+            \text{Silhouette Score} = \frac{b - a}{\max\left(a, b\right)}
+        \end{equation}
+        \footnotesize{Source: Definition taken from \cite{sklearn_silhouette_score}.}
+    \end{block}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+    \frametitle{Appendix - Definitions}
+
+    \begin{block}{Standard UIP relationship - log terms (Slide XX):}
+        \begin{equation}
+            \bigtriangleup s_{t + 1} = i_{t} - i_{t}^{*} + u_{t+1}
+        \end{equation}
+        \footnotesize{Source: Definition taken from \cite{reitz_2025_applied_econometrics_fx}, section "Testing UIP conditions", page 7.}
+    \end{block}
+
+    \begin{block}{Calculation of the RCM (Slide 17):}
+        \begin{equation}
+            \text{RCM} = 100\,S^{2}\left(1-\frac{1}{N}\sum_{t=1}^{N}\big[g_t p_t + (1-g_t)(1-p_t)\big]\right)
+        \end{equation}
+        \footnotesize{with \(g_t=\mathbf{1}\{p_t\ge\tau\}\), \(p_t\) the smoothed probability at time \(t\), \(N\) the sample size, and \(\tau\) the classification threshold (e.g. 0.5).}
+        \footnotesize{Source: Definition taken from \cite{ang1998regime}.}
+    \end{block}
 \end{frame}

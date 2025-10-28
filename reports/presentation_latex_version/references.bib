@@ -37,6 +37,14 @@
   url          = {https://fred.stlouisfed.org},
   type         = {dataset}
 }
+@dataset{fred_usrec,
+  title = {NBER based Recession Indicators for the United States from the Peak through the Trough},
+  author = {Federal Reserve Bank of St. Louis},
+  note = {Data retrieved October 1, 2025},
+  url  = {https://fred.stlouisfed.org/series/USREC},
+  year = {2025},
+  type = {dataset}
+}
 @dataset{ecb_2025_data_portal,
   author       = {European Central Bank},
   title        = {European Central Bank (ECB) Data Portal},
@@ -55,15 +63,15 @@
   url          = {https://data.bis.org/topics/EER},
   type         = {dataset}
 }
-% @dataset{oecd_2025_purchasing_power_parities,
-%   author       = {Organisation for Economic Co-operation and Development},
-%   title        = {Purchasing Power Parities (PPP) Database},
-%   year         = {2025},
-%   institution  = {OECD Statistics and Data Directorate},
-%   note         = {Part of the Eurostat–OECD PPP Programme. PPPs measure currency conversion rates that equalise the purchasing power of different currencies, eliminating price level differences between countries. Retrieved October 25, 2025, from the OECD Data Portal.},
-%   url          = {https://www.oecd.org/en/data/indicators/purchasing-power-parities-ppp.html},
-%   type         = {dataset}
-% }
+@dataset{oecd_2025_purchasing_power_parities,
+  author       = {Organisation for Economic Co-operation and Development},
+  title        = {Purchasing Power Parities (PPP) Database},
+  year         = {2025},
+  institution  = {OECD Statistics and Data Directorate},
+  note         = {Part of the Eurostat–OECD PPP Programme. PPPs measure currency conversion rates that equalise the purchasing power of different currencies, eliminating price level differences between countries. Retrieved October 25, 2025, from the OECD Data Portal.},
+  url          = {https://www.oecd.org/en/data/indicators/purchasing-power-parities-ppp.html},
+  type         = {dataset}
+}
 %----------------------------------------------------------------------------------------
 %	LITERATURE
 %----------------------------------------------------------------------------------------
@@ -167,6 +175,77 @@
   url          = {https://www.ecb.europa.eu/pub/pdf/scpwps/ecb.wp2151.en.pdf},
   note         = {Explores mean reversion in real exchange rates and demonstrates a simple calibrated PPP-based model that outperforms the random walk in exchange rate forecasting.}
 }
+@article{ang1998regime,
+  title = {Regime Switches in Interest Rates},
+  author = {Andrew Ang and Geert Bekaert},
+  institution = {National Bureau of Economic Research},
+  type = {NBER Working Paper},
+  number = {6508},
+  year = {1998},
+  url = {https://www.nber.org/system/files/working_papers/w6508/w6508.pdf},
+  type = {article},
+}
+@article{corzo2025exchange,
+  author = {Teresa Corzo and Karin Martin-Bujack and Jose Portela and Alejandro Rodríguez-Gallego},
+  title = {Exchange rate regime changes and market efficiency: An event study},
+  journal = {Journal of International Financial Markets, Institutions and Money},
+  year = {2025},
+  volume = {??},
+  number = {??},
+  pages = {??},
+  doi = {10.1016/j.intfin.2025.100629},
+  url = {https://www.sciencedirect.com/science/article/abs/pii/S1042443125000228},
+  type = {article}
+}
+@article{ehrmann2004exchange,
+  author = {Michael Ehrmann and Marcel Fratzscher},
+  title = {Exchange rates and fundamentals - new evidence from real-time data},
+  institution = {European Central Bank},
+  type = {ECB Working Paper Series, No. 365},
+  year = {2004},
+  url = {https://www.ecb.europa.eu/pub/pdf/scpwps/ecbwp365.pdf},
+  type = {article}
+}
+@article{trancoso2023beyond,
+  author = {von T Trancoso},
+  title = {Beyond the dollar: A global perspective on exchange rate ...},
+  journal = {Finance Letters},
+  year = {2023},
+  volume = {58},
+  doi = {10.1016/j.finlet.2023.101456},
+  url = {https://www.sciencedirect.com/science/article/pii/S1544612323006335},
+  type = {article}
+}
+@article{martins2023events,
+  author = {Igor Martins and Hedibert Freitas Lopes},
+  title = {What events matter for exchange rate volatility?},
+  institution = {Örebro University},
+  year = {2023},
+  month = {October},
+  url = {https://www.oru.se/contentassets/c58950f48c1e4e97b7f1e7c098f7862b/martins-jmp.pdf},
+  note = {Working Paper},
+  type = {article}
+}
+@article{martinez2025equilibrium,
+  author = {María Martínez and Alejandro Neut and David Ramírez},
+  title = {Equilibrium of the Euro-Dollar Exchange Rate: A Long-Term Perspective},
+  institution = {BBVA Research},
+  year = {2025},
+  month = {March},
+  url = {https://www.bbvaresearch.com/wp-content/uploads/2025/03/Equilibrium-of-the-EUR-USD-exchange-rate-A-long-term-perspective.pdf},
+  note = {BBVA Research Economic Watch Report, 2025},
+  type = {article}
+}
+@article{chandan2025currency,
+  author = {Meera Chandan},
+  title = {Currency volatility: Will the US dollar regain its strength?},
+  institution = {J.P. Morgan Global Research},
+  year = {2025},
+  month = {July},
+  url = {https://www.jpmorgan.com/insights/global-research/currencies/currency-volatility-dollar-strength},
+  note = {Updated July 28, 2025},
+  type = {article}
+}
 %----------------------------------------------------------------------------------------
 %	LITERATURE - BOOKS
 %----------------------------------------------------------------------------------------
@@ -191,22 +270,22 @@
   title        = {Lecture Notes: Applied Econometrics of Foreign Exchange Markets},
   year         = {2025},
   institution  = {Kiel University},
-  note         = {Lecture notes prepared for the course "Applied Econometrics of Foreign Exchange Markets" (VWLfeAEFEM-02a), Kiel University, Department of Economics.},
+  note         = {Lecture notes prepared for the course "Applied Econometrics of Foreign Exchange Markets" (VWLfeAEFEM-02a), Kiel University, QBER - Quantitative Business and Economics Research.},
   type         = {article}
 }
 %----------------------------------------------------------------------------------------
 %	SOFTWARE
 %----------------------------------------------------------------------------------------
 @misc{scipy_2025,
-  author       = {Virtanen, Pauli and Gommers, Ralf and Oliphant, Travis E. and Haberland, Matt and Reddy, Tyler and Cournapeau, David and Burovski, Evgeni and Peterson, Pearu and Weckesser, Warren and Bright, Jonathan and {and others}},
+  author       = {Virtanen, Pauli and Gommers, Ralf and Oliphant, Travis E. and Haberland, Matt and Reddy, Tyler and Cournapeau, David and Burovski, Evgeni and Peterson, Pearu and Weckesser, Warren and Bright, Jonathan and others},
   title        = {SciPy: Scientific Computing Tools for Python},
   year         = {2025},
   version      = {1.16.2},
   url          = {https://scipy.org},
-  note         = {Open-source library for mathematics, science, and engineering. Documentation available at https://docs.scipy.org/doc/scipy/.},
-  type         = {software}
+  note         = {Open-source library for mathematics, science, and engineering. Documentation available at \url{https://docs.scipy.org/doc/scipy/}.},
+  keywords     = {software}
 }
-@misc{seabold2010statsmodels,
+@inproceedings{seabold2010statsmodels,
   author       = {Seabold, Skipper and Perktold, Josef},
   title        = {statsmodels: Econometric and Statistical Modeling with Python},
   booktitle    = {Proceedings of the 9th Python in Science Conference},
@@ -214,6 +293,15 @@
   editor       = {van der Walt, Stéfan and Millman, Jarrod},
   pages        = {92--96},
   url          = {https://www.statsmodels.org},
-  note         = {Open-source library for econometrics and statistical modeling in Python. Documentation available at https://www.statsmodels.org.},
-  type         = {software}
+  note         = {Open-source library for econometrics and statistical modeling in Python. Documentation available at \url{https://www.statsmodels.org}.},
+  keywords     = {software}
+}
+@misc{sklearn_silhouette_score,
+  author       = {scikit-learn developers},
+  title        = {silhouette_score --- scikit-learn 1.7.2 documentation},
+  organization = {scikit-learn},
+  year         = {2024},
+  url          = {https://scikit-learn.org/stable/modules/generated/sklearn.metrics.silhouette_score.html},
+  note         = {Accessed October 28, 2025},
+  keywords     = {software}
 }
