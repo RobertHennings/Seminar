@@ -539,6 +539,17 @@ prices_oi_df = pd.merge(
 prices_oi_df["Gas Open Interest USD"] = prices_oi_df["Gas"] * prices_oi_df["NG=F"] * ng_contract_size
 prices_oi_df["Oil Open Interest USD"] = prices_oi_df["Oil"] * prices_oi_df["CL=F"] * wti_contract_size
 # ----------------------------------------------------------------------------------------
+# Open Interest from Reuters
+# ----------------------------------------------------------------------------------------
+oi_tv_oil_gas_reuters_df = pd.read_excel(r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/open_interest_trading_volume_oil_gas_reuters.xlsx")
+oi_tv_oil_gas_reuters_df["Date"] = pd.to_datetime(oi_tv_oil_gas_reuters_df["Date"], format="%Y-%m-%d")
+oi_tv_oil_gas_reuters_df = oi_tv_oil_gas_reuters_df.set_index("Date", drop=True)
+# Separate out the Open-Interest
+oi_columns = [col for col in oi_tv_oil_gas_reuters_df.columns if "open interest" in col.lower()]
+tv_columns = [col for col in oi_tv_oil_gas_reuters_df.columns if "volume" in col.lower()]
+oi_tv_oil_gas_reuters_df[oi_columns].dropna()
+oi_tv_oil_gas_reuters_df[tv_columns].dropna()
+# ----------------------------------------------------------------------------------------
 # 01 - Modern Commodities Markets - The current state - Oil Open Interest
 # ----------------------------------------------------------------------------------------
 variables = ["Oil"]
@@ -836,14 +847,17 @@ fig_inflation_decomp_euro_area = data_graphing_instance.get_fig_inflation_contri
 # Show the figure
 fig_inflation_decomp_euro_area.show(renderer="browser")
 #----------------------------------------------------------------------------------------
-# 02 - Research Hypothesis - Main Relationships between Oil, Gas and USD Index
+# 02 - Research Hypothesis - Main Relationships between Oil, Gas and EUR/USD
 #----------------------------------------------------------------------------------------
-usd_index_ticker = "DX-Y.NYB"
+# EUR/USD Spot Exchange Rate
+# US WTI Oil Price of Front Months Futures
+# US Natural Gas Price of Front Month Futures
+eur_usd_ticker = "EURUSD=X"
 us_oil_ticker = "CL=F"
 us_ng_ticker = "NG=F"
 
 us_data = yf.download(
-    tickers=[usd_index_ticker, us_oil_ticker, us_ng_ticker],
+    tickers=[eur_usd_ticker, us_oil_ticker, us_ng_ticker],
     start="2000-01-01",
     end="2024-12-31",
     interval="1d",
@@ -851,11 +865,13 @@ us_data = yf.download(
     auto_adjust=False
 )
 us_data = us_data["Adj Close"].dropna()
-us_data.columns = ["USD Index", "WTI Oil", "Natural Gas"]
-
-
+us_data = us_data.rename(columns={
+    "EURUSD=X": "EUR/USD",
+    "CL=F": "WTI Oil",
+    "NG=F": "Natural Gas"
+})
 data = us_data.copy()
-variables = ["USD Index", "WTI Oil"]
+variables = ["EUR/USD", "WTI Oil"]
 secondary_yaxis_variables = ["Natural Gas"]
 color_discrete_sequence = ["grey", "black", "#9b0a7d"]
 title = f"WTI Oil, Natural Gas and USD Index over the time: {data.index[0].year} - {data.index[-1].year}"
@@ -863,7 +879,7 @@ x_axis_title = "Date"
 y_axis_title = "WTI Oil & USD Index"
 secondary_yaxis_title = "Natural Gas"
 color_mapping = {
-    'USD Index': "grey",
+    'EUR/USD': "grey",
     'WTI Oil': "black",
     'Natural Gas': "#9b0a7d",
 }
@@ -887,13 +903,13 @@ fig_main_relationships_commodities_fx = data_graphing_instance.get_fig_relations
 # Show the figure
 fig_main_relationships_commodities_fx.show(renderer="browser")
 #----------------------------------------------------------------------------------------
-# 02 - Research Hypothesis - Main Relationships between Oil, Gas and USD Index - Rolling Volatility and Crisis Periods
+# 02 - Research Hypothesis - Main Relationships between Oil, Gas and EUR/USD
 #----------------------------------------------------------------------------------------
 with open("/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/crisis_periods_dict.json", "r") as f:
     crisis_periods_dict = json.load(f)
 
 series_dict_mapping = {
-    'EUR/USD': 'DEXUSEU',
+    'USD/EUR': 'DEXUSEU',
     'WTI Oil': 'DCOILWTICO',
     "Natural Gas": "DHHNGSP",
 }
@@ -907,50 +923,108 @@ data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_dat
     end_date=end_date
     )
 spot_exchange_rate_data_df = pd.concat(list(data_dict.values()), axis=1).dropna()
+# Compute the EUR/USD rate
+spot_exchange_rate_data_df["EUR/USD"] = 1 / spot_exchange_rate_data_df["USD/EUR"]
+spot_exchange_rate_data_df = spot_exchange_rate_data_df.drop(columns=["USD/EUR"])
+spot_exchange_rate_data_log_diff_df = np.log(spot_exchange_rate_data_df).diff().dropna()
 
-
-country_keys_mapping = {
-    "US": "United States",
+data = spot_exchange_rate_data_df.copy()
+variables = ["WTI Oil"]
+secondary_yaxis_variables = ["Natural Gas", "EUR/USD"]
+color_discrete_sequence = ["grey", "black", "#9b0a7d"]
+title = f"WTI Oil, Natural Gas and USD Index over the time: {data.index[0].year} - {data.index[-1].year}"
+x_axis_title = "Date"
+y_axis_title = "WTI Oil"
+secondary_yaxis_title = "Natural Gas & EUR/USD Spot Exchange Rate"
+color_mapping = {
+    'EUR/USD': "grey",
+    'WTI Oil': "black",
+    'Natural Gas': "#9b0a7d",
 }
-exchange_rates_df = data_loading_instance.get_bis_exchange_rate_data(
-    country_keys_mapping=country_keys_mapping,
-    exchange_rate_type_list=[
-        "Nominal effective exchange rate - daily - narrow basket",
-        ])
-exchange_rates_df = exchange_rates_df.dropna()
-# Compute the rolling standard deviation as volatility proxy
-window = 30
-exchange_rate_vola_df = exchange_rates_df.rolling(window=window).std().dropna()
-# Also compute the log differences
-exchange_rate_log_diff_df = np.log(exchange_rates_df).diff().dropna()
-# Load the daily Oil WTI data from FRED because the data history is longer than Yahoo Finance
+fig_main_relationships_commodities_fx = data_graphing_instance.get_fig_relationship_main_vars(
+        data=data,
+        variables=variables,
+        secondary_y_variables=secondary_yaxis_variables,
+        title="",
+        secondary_y_axis_title=secondary_yaxis_title,
+        color_discrete_sequence=color_discrete_sequence,
+        x_axis_title=x_axis_title,
+        y_axis_title=y_axis_title,
+        color_mapping_dict=color_mapping,
+        save_fig=False,
+        file_name="oil_gas_usd_index",
+        file_path=FIGURES_PATH,
+        width=1200,
+        height=800,
+        scale=3
+        )
+# Show the figure
+fig_main_relationships_commodities_fx.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 02 - Research Hypothesis - Main Relationships between Oil, Gas and EUR/USD - log diffs
+#----------------------------------------------------------------------------------------
+data = spot_exchange_rate_data_log_diff_df.copy()
+variables = ["WTI Oil", "Natural Gas", "EUR/USD"]
+secondary_yaxis_variables = []
+color_discrete_sequence = ["grey", "black", "#9b0a7d"]
+title = f"WTI Oil, Natural Gas and USD Index over the time: {data.index[0].year} - {data.index[-1].year}"
+x_axis_title = "Date"
+y_axis_title = "WTI Oil"
+secondary_yaxis_title = ""
+color_mapping = {
+    'EUR/USD': "grey",
+    'WTI Oil': "black",
+    'Natural Gas': "#9b0a7d",
+}
+fig_main_relationships_commodities_fx = data_graphing_instance.get_fig_relationship_main_vars(
+        data=data,
+        variables=variables,
+        secondary_y_variables=secondary_yaxis_variables,
+        title="",
+        secondary_y_axis_title=secondary_yaxis_title,
+        color_discrete_sequence=color_discrete_sequence,
+        x_axis_title=x_axis_title,
+        y_axis_title=y_axis_title,
+        color_mapping_dict=color_mapping,
+        save_fig=False,
+        file_name="oil_gas_usd_index",
+        file_path=FIGURES_PATH,
+        width=1200,
+        height=800,
+        scale=3
+        )
+# Show the figure
+fig_main_relationships_commodities_fx.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 02 - Research Hypothesis - Normalized Exchange rate volatilty, wti oil and natural gas with highlighted crisis periods - rolling volatility
+#----------------------------------------------------------------------------------------
+with open("/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/crisis_periods_dict.json", "r") as f:
+    crisis_periods_dict = json.load(f)
+
+series_dict_mapping = {
+    'USD/EUR': 'DEXUSEU',
+    'WTI Oil': 'DCOILWTICO',
+    "Natural Gas": "DHHNGSP",
+}
+
+start_date = "1960-01-01"
+end_date = "2025-10-01"
+
 data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_data(
-    series_dict_mapping={"OIL WTI": "DCOILWTICO",
-                         "Henry Hub Natural Gas Spot Price": "DHHNGSP"},
+    series_dict_mapping=series_dict_mapping,
     start_date=start_date,
     end_date=end_date
-)
-energy_commodity_prices_df = pd.concat(list(data_dict.values()), axis=1).dropna()
-energy_commodity_prices_vola_df = energy_commodity_prices_df.rolling(window=window).std().dropna()
+    )
+spot_exchange_rate_data_df = pd.concat(list(data_dict.values()), axis=1).dropna()
+# Compute the EUR/USD rate
+spot_exchange_rate_data_df["EUR/USD"] = 1 / spot_exchange_rate_data_df["USD/EUR"]
+spot_exchange_rate_data_df = spot_exchange_rate_data_df.drop(columns=["USD/EUR"])
 # Also compute the log differences
-energy_commodity_prices_log_diff_df = np.log(energy_commodity_prices_df).diff().dropna()
+spot_exchange_rate_data_log_diff_df = np.log(spot_exchange_rate_data_df).diff().dropna()
 
-# Merge the exchange rate and US energy commodtiy vola data
-crisis_volatility_data = exchange_rate_vola_df.merge(
-    right=energy_commodity_prices_vola_df,
-    left_index=True,
-    right_index=True,
-    how="inner"
-).dropna()
-
-crisis_log_first_diff_data = exchange_rate_log_diff_df.merge(
-    right=energy_commodity_prices_log_diff_df,
-    left_index=True,
-    right_index=True,
-    how="inner"
-).dropna()
-data = crisis_volatility_data.copy()
-data_log_first_diff = crisis_log_first_diff_data.copy()
+#Calculate rolling volatility (standard deviation) of log first differences
+window_size = 30  # e.g., 30-day rolling window
+data_log_first_diff = spot_exchange_rate_data_log_diff_df.rolling(window=window_size).std().dropna()
 #----------------------------------------------------------------------------------------
 # 02 - Research Hypothesis - Normalized Exchange rate volatilty, wti oil and natural gas with highlighted crisis periods
 #----------------------------------------------------------------------------------------
@@ -967,13 +1041,13 @@ fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_h
     secondary_y_variables=[],
     recession_shading_color="rgba(155, 10, 125, 0.3)",
     title="",
-    secondary_y_axis_title="WTI Oil & Natural Gas Volatility (Normalized)",
+    secondary_y_axis_title="",
     x_axis_title=x_axis_title,
     y_axis_title=y_axis_title,
     color_mapping_dict={
-        'US_Nominal effective exchange rate - daily - narrow basket': "grey",
-        'OIL WTI': "black",
-        'Henry Hub Natural Gas Spot Price': "#9b0a7d",
+        'EUR/USD': "grey",
+        'WTI Oil': "black",
+        'Natural Gas': "#9b0a7d",
     },
     num_years_interval_x_axis=5,
     showlegend=False,
@@ -987,10 +1061,10 @@ fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_h
 # Show the figure
 fig_crisis_periods_highlighted.show(renderer="browser")
 #----------------------------------------------------------------------------------------
-# 02 - Research Hypothesis - Rolling correlation of exchange rates, wti oil and natural gas with highlighted crisis periods
+# 02 - Research Hypothesis - Rolling correlation (normalised) of exchange rates, wti oil and natural gas with highlighted crisis periods
 #----------------------------------------------------------------------------------------
 series_dict_mapping = {
-    'EUR/USD': 'DEXUSEU',
+    'USD/EUR': 'DEXUSEU',
     'WTI Oil': 'DCOILWTICO',
     "Natural Gas": "DHHNGSP",
 }
@@ -1004,7 +1078,12 @@ data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_dat
     end_date=end_date
     )
 spot_exchange_rate_data_df = pd.concat(list(data_dict.values()), axis=1).dropna()
-window = 30
+# Compute the EUR/USD rate
+spot_exchange_rate_data_df["EUR/USD"] = 1 / spot_exchange_rate_data_df["USD/EUR"]
+spot_exchange_rate_data_df = spot_exchange_rate_data_df.drop(columns=["USD/EUR"])
+
+# window = 30
+window = 120
 return_type = "log"  # "log" or "pct"
 
 if return_type == "pct":
@@ -1021,10 +1100,9 @@ data = rolling_corr_data_pct_returns.copy()
 with open("/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/crisis_periods_dict.json", "r") as f:
     crisis_periods_dict = json.load(f)
 
-title=f"Daily rolling correlation between EUR/USD spot exchange rate, oil and gas log first differences with highlighted crisis periods over the time: {data.index[0].year} - {data.index[-1].year}"
-x_axis_title="Time"
-y_axis_title="Rolling correlation"
-
+title=f"Daily rolling correlation (120 days window) between EUR/USD spot exchange rate, oil and gas log first differences with highlighted crisis periods over the time: {data.index[0].year} - {data.index[-1].year}"
+x_axis_title="Date"
+y_axis_title="Rolling (linear) correlation (120 days window) of log first differences"
 
 fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_highlighted(
     data=data,
@@ -1033,7 +1111,60 @@ fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_h
     secondary_y_variables=[],
     recession_shading_color="rgba(155, 10, 125, 0.3)",
     title="",
-    secondary_y_axis_title="WTI Oil & Natural Gas Volatility (Normalized)",
+    secondary_y_axis_title="",
+    x_axis_title=x_axis_title,
+    y_axis_title=y_axis_title,
+    color_mapping_dict={
+        'WTI Oil & Natural Gas': "grey",
+        'Natural Gas & EUR/USD': "black",
+        'WTI Oil & EUR/USD': "#9b0a7d",
+    },
+    num_years_interval_x_axis=5,
+    showlegend=False,
+    save_fig=False,
+    file_name="chap_02_rolling_correlation_exchange_rate_oil_log_diff_crisis_periods_highlighted",
+    file_path=FIGURES_PATH,
+    width=1200,
+    height=800,
+    scale=3
+    )
+# Show the figure
+fig_crisis_periods_highlighted.show(renderer="browser")
+
+# Also try out the non-linear rank correlation (Spearman)
+from scipy import stats
+def rolling_spearman(series_x: pd.Series, series_y: pd.Series, window: int) -> pd.Series:
+    """Simple rolling Spearman (ranks computed inside each window)."""
+    x_vals = series_x.to_numpy()
+    y_vals = series_y.to_numpy()
+    idx = series_x.index
+    out = np.full(len(idx), np.nan)
+    for i in range(window - 1, len(idx)):
+        xw = x_vals[i - window + 1 : i + 1]
+        yw = y_vals[i - window + 1 : i + 1]
+        out[i] = stats.spearmanr(xw, yw).correlation
+    return pd.Series(out, index=idx).dropna()
+
+# compute rolling rank (Spearman) correlations for the three pairs
+r1 = rolling_spearman(return_data["WTI Oil"], return_data["Natural Gas"], window)
+r2 = rolling_spearman(return_data["Natural Gas"], return_data["EUR/USD"], window)
+r3 = rolling_spearman(return_data["WTI Oil"], return_data["EUR/USD"], window)
+
+rolling_corr_rank_data_pct_returns = pd.concat([r1, r2, r3], axis=1)
+rolling_corr_rank_data_pct_returns.columns = [
+    "WTI Oil & Natural Gas",
+    "Natural Gas & EUR/USD",
+    "WTI Oil & EUR/USD",
+]
+data = rolling_corr_rank_data_pct_returns.copy()
+fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_highlighted(
+    data=data,
+    crisis_periods_dict=crisis_periods_dict,
+    variables=data.columns,
+    secondary_y_variables=[],
+    recession_shading_color="rgba(155, 10, 125, 0.3)",
+    title="",
+    secondary_y_axis_title="",
     x_axis_title=x_axis_title,
     y_axis_title=y_axis_title,
     color_mapping_dict={

@@ -5,8 +5,8 @@ from sklearn.metrics import silhouette_score
 # to determine the accuracy of the Markov-switching models. This statistic is computed using the following formula:
 # The RCM is computed as the average of the product of smoothed probabilities p~; where S is the number of
 # regimes (states, S). The switching variable follows a Bernoulli distribution and as a result, the RCM provides an
-# estimate of the variance. The RCM statistic ranges be- tween 0 (perfect regime classification) and 100
-# (failure to detect any re- gime classification) with lower values of the RCM preferable to higher values of the RCM.
+# estimate of the variance. The RCM statistic ranges between 0 (perfect regime classification) and 100
+# (failure to detect any regime classification) with lower values of the RCM preferable to higher values of the RCM.
 # Thus to ensure significantly different regimes, it is important that a model's RCM is close to zero and its
 # smoothed proba- bility indicator be close to 1.
 def compute_rcm(S: int, smoothed_probs: pd.Series, threshold: float=0.5) -> float:
