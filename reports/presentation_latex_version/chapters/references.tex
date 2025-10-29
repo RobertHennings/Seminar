@@ -64,7 +64,10 @@
         \tiny{
             \setlength{\bibitemsep}{0pt}
             \setlength{\bibhang}{1em}
+            % \nocite{*} % Cite all entries in the .bib file
+            % \printbibliography
             \printbibliography[type=article,title={Articles}]
+            \printbibliography[keyword={article},title={Articles}]
             \printbibliography[type=book,title={Books}]
             \printbibliography[type=unpublished,title={Unpublished / Lecture notes}]
             }
@@ -107,6 +110,7 @@
     \tiny{
         \setlength{\bibitemsep}{0pt}
         \setlength{\bibhang}{1em}
+        % \nocite{*} % Cite all entries in the .bib file
         \printbibliography[type=online,title={Datasets / Online sources}]
     }
 \end{frame}

@@ -1,0 +1,20 @@
+                       OLS Regression Results                      
+Dep. Variable:   ,EUR             ,  R-squared:         ,   0.000  
+Model:           ,OLS             ,  Adj. R-squared:    ,  -0.000  
+Method:          ,Least Squares   ,  F-statistic:       ,  0.1759  
+Date:            ,Tue, 28 Oct 2025,  Prob (F-statistic):, 0.675    
+Time:            ,21:20:43        ,  Log-Likelihood:    ,  25065.  
+No. Observations:,  6720          ,  AIC:               ,-5.013e+04
+Df Residuals:    ,  6718          ,  BIC:               ,-5.011e+04
+Df Model:        ,     1          ,                     ,          
+Covariance Type: ,nonrobust       ,                     ,          
+          ,   coef   , std err ,    t    ,P>|t| ,  [0.025 ,  0.975] 
+const     ,  6.12e-06, 7.38e-05,    0.083, 0.934,   -0.000,    0.000
+i_diff_EUR,-2.266e-05,  5.4e-05,   -0.419, 0.675,   -0.000, 8.32e-05
+Omnibus:      ,404.973,  Durbin-Watson:     ,   1.977
+Prob(Omnibus):, 0.000 ,  Jarque-Bera (JB):  ,1708.071
+Skew:         , 0.106 ,  Prob(JB):          ,    0.00
+Kurtosis:     , 5.461 ,  Cond. No.          ,    1.53
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.

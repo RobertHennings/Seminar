@@ -134,12 +134,9 @@
 %\setbeamertemplate{footline}[page number] % Uncomment this line to replace the footer line in all slides with a simple slide count
 
 %\setbeamertemplate{navigation symbols}{} % Uncomment this line to remove the navigation symbols from the bottom of all slides
-\usepackage[style=alphabetic,backend=biber]{biblatex}
-% \usepackage[style=numeric,backend=biber]{biblatex}
+\usepackage[backend=bibtex, style=alphabetic]{biblatex}
 \addbibresource{references.bib}
-% \usepackage{natbib}
-% \bibliographystyle{alpha}
-% \bibliography{references}
+% \usepackage[backend=biber, style=alphabetic, sorting=ynt]{biblatex}
 \usepackage{graphicx}
 \usepackage{tikz}
 \usepackage{booktabs} % Allows the use of \toprule, \midrule and \bottomrule for better rules in tables
@@ -209,7 +206,7 @@
 \setbeamerfont{bibliography entry title}{size=\tiny}
 \setbeamerfont{bibliography entry location}{size=\tiny}
 \setbeamerfont{bibliography entry note}{size=\tiny}
-\renewcommand*{\bibfont}{\tiny}%
+\renewcommand*{\bibfont}{\tiny}
 %----------------------------------------------------------------------------------------
 %	PRESENTATION INFORMATION
 %----------------------------------------------------------------------------------------
@@ -291,7 +288,7 @@
 %	05 - Methodology Overview
 %----------------------------------------------------------------------------------------
 \section{Methodology Overview} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
-\input{chapters/chapter-05}
+% \input{chapters/chapter-05}
 %----------------------------------------------------------------------------------------
 %	06 - Data Characteristics and Stylized Facts
 %----------------------------------------------------------------------------------------
