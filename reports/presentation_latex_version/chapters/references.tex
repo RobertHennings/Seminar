@@ -64,12 +64,10 @@
         \tiny{
             \setlength{\bibitemsep}{0pt}
             \setlength{\bibhang}{1em}
-            % \nocite{*} % Cite all entries in the .bib file
-            % \printbibliography
             \printbibliography[type=article,title={Articles}]
-            \printbibliography[keyword={article},title={Articles}]
             \printbibliography[type=book,title={Books}]
             \printbibliography[type=unpublished,title={Unpublished / Lecture notes}]
+            % \printbibliography[keyword={fig_chap03},title={Full sources for the literature overview}]
             }
 \end{frame}
 %----------------------------------------------------------------------------------------
@@ -110,44 +108,43 @@
     \tiny{
         \setlength{\bibitemsep}{0pt}
         \setlength{\bibhang}{1em}
-        % \nocite{*} % Cite all entries in the .bib file
         \printbibliography[type=online,title={Datasets / Online sources}]
     }
 \end{frame}
+% ----------------------------------------------------------------------------------------
+\subsection{Software}
+% ----------------------------------------------------------------------------------------
+% 	NEW CHAPTER TITLE SLIDE
+% ----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{~}
+	\begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
+            \includegraphics[width=1.7cm]{wiso_logo.png}
+        };
+		\node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
+            \tikz\node[opacity=0.15] {
+                \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
+            };
+        };
+    \end{tikzpicture}
+	% \begin{block}{} % Empty block title % Set background color (adjust 'blue!20' as needed)
+    %     \centering
+    %     {\large \textbf{References}} % Slightly smaller text
+    % \end{block}
+	\begin{center}
+        \begin{minipage}{0.6\textwidth} % Adjust the width of the block
+            \begin{block}{} % Empty block title
+                \centering
+                {\large \textbf{References - Software}} % Slightly smaller text
+            \end{block}
+        \end{minipage}
+    \end{center}
+\end{frame}
 %----------------------------------------------------------------------------------------
-% \subsection{Software}
+%	NEW SLIDE
 %----------------------------------------------------------------------------------------
-%	NEW CHAPTER TITLE SLIDE
-%----------------------------------------------------------------------------------------
-% \begin{frame}
-% 	\frametitle{~}
-% 	\begin{tikzpicture}[remember picture, overlay]
-%         \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
-%             \includegraphics[width=1.7cm]{wiso_logo.png}
-%         };
-% 		\node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
-%             \tikz\node[opacity=0.15] {
-%                 \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
-%             };
-%         };
-%     \end{tikzpicture}
-% 	% \begin{block}{} % Empty block title % Set background color (adjust 'blue!20' as needed)
-%     %     \centering
-%     %     {\large \textbf{References}} % Slightly smaller text
-%     % \end{block}
-% 	\begin{center}
-%         \begin{minipage}{0.6\textwidth} % Adjust the width of the block
-%             \begin{block}{} % Empty block title
-%                 \centering
-%                 {\large \textbf{References - Software}} % Slightly smaller text
-%             \end{block}
-%         \end{minipage}
-%     \end{center}
-% \end{frame}
-% %----------------------------------------------------------------------------------------
-% %	NEW SLIDE
-% %----------------------------------------------------------------------------------------
-% \begin{frame}[allowframebreaks]
-%         \frametitle{References - Software}
-%         \printbibliography[keyword=software,title={}]
-% \end{frame}
+\begin{frame}[allowframebreaks]
+    \frametitle{References - Software}
+    \printbibliography[keyword={software},title={}]
+\end{frame}
