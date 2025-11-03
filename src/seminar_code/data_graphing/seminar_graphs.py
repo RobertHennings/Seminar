@@ -1,26 +1,26 @@
-from typing import Dict, List, Tuple
 import logging
+import json
 import os
-import datetime as dt
 import pandas as pd
 import numpy as np
 import yfinance as yf
-import json
 
-CAU_COLOR_SCALE = ["#9b0a7d", "grey", "black", "darkgrey", "lightgrey"]
-FIGURES_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/figures"
-TABLES_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables"
-DATA_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/data"
+SEMINAR_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar"
+SEMINAR_CODE_PATH = rf"{SEMINAR_PATH}/src/seminar_code"
+FIGURES_PATH = rf"{SEMINAR_PATH}/reports/figures"
+TABLES_PATH = rf"{SEMINAR_PATH}/reports/tables"
+DATA_PATH = rf"{SEMINAR_PATH}/data"
+PRESENTATION_DATA = rf"{SEMINAR_PATH}/reports/presentation_latex_version/data"
 NUM_YEARS_INTERVAL_X_AXIS = 5
-SRC_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/src"
-SEMINAR_CODE_PATH = rf"{SRC_PATH}/seminar_code"
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-# import config settings with static global variables
+RENDERER = "vscode+browser"
+CAU_COLOR_SCALE = ["#9b0a7d", "grey", "black", "darkgrey", "lightgrey"]
 print(os.getcwd())
 os.chdir(SEMINAR_CODE_PATH)
 print(os.getcwd())
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+# import config settings with static global variables
 from utils.evaluation import adf_test, \
     granger_causality_test, \
     cointegration_test, \
@@ -60,6 +60,15 @@ exchange_rates_df = data_loading_instance.get_bis_exchange_rate_data(
             "CH_Real effective exchange rate - monthly - narrow basket": "Switzerland",
             "XM_Real effective exchange rate - monthly - narrow basket": "Euro Area (EA)"
         })
+# Save the data locally
+data_loading_instance.export_dataframe(
+    df=exchange_rates_df,
+    file_name="chap_00_exchange_rates_ppp_deviations",
+    excel_sheet_name="00",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=True,
+)
 effective_exchange_rates_df = pd.DataFrame()
 effective_exchange_rates_df["GBPREAL"] = np.log(exchange_rates_df["United Kingdom"]) - np.log(exchange_rates_df["United States"])
 effective_exchange_rates_df["JPYREAL"] = np.log(exchange_rates_df["Japan"]) - np.log(exchange_rates_df["United States"])
@@ -118,6 +127,39 @@ oil_consumption_df = data_dict.get("Oil Consumption")
 oil_production_df = data_dict.get("Oil Production").rename(mapper={"oil_production__twh": "oil_production_twh"}, axis=1)
 gas_consumption_df = data_dict.get("Gas Consumption")
 gas_production_df = data_dict.get("Gas Production").rename(mapper={"gas_production__twh": "gas_production_twh"}, axis=1)
+# Save the data locally
+data_loading_instance.export_dataframe(
+    df=oil_consumption_df,
+    file_name="chap_07_oil_consumption_data",
+    excel_sheet_name="07",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=True,
+)
+data_loading_instance.export_dataframe(
+    df=oil_production_df,
+    file_name="chap_07_oil_production_data",
+    excel_sheet_name="07",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=True,
+)
+data_loading_instance.export_dataframe(
+    df=gas_consumption_df,
+    file_name="chap_07_gas_consumption_data",
+    excel_sheet_name="07",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=True,
+)
+data_loading_instance.export_dataframe(
+    df=gas_production_df,
+    file_name="chap_07_gas_production_data",
+    excel_sheet_name="07",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=True,
+)
 # ----------------------------------------------------------------------------------------
 # 01 - Modern Commodities Markets - The current state - Oil Consumption
 # ----------------------------------------------------------------------------------------
@@ -701,6 +743,16 @@ data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_dat
 data_us_df = pd.concat(list(data_dict.values()), axis=1).dropna()
 data_us_full_info_table = pd.DataFrame(data_full_info_dict).T
 
+# Save the data locally
+data_loading_instance.export_dataframe(
+    df=data_us_df,
+    file_name="chap_01_us_inflation_contribution_data",
+    excel_sheet_name="01",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=True,
+)
+
 def percent_change(series):
     return 100 * (series.iloc[-1] / series.iloc[-13] - 1)
 
@@ -788,6 +840,16 @@ data = pd.concat([df["OBS_VALUE"] for df in data_dict.values()], axis=1)
 data.columns = data_dict.keys()
 data.index = pd.to_datetime(data_dict[list(data_dict.keys())[0]]["TIME_PERIOD"])
 
+# Save the data locally
+data_loading_instance.export_dataframe(
+    df=data,
+    file_name="chap_01_eu_inflation_contribution_data",
+    excel_sheet_name="01",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=True,
+)
+
 # Use approximate euro area HICP weights (for 2022, update for accuracy):
 # Euro area weights (approx. for 2022, update if needed)
 weights = {
@@ -870,6 +932,7 @@ us_data = us_data.rename(columns={
     "CL=F": "WTI Oil",
     "NG=F": "Natural Gas"
 })
+
 data = us_data.copy()
 variables = ["EUR/USD", "WTI Oil"]
 secondary_yaxis_variables = ["Natural Gas"]
@@ -1025,6 +1088,16 @@ spot_exchange_rate_data_log_diff_df = np.log(spot_exchange_rate_data_df).diff().
 #Calculate rolling volatility (standard deviation) of log first differences
 window_size = 30  # e.g., 30-day rolling window
 data_log_first_diff = spot_exchange_rate_data_log_diff_df.rolling(window=window_size).std().dropna()
+
+# Save the data locally
+data_loading_instance.export_dataframe(
+    df=data_log_first_diff,
+    file_name="chap_01_daily_exchange_rate_oil_log_diff_vola_normalized_crisis_periods_highlighted",
+    excel_sheet_name="01",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=True,
+)
 #----------------------------------------------------------------------------------------
 # 02 - Research Hypothesis - Normalized Exchange rate volatilty, wti oil and natural gas with highlighted crisis periods
 #----------------------------------------------------------------------------------------
@@ -1082,8 +1155,8 @@ spot_exchange_rate_data_df = pd.concat(list(data_dict.values()), axis=1).dropna(
 spot_exchange_rate_data_df["EUR/USD"] = 1 / spot_exchange_rate_data_df["USD/EUR"]
 spot_exchange_rate_data_df = spot_exchange_rate_data_df.drop(columns=["USD/EUR"])
 
-# window = 30
-window = 120
+window = 30
+# window = 120
 return_type = "log"  # "log" or "pct"
 
 if return_type == "pct":
@@ -1097,6 +1170,7 @@ rolling_corr_data_pct_returns = return_data.rolling(window=window).corr().dropna
 rolling_corr_data_pct_returns.columns = [f"{col[0]} & {col[1]}" for col in rolling_corr_data_pct_returns.columns]
 
 data = rolling_corr_data_pct_returns.copy()
+
 with open("/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/crisis_periods_dict.json", "r") as f:
     crisis_periods_dict = json.load(f)
 
@@ -1190,6 +1264,7 @@ interbank_rates_df = pd.read_csv(r"/Users/Robert_Hennings/Uni/Master/Seminar/dat
 interbank_rates_df["Date"] = interbank_rates_df["Year"].astype(str) + "-" + interbank_rates_df["Month"].astype(str).str.zfill(2) + "-" + interbank_rates_df["Day"].astype(str).str.zfill(2)
 interbank_rates_df = interbank_rates_df.set_index(pd.to_datetime(interbank_rates_df["Date"]))
 interbank_rates_df = interbank_rates_df[["USD", "EUR"]]
+
 # Load the BIS Central Bank Policy Rate data for the relevant countries as a proxy for the interest rates
 country_keys_mapping = {
     "US": "United States",
@@ -1211,6 +1286,15 @@ interest_rate_comparison_df = interbank_rates_df.merge(
     how="inner"
 ).dropna()
 interest_rate_comparison_df.columns = ["USD 3M", "EUR 3M", "USD CBPR", "EUR CBPR"]
+# Save the data locally
+data_loading_instance.export_dataframe(
+    df=interest_rate_comparison_df,
+    file_name="chap_07_interest_rate_comparison_df",
+    excel_sheet_name="07",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=True,
+)
 
 data = interest_rate_comparison_df.copy()
 variables = interest_rate_comparison_df.columns.tolist()
@@ -1252,6 +1336,7 @@ interbank_rates_df = pd.read_csv(r"/Users/Robert_Hennings/Uni/Master/Seminar/dat
 interbank_rates_df["Date"] = interbank_rates_df["Year"].astype(str) + "-" + interbank_rates_df["Month"].astype(str).str.zfill(2) + "-" + interbank_rates_df["Day"].astype(str).str.zfill(2)
 interbank_rates_df = interbank_rates_df.set_index(pd.to_datetime(interbank_rates_df["Date"]))
 interbank_rates_df = interbank_rates_df[["USD", "EUR"]]
+
 # Load the BIS Central Bank Policy Rate data for the relevant countries as a proxy for the interest rates
 country_keys_mapping = {
     "US": "United States",
@@ -1329,10 +1414,29 @@ spot_exchange_rate_data_df = pd.concat(list(data_dict.values()), axis=1).dropna(
 # Transform to log values and take first difference
 log_spot_exchange_rate_data_df = np.log(spot_exchange_rate_data_df)
 log_diff_spot_exchange_rate_data_df = log_spot_exchange_rate_data_df.diff().dropna()
+# Save the data locally
+data_loading_instance.export_dataframe(
+    df=log_diff_spot_exchange_rate_data_df,
+    file_name="chap_07_normed_histogram_data_log_first_differences",
+    excel_sheet_name="07",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=True,
+)
 window = 30
 spot_exchange_rate_vola_df = log_diff_spot_exchange_rate_data_df.rolling(window=window).std().dropna()
 # Normalize the data
 spot_exchange_rate_data_df_normed = (spot_exchange_rate_data_df - spot_exchange_rate_data_df.mean()) / spot_exchange_rate_data_df.std()
+# Save the data locally
+data_loading_instance.export_dataframe(
+    df=spot_exchange_rate_data_df_normed,
+    file_name="chap_07_normed_histogram_data",
+    excel_sheet_name="07",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=True,
+)
+
 start_year = spot_exchange_rate_data_df_normed.index.min().strftime('%Y')
 end_year = spot_exchange_rate_data_df_normed.index.max().strftime('%Y')
 color_mapping_dict = {
@@ -1423,10 +1527,55 @@ data_loading_instance.export_dataframe(
         save_excel=True,
         save_index=False,
         )
+data_loading_instance.export_dataframe(
+        df=normality_test_results,
+        file_name="norm_test_raw_series",
+        excel_sheet_name="ADF Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        save_excel=True,
+        save_index=False,
+        )
 # Also export to Latex
 data_loading_instance.export_dataframe(
         df=normality_test_results.round(3),
         file_name="norm_test_raw_series",
+        latex_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables",
+        save_latex=True,
+        save_index=False,
+        )
+#----------------------------------------------------------------------------------------
+# 06 - Data Characteristics and Stylized Facts - Tests for Normality (log first differences)
+#----------------------------------------------------------------------------------------
+normality_test_results = test_data_for_normality(
+    data=log_diff_spot_exchange_rate_data_df,
+    variables=log_diff_spot_exchange_rate_data_df.columns.tolist(),
+    significance_level=0.05,
+    test_shapiro_wilks=True,
+    test_anderson_darling=False,
+    test_kolmogorov_smirnov=True,
+    test_dagostino_k2=True
+)
+# Export results
+data_loading_instance.export_dataframe(
+        df=normality_test_results,
+        file_name="norm_test_log_diff",
+        excel_sheet_name="ADF Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+        save_excel=True,
+        save_index=False,
+        )
+data_loading_instance.export_dataframe(
+        df=normality_test_results,
+        file_name="norm_test_log_diff",
+        excel_sheet_name="ADF Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        save_excel=True,
+        save_index=False,
+        )
+# Also export to Latex
+data_loading_instance.export_dataframe(
+        df=normality_test_results.round(3),
+        file_name="norm_test_log_diff",
         latex_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables",
         save_latex=True,
         save_index=False,
@@ -1458,6 +1607,14 @@ data_loading_instance.export_dataframe(
         file_name="adf_test_raw_series",
         excel_sheet_name="ADF Test Results",
         excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+        save_excel=True,
+        save_index=False,
+        )
+data_loading_instance.export_dataframe(
+        df=adf_test_df,
+        file_name="adf_test_raw_series",
+        excel_sheet_name="ADF Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
         save_excel=True,
         save_index=False,
         )
@@ -1500,6 +1657,14 @@ data_loading_instance.export_dataframe(
         save_excel=True,
         save_index=False,
         )
+data_loading_instance.export_dataframe(
+        df=adf_test_df,
+        file_name="adf_test_log_diff",
+        excel_sheet_name="ADF Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        save_excel=True,
+        save_index=False,
+        )
 # Also export to Latex
 data_loading_instance.export_dataframe(
         df=adf_test_df[['ADF Statistic', 'p-value', 'Start Time:', 'End Time:', 'Regression Type', 'Observations:', "Variable", "Result"]].round(3),
@@ -1537,6 +1702,14 @@ data_loading_instance.export_dataframe(
         save_excel=True,
         save_index=False,
         )
+data_loading_instance.export_dataframe(
+        df=cointegration_test_df,
+        file_name="cointegration_test_raw_series",
+        excel_sheet_name="Granger Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        save_excel=True,
+        save_index=False,
+        )
 # Also export to Latex
 data_loading_instance.export_dataframe(
         df=cointegration_test_df[['Cointegration Score', 'p-value', 'Start Time', 'End Time', 'Observations', 'Trend','Variable X', 'Variable Y', 'Result']].round(3),
@@ -1554,7 +1727,7 @@ cointegration_test_df = pd.DataFrame()
 for variable_y in variable_y_list:
     for trend in trend_type_list:
         cointegration_test_result_df = cointegration_test(
-            data=spot_exchange_rate_vola_df,
+            data=log_diff_spot_exchange_rate_data_df,
             variable_x='EUR/USD',
             variable_y=variable_y,
             significance_level=0.05,
@@ -1568,9 +1741,17 @@ cointegration_test_df["Result"] = np.where(cointegration_test_df["p-value"] < 0.
 # Export results
 data_loading_instance.export_dataframe(
         df=cointegration_test_df,
-        file_name="coint_test_log_diff_rolvol",
+        file_name="cointegration_test_log_diff",
         # excel_sheet_name="Granger Test Results",
         excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+        save_excel=True,
+        save_index=False,
+        )
+data_loading_instance.export_dataframe(
+        df=cointegration_test_df,
+        file_name="cointegration_test_log_diff",
+        excel_sheet_name="Granger Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
         save_excel=True,
         save_index=False,
         )
