@@ -1,4 +1,3 @@
-BASE_URL = "https://www.epexspot.com/en/market-results"
 ERROR_CODES_DICT = {
         400: {
             "message": "Error",

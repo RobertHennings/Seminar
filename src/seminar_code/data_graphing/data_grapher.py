@@ -1,25 +1,28 @@
-from typing import Dict, List, Tuple
-import matplotlib.colors as mcolors
-import numpy as np
-import os
+from typing import Dict, List
 import logging
-import datetime as dt
+import os
+import ast
+import matplotlib.colors as mcolors
 import pandas as pd
+import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from statsmodels.tsa.stattools import acf
-from statsmodels.tsa.stattools import pacf
-from scipy import stats
 import plotly.io as pio
 from plotly.io import to_html
-import ast
-# Configure logging
+from scipy import stats
+from statsmodels.tsa.stattools import acf
+from statsmodels.tsa.stattools import pacf
+
+"""
+This file contains the main class for creating all graphs used and produced for the seminar
+project.
+"""
+
+# Set up logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # import config settings with static global variables
-# os.chdir(r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/data_graphing")
-
 try:
     from . import config as cfg
 except:
@@ -83,15 +86,19 @@ class DataGraphing(object):
         height: int=600,
         scale: int=2
         ) -> None:
-        """
-        Save a Plotly figure as a PDF file.
+        """Saves the given figure as a PDF file to be directly used as .pdf
+           in the LaTeX presentation.
 
-        Parameters:
-        - fig: The Plotly figure to save.
-        - file_path: The path to save the PDF file.
-        - width: The width of the figure in pixels.
-        - height: The height of the figure in pixels.
-        - scale: The resolution scale (default is 2 for high resolution).
+        Args:
+            fig (go.Figure): The Plotly figure to save.
+            file_name (str, optional): The specified filename (without file type ending). Defaults to None.
+            file_path (str, optional): The specified path at which to save the graph. Defaults to None.
+            width (int, optional): Custom width. Defaults to 800.
+            height (int, optional): Custom height. Defaults to 600.
+            scale (int, optional): Custom resolution scaling. Defaults to 2.
+
+        Raises:
+            ValueError: If file_name or file_path is not provided.
         """
         if file_path is not None:
             file_path_save = file_path
@@ -120,6 +127,16 @@ class DataGraphing(object):
         file_name: str=None,
         file_path: str=None,
         ) -> None:
+        """Saves the given figure as a html file to be viewed better online or locally.
+
+        Args:
+            fig (go.Figure): _description_
+            file_name (str, optional): _description_. Defaults to None.
+            file_path (str, optional): _description_. Defaults to None.
+
+        Raises:
+            ValueError: If file_name or file_path is not provided.
+        """
         if file_path is not None:
             file_path_save = file_path
         elif self.file_path:
@@ -143,7 +160,16 @@ class DataGraphing(object):
         hex_color: str,
         factor: float
         ) -> str:
-        """Lightens the given color by multiplying it with the given factor (0-1)."""
+        """Lightens the provided hex_color by a specified factor to create
+           a full custom diverging colorscale with custom steps.
+
+        Args:
+            hex_color (str): The color to be lightened up.
+            factor (float): The factor by which the provided hex color should be lightened up.
+
+        Returns:
+            str: Lightened color.
+        """
         rgb = np.array(mcolors.to_rgb(hex_color))
         light_rgb = 1 - (1 - rgb) * factor  # move toward white
         return mcolors.to_hex(light_rgb)
@@ -157,21 +183,18 @@ class DataGraphing(object):
         center_color: str = "#ffffff",
         lightening_factor: float = 0.6
         ) -> List[[float, str]]:
-        """
-        Returns a Plotly-style custom diverging continuous color scale from start to end color.
-        
-        Parameters:
-        - start_hex: Hex color for the low end (e.g., '#ff0000')
-        - end_hex: Hex color for the high end (e.g., '#0000ff')
-        - steps: Number of gradient steps toward the center for each side
-        - lightening_factor: Value < 1 to determine how much each step lightens
-        
+        """Returns a Plotly-style custom diverging continuous color scale from start to end color.
+
+        Args:
+            start_hex (str): Hex color for the low end (e.g., '#ff0000')
+            end_hex (str): Hex color for the high end (e.g., '#0000ff')
+            steps (int, optional): Number of gradient steps toward the center for each side. Defaults to 5.
+            center_color (str, optional): divergence midpoint (white). Defaults to "#ffffff".
+            lightening_factor (float, optional): Value < 1 to determine how much each step lightens. Defaults to 0.6.
+
         Returns:
-        - List of [position, color] for use in Plotly
+            List[[float, str]]: _description_
         """
-
-        # center_color = "#ffffff"  # divergence midpoint (white)
-
         # Generate lightened steps from start -> white
         left_colors = [
             self.lighten_color(start_hex, lightening_factor ** (steps - i - 1))
@@ -387,12 +410,7 @@ class DataGraphing(object):
         specs: List[List[Dict[str, str]]]=[[{"secondary_y": True}], [{"secondary_y": True}]],
         fig_production: go.Figure=None,
         fig_consumption: go.Figure=None,
-        margin_dict: Dict[str, float]=dict(
-                l=20,  # Left margin
-                r=20,  # Right margin
-                t=90,  # Top margin
-                b=10   # Bottom margin
-                ),
+        margin_dict: Dict[str, float]=None,
         showlegend: bool=False,
         save_fig: bool=False,
         file_name: str=None,
@@ -678,12 +696,7 @@ class DataGraphing(object):
         specs: List[List[Dict[str, str]]]=[{"secondary_y": True}, {"secondary_y": True}],
         fig_oil_oi: go.Figure=None,
         fig_gas_oi: go.Figure=None,
-        margin_dict: Dict[str, float]=dict(
-                l=20,  # Left margin
-                r=20,  # Right margin
-                t=90,  # Top margin
-                b=10   # Bottom margin
-                ),
+        margin_dict: Dict[str, float]=None,
         showlegend: bool=False,
         save_fig: bool=False,
         file_name: str=None,
@@ -814,8 +827,6 @@ class DataGraphing(object):
         variables: List[str],
         secondary_y_variables: List[str],
         title: str,
-        # x_axis_variable: str,
-        # y_axis_variable: str,
         x_axis_title: str,
         y_axis_title: str,
         color_mapping_dict: Dict[str, str],
@@ -1085,12 +1096,7 @@ class DataGraphing(object):
         y_axis_title: str,
         color_mapping_dict: Dict[str, str],
         num_years_interval_x_axis: int=5,
-        margin_dict: Dict[str, float]=dict(
-                l=20,  # Left margin
-                r=20,  # Right margin
-                t=50,  # Top margin
-                b=10   # Bottom margin
-                ),
+        margin_dict: Dict[str, float]=None,
         showlegend: bool=False,
         save_fig: bool=False,
         file_name: str=None,
@@ -1144,7 +1150,7 @@ class DataGraphing(object):
         if secondary_y_variables:
             for i, var in enumerate(secondary_y_variables):
                 if var not in data.columns:
-                    print(f"Variable '{var}' not found in data columns. Skipping.")
+                    logging.info(f"Variable '{var}' not found in data columns. Skipping.")
                     continue
                 fig.add_trace(
                     go.Scatter(
@@ -1258,12 +1264,7 @@ class DataGraphing(object):
         y_axis_title: str,
         color_mapping_dict: Dict[str, str],
         num_years_interval_x_axis: int=5,
-        margin_dict: Dict[str, float]=dict(
-                l=20,  # Left margin
-                r=20,  # Right margin
-                t=50,  # Top margin
-                b=10   # Bottom margin
-                ),
+        margin_dict: Dict[str, float]=None,
         showlegend: bool=False,
         save_fig: bool=False,
         file_name: str=None,
@@ -1307,7 +1308,7 @@ class DataGraphing(object):
         if secondary_y_variables:
             for i, var in enumerate(secondary_y_variables):
                 if var not in data.columns:
-                    print(f"Variable '{var}' not found in data columns. Skipping.")
+                    logging.info(f"Variable '{var}' not found in data columns. Skipping.")
                     continue
                 fig.add_trace(
                     go.Scatter(
@@ -1424,12 +1425,7 @@ class DataGraphing(object):
         y_axis_title: str,
         color_mapping_dict: Dict[str, str],
         num_years_interval_x_axis: int=5,
-        margin_dict: Dict[str, float]=dict(
-                l=20,  # Left margin
-                r=20,  # Right margin
-                t=50,  # Top margin
-                b=10   # Bottom margin
-                ),
+        margin_dict: Dict[str, float]=None,
         showlegend: bool=False,
         save_fig: bool=False,
         file_name: str=None,
@@ -1473,7 +1469,7 @@ class DataGraphing(object):
         if secondary_y_variables:
             for i, var in enumerate(secondary_y_variables):
                 if var not in data.columns:
-                    print(f"Variable '{var}' not found in data columns. Skipping.")
+                    logging.info(f"Variable '{var}' not found in data columns. Skipping.")
                     continue
                 fig.add_trace(
                     go.Scatter(
@@ -1589,12 +1585,7 @@ class DataGraphing(object):
         crisis_periods_dict: Dict[str, Dict[str, str]]=None,
         num_years_interval_x_axis: int=5,
         recession_shading_color: str="rgba(200,200,200,0.3)",  # Light gray for recessions
-        margin_dict: Dict[str, float]=dict(
-                l=20,  # Left margin
-                r=20,  # Right margin
-                t=50,  # Top margin
-                b=10   # Bottom margin
-                ),
+        margin_dict: Dict[str, float]=None,
         showlegend: bool=False,
         save_fig: bool=False,
         file_name: str=None,
@@ -1641,7 +1632,7 @@ class DataGraphing(object):
         if secondary_y_variables:
             for i, var in enumerate(secondary_y_variables):
                 if var not in data.columns:
-                    print(f"Variable '{var}' not found in data columns. Skipping.")
+                    logging.info(f"Variable '{var}' not found in data columns. Skipping.")
                     continue
                 fig.add_trace(
                     go.Scatter(
@@ -1772,7 +1763,7 @@ class DataGraphing(object):
         x_axis_title: str,
         y_axis_title: str,
         color_mapping_dict: Dict[str, str],
-        margin_dict: Dict[str, float]=dict(l=20, r=20, t=50, b=10),
+        margin_dict: Dict[str, float]=None,
         textfont_size: int=16,
         showlegend: bool=False,
         save_fig: bool=False,
@@ -1914,12 +1905,7 @@ class DataGraphing(object):
         y_axis_title: str="",
         color_mapping_dict: Dict[str, str]=None,
         color_discrete_sequence: List[str]=None,
-        margin_dict: Dict[str, float]=dict(
-            l=20,  # Left margin
-            r=20,  # Right margin
-            t=50,  # Top margin
-            b=10   # Bottom margin
-            ),
+        margin_dict: Dict[str, float]=None,
         save_fig: bool=False,
         file_name: str=None,
         file_path: str=None,
@@ -2092,12 +2078,7 @@ class DataGraphing(object):
         y_axis_title: str,
         color_mapping_dict: Dict[str, str],
         significance_level: float=0.05,
-        margin_dict: Dict[str, float]=dict(
-                l=20,  # Left margin
-                r=20,  # Right margin
-                t=50,  # Top margin
-                b=10   # Bottom margin
-                ),
+        margin_dict: Dict[str, float]=None,
         showlegend: bool=False,
         save_fig: bool=False,
         file_name: str=None,
@@ -2139,7 +2120,7 @@ class DataGraphing(object):
         if secondary_y_variables:
             for i, var in enumerate(secondary_y_variables):
                 if var not in data.columns:
-                    print(f"Variable '{var}' not found in data columns. Skipping.")
+                    logging.info(f"Variable '{var}' not found in data columns. Skipping.")
                     continue
                 fig.add_trace(
                     go.Scatter(
@@ -2282,12 +2263,7 @@ class DataGraphing(object):
         dot_color: str = "red",
         confidence_fill_color: str = "rgba(200,200,200,0.3)",
         confidence_line_color: str = 'rgba(255,255,255,0)',
-        margin_dict: Dict[str, float]=dict(
-                l=20,  # Left margin
-                r=20,  # Right margin
-                t=50,  # Top margin
-                b=10   # Bottom margin
-                ),
+        margin_dict: Dict[str, float]=None,
         showlegend: bool=False,
         save_fig: bool=False,
         file_name: str=None,
@@ -2414,12 +2390,7 @@ class DataGraphing(object):
         dot_color: str = "red",
         confidence_fill_color: str = "rgba(200,200,200,0.3)",
         confidence_line_color: str = 'rgba(255,255,255,0)',
-        margin_dict: Dict[str, float]=dict(
-                l=20,  # Left margin
-                r=20,  # Right margin
-                t=50,  # Top margin
-                b=10   # Bottom margin
-                ),
+        margin_dict: Dict[str, float]=None,
         showlegend: bool=False,
         save_fig: bool=False,
         file_name: str=None,

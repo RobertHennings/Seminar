@@ -1,10 +1,8 @@
-import pandas as pd
-import numpy as np
+import os
 import json
 import datetime as dt
-import os
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning)
+import pandas as pd
+import numpy as np
 
 MODELS_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models"
 FIGURES_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/figures"

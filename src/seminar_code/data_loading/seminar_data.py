@@ -1,12 +1,13 @@
-from typing import Dict, List, Tuple
 import logging
-import datetime as dt
 import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import silhouette_score
-from sklearn.cluster import KMeans
 
+"""
+This file contains the routines to load various datasets used in the seminar,
+like oil and gas production/consumption data, CFTC Commitment of Traders data,
+Yahoo Finance data, FRED data, ECB data and BIS exchange rate data.
+"""
+
+# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

@@ -1,12 +1,21 @@
 from typing import Dict, List, Any
-import os
-import pandas as pd
-import numpy as np
-import ast
-import json
 import logging
+import os
+import json
 from datetime import datetime
 import re
+import ast
+import pandas as pd
+import numpy as np
+from statsmodels.tsa.stattools import adfuller, grangercausalitytests, coint
+from scipy.stats import shapiro, anderson, kstest, normaltest
+
+"""
+This file contains various methods used for inference and evaluation of the fitted (clustering) models.
+Among some utility methods for loading and flattening model information, statistical tests such as tests
+for normality, cointegration and granger causality are also included.
+"""
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -105,18 +114,38 @@ def load_full_model_info(
                 return {}
 
 
+def safe_dict(
+    x: Any
+    ) -> Dict[str, Any]:
+    """Safely convert a string representation of a dictionary to an actual dictionary.
+
+    Args:
+        x (Any): The input to convert.
+
+    Returns:
+        Dict[str, Any]: The converted dictionary.
+    """
+    if isinstance(x, dict):
+        return x
+    try:
+        return ast.literal_eval(x)
+    except Exception:
+        return {}
+
+
 def get_model_metadata_df(
     full_model_info_path: str,
     file_format: str=".json"
     ) -> pd.DataFrame:
-    # If some entries are strings, convert them to dicts
-    def safe_dict(x):
-        if isinstance(x, dict):
-            return x
-        try:
-            return ast.literal_eval(x)
-        except Exception:
-            return {}
+    """Load model metadata from a file.
+
+    Args:
+        full_model_info_path (str): The path to the directory containing model info files.
+        file_format (str, optional): The file format to use for loading. Defaults to ".json".
+
+    Returns:
+        pd.DataFrame: The loaded model metadata.
+    """
     all_model_info_files = [file for file in os.listdir(full_model_info_path) if file.endswith(file_format)]
     logging.info(f"Found {len(all_model_info_files)} model info files in {full_model_info_path}")
     # Delete the file extension for loading
@@ -144,6 +173,15 @@ def extract_predicted_labels_from_metadata_df(
     metadata_df: pd.DataFrame,
     column_name_predicted_labels: str="predicted_labels"
     ) -> pd.DataFrame:
+    """Extract predicted labels from the metadata DataFrame, expected as (0, 1).
+
+    Args:
+        metadata_df (pd.DataFrame): The metadata DataFrame containing predicted labels.
+        column_name_predicted_labels (str, optional): The name of the column containing predicted labels. Defaults to "predicted_labels".
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the extracted predicted labels.
+    """
     predicted_labels_df = pd.DataFrame()
     # Set the initial and longest index of all for later merging correctly
     len_model_dates = [len(ast.literal_eval(metadata_df["testing_data_dates"][i])) for i in range(len(metadata_df.index))]
@@ -202,6 +240,18 @@ def get_recoded_predicted_labels_df(
     label_mapping_dict: Dict[int, int],
     column_names_list: List[str]
     ) -> pd.DataFrame:
+    """Recodes the predicted labels in the DataFrame based on a mapping dictionary.
+       For some model classes it might be necessary to recode the labels to a different format,
+       because what is the regime 1 in one model might be the regime 0 in another model.
+
+    Args:
+        predicted_labels_df (pd.DataFrame): DataFrame containing predicted labels.
+        label_mapping_dict (Dict[int, int]): Mapping dictionary for recoding labels.
+        column_names_list (List[str]): List of column names to apply recoding.
+
+    Returns:
+        pd.DataFrame: DataFrame with recoded predicted labels.
+    """
     for model in column_names_list:
         if model in predicted_labels_df.columns:
             # Recode the regimes
@@ -210,11 +260,17 @@ def get_recoded_predicted_labels_df(
     return predicted_labels_df
 
 
-# Count the number of data points per regime
-# Create a dictionary to hold counts for each model
 def get_regime_counts_df(
     predicted_labels_df: pd.DataFrame
     ) -> pd.DataFrame:
+    """Counts the number of data points per regime for each model.
+
+    Args:
+        predicted_labels_df (pd.DataFrame): DataFrame containing predicted labels.
+
+    Returns:
+        pd.DataFrame: DataFrame with counts of data points per regime for each model.
+    """
     regime_counts = {}
     for column in predicted_labels_df.columns:
         counts = predicted_labels_df[column].value_counts()
@@ -230,6 +286,14 @@ def get_regime_counts_df(
 def get_overlapping_regimes_df(
     predicted_labels_df: pd.DataFrame
     ) -> pd.DataFrame:
+    """Identifies overlapping regimes between different models.
+
+    Args:
+        predicted_labels_df (pd.DataFrame): DataFrame containing predicted labels.
+
+    Returns:
+        pd.DataFrame: DataFrame with overlapping regimes between models.
+    """
     predicted_labels_overlap_df = pd.DataFrame()
     for i in range(len(predicted_labels_df.columns)):
         for j in range(i + 1, len(predicted_labels_df.columns)):
@@ -251,6 +315,23 @@ def get_periods_overlaying_df(
     predicted_labels_df: pd.DataFrame,
     predicted_labels_df_column_names_list: List[str],
     ) -> pd.DataFrame:
+    """Identifies periods of overlap between crisis periods and model predictions.
+
+    Args:
+        crisis_periods_df (pd.DataFrame): DataFrame containing crisis periods.
+        predicted_labels_df (pd.DataFrame): DataFrame containing predicted labels.
+        predicted_labels_df_column_names_list (List[str]): List of column names in the predicted labels DataFrame.
+
+    Returns:
+        pd.DataFrame: DataFrame with periods of overlap between crisis periods and model predictions.
+    """
+    overlay_df = pd.DataFrame()
+    for column in predicted_labels_df_column_names_list:
+        total_crisis_points = 0
+        high_vol_crisis_points = 0
+        for i, row in crisis_periods_df.iterrows():
+            mask = (predicted_labels_df.index >= row["Start-date"]) & (predicted_labels_df.index <= row["End-date"])
+
     overlay_df = pd.DataFrame()
     for column in predicted_labels_df_column_names_list:
         total_crisis_points = 0
@@ -305,8 +386,6 @@ def adf_test(
     if data.empty:
         raise ValueError("The provided Series is empty.")
 
-    from statsmodels.tsa.stattools import adfuller
-    from datetime import datetime
     data = data[variable].dropna()
     adf_stat, p_val, crit_vals, result = adfuller(
         x=data,
@@ -317,16 +396,16 @@ def adf_test(
         regresults=False
         )
     regression_summary = result.resols.summary()
-    print(f"{title}\n")
-    print(f"ADF Statistic: {adf_stat}")
-    print(f"p-value: {p_val}")
-    print("Critical Values:")
+    logging.info(f"{title}\n")
+    logging.info(f"ADF Statistic: {adf_stat}")
+    logging.info(f"p-value: {p_val}")
+    logging.info("Critical Values:")
     for key, value in crit_vals.items():
-        print(f"   {key}: {value}")
+        logging.info(f"   {key}: {value}")
     if p_val < significance_level:
-        print(f"The null hypothesis can be rejected at the {significance_level*100}% significance level. The series is stationary.")
+        logging.info(f"The null hypothesis can be rejected at the {significance_level*100}% significance level. The series is stationary.")
     else:
-        print(f"The null hypothesis cannot be rejected at the {significance_level*100}% significance level. The series is non-stationary.")
+        logging.info(f"The null hypothesis cannot be rejected at the {significance_level*100}% significance level. The series is non-stationary.")
 
     result_df = pd.DataFrame({
         'ADF Statistic': [adf_stat],
@@ -379,8 +458,7 @@ def granger_causality_test(
     if variable_x not in data.columns or variable_y not in data.columns:
         raise ValueError(f"One or both variables '{variable_x}', '{variable_y}' are not in the DataFrame columns.")
 
-    from statsmodels.tsa.stattools import grangercausalitytests
-    print(f"Granger Causality Test between {variable_x} and {variable_y}\n")
+    logging.info(f"Granger Causality Test between {variable_x} and {variable_y}\n")
     data = data[[variable_y, variable_x]].dropna()
     test_result = grangercausalitytests(data, maxlag=max_lag, verbose=True)
     granger_test_df_list = []
@@ -406,9 +484,9 @@ def granger_causality_test(
         granger_test_df_list.append(granger_test_df)
         p_value = test_result[lag][0][test_type_p_value][1]
         if p_value < significance_level:
-            print(f"Lag {lag}: Reject null hypothesis at {significance_level*100}% significance level. {variable_x} Granger-causes {variable_y}.")
+            logging.info(f"Lag {lag}: Reject null hypothesis at {significance_level*100}% significance level. {variable_x} Granger-causes {variable_y}.")
         else:
-            print(f"Lag {lag}: Cannot reject null hypothesis at {significance_level*100}% significance level. No Granger causality from {variable_x} to {variable_y}.")
+            logging.info(f"Lag {lag}: Cannot reject null hypothesis at {significance_level*100}% significance level. No Granger causality from {variable_x} to {variable_y}.")
     granger_test_df_complete = pd.concat(granger_test_df_list, axis=0).reset_index(drop=True)
     granger_test_df_complete['Start Time'] = f"{data.index.min().strftime('%d-%m-%Y')}"
     granger_test_df_complete['End Time'] = f"{data.index.max().strftime('%d-%m-%Y')}"
@@ -442,14 +520,13 @@ def cointegration_test(
         significance_level (float): Significance level for the test.
 
     Returns:
-        None
+        pd.DataFrame: DataFrame containing the cointegration test results.
     """
     if data.empty:
         raise ValueError("The provided DataFrame is empty.")
     if variable_x not in data.columns or variable_y not in data.columns:
         raise ValueError(f"One or both variables '{variable_x}', '{variable_y}' are not in the DataFrame columns.")
 
-    from statsmodels.tsa.stattools import coint
     data = data[[variable_x, variable_y]].dropna()
     cointegration_test_result = coint(
         data[variable_x],
@@ -458,13 +535,13 @@ def cointegration_test(
         method=method,
         maxlag=maxlag
         )
-    print(f"Cointegration Test between {variable_x} and {variable_y}\n")
-    print(f"Cointegration Score: {cointegration_test_result[0]}")
-    print(f"p-value: {cointegration_test_result[1]}")
+    logging.info(f"Cointegration Test between {variable_x} and {variable_y}\n")
+    logging.info(f"Cointegration Score: {cointegration_test_result[0]}")
+    logging.info(f"p-value: {cointegration_test_result[1]}")
     if cointegration_test_result[1] < significance_level:
-        print(f"The null hypothesis can be rejected at the {significance_level*100}% significance level. The series are cointegrated.")
+        logging.info(f"The null hypothesis can be rejected at the {significance_level*100}% significance level. The series are cointegrated.")
     else:
-        print(f"The null hypothesis cannot be rejected at the {significance_level*100}% significance level. The series are not cointegrated.")
+        logging.info(f"The null hypothesis cannot be rejected at the {significance_level*100}% significance level. The series are not cointegrated.")
     cointegration_df = pd.DataFrame({
         'Cointegration Score': [cointegration_test_result[0]],
         'p-value': [cointegration_test_result[1]],
@@ -493,9 +570,19 @@ def test_data_for_normality(
     test_dagostino_k2: bool = True
     ) -> pd.DataFrame:
     """Test data for normality using various statistical tests.
-    from scipy.stats import shapiro, anderson, kstest, normaltest"""
-    from scipy.stats import shapiro, anderson, kstest, normaltest
 
+    Args:
+        data (pd.DataFrame): DataFrame containing the data to test.
+        variables (List[str]): List of variable names to test.
+        significance_level (float, optional): Significance level for the tests. Defaults to 0.05.
+        test_shapiro_wilks (bool, optional): Whether to perform the Shapiro-Wilk test. Defaults to True.
+        test_anderson_darling (bool, optional): Whether to perform the Anderson-Darling test. Defaults to True.
+        test_kolmogorov_smirnov (bool, optional): Whether to perform the Kolmogorov-Smirnov test. Defaults to True.
+        test_dagostino_k2 (bool, optional): Whether to perform D'Agostino's K^2 test. Defaults to True.
+
+    Returns:
+        pd.DataFrame: DataFrame containing the results of the normality tests.
+    """
     normality_test_results = pd.DataFrame(columns=["Variable", "Test", "Statistic", "p-value"])
     for variable in variables:
         # logging.info(f"Testing normality for variable: {variable}")
@@ -538,7 +625,15 @@ def extract_best_params(
     results_list: List[Dict[str, Any]],
     score_name: str = "silhouette"
     ) -> List[Dict[str, Any]]:
-    """Extract best parameters from GridSearchCV results."""
+    """Extract best parameters from GridSearchCV results.
+
+    Args:
+        results_list (List[Dict[str, Any]]): List of results from GridSearchCV.
+        score_name (str, optional): Name of the score to optimize. Defaults to "silhouette".
+
+    Returns:
+        List[Dict[str, Any]]: List of dictionaries containing best parameters and scores for each result set.
+    """
     best_params_list = []
 
     for i, result in enumerate(results_list):

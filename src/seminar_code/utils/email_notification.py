@@ -1,9 +1,17 @@
 import logging
-import smtplib
+import os
 import json
+import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import os
+
+"""
+This file contains a class that sends email notifications when a certain state is reached,
+for example when a machine learning model has finished training or reached a certain accuracy.
+Since the training/optimization of machine learning models can take a long time,
+it is useful to be notified when the process is complete.
+"""
+
 # Set logging config
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

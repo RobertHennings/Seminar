@@ -1,23 +1,27 @@
 from typing import Dict, List, Tuple
-import os
-import zipfile
-import io
 import logging
+import os
 import json
-from ecbdata import ecbdata
+import io
+import zipfile
 import datetime as dt
+import requests
+import matplotlib.pyplot as plt
+from ecbdata import ecbdata
 import pandas as pd
 from fredapi import Fred
 import yfinance as yf
-import requests
-import matplotlib.pyplot as plt
+
+"""
+This file contains the main data loading class that is used to load data from various sources,
+like the FRED API, Yahoo Finance, ECB data and BIS data.
+"""
 
 # Configure logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # import config settings with static global variables
-# os.chdir(r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/data_loading")
 try:
     from . import config as cfg
 except:
@@ -66,8 +70,10 @@ class DataLoading(object):
             credentials = self.__load_credentials()
             self.credentials = credentials
             # initialize the different API Clients
-            fred_api_key = credentials.get("FRED_API", None)
-            us_bureau_api_key = credentials.get("US_Bureau_of_Labor_Statistics", None)
+            try:
+                fred_api_key = credentials.get("FRED_API", None)
+            except:
+                logging.info(f"FRED_API key not found in credentials file: {self.credential_file_name} in path: {self.credential_path}, maybe named differently?")
 
             if fred_api_key is not None:
                 self.fred = Fred(api_key=fred_api_key)

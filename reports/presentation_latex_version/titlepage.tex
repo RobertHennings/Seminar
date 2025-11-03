@@ -1,0 +1,18 @@
+\begin{frame}[plain]
+    \titlepage{}
+    \begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
+            \includegraphics[width=1.7cm]{wiso_logo.png}
+        };
+		% Add the .pdf graph as a lightly shaded background
+        \node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
+            \tikz\node[opacity=0.15] {
+                \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
+            };
+        };
+    \end{tikzpicture}
+\end{frame}
+
+% \begin{frame}
+% 	\titlepage % Output the title slide, automatically created using the text entered in the PRESENTATION INFORMATION block above
+% \end{frame}

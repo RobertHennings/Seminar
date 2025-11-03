@@ -1,26 +1,34 @@
+from typing import Dict, Any, List
 import logging
 import os
+import json
 import inspect
-from typing import Dict, Any, List
 import sklearn
 import pandas as pd
 import numpy as np
 import joblib
-import json
+
+"""
+This file contains the main architecture as class, named ModelObject,
+that stores and contains all the main functionalities being used for the
+fitting and inference of the clustering algorithms.
+"""
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-# each algorithm will be set up as its own data model object (a class instance)
-# separating data, the configuration of the model and the model fitting and evaluation
+
 class ModelObject:
     """
-    Idea: Separate the model object from the data and the fitting process.
+    Idea: Separate the model object itself from the data and the fitting process.
     1) Create a model object with the model configuration and the data
-    2) Fit the model to the data
-    3) Evaluate the model with a metric function
-    4) Extract all the metadata for the model
-    5) Store the model object, the data and the metadata in a dictionary or a
+       (any algorithm from sklearn, statsmodels, etc.), pass it on to the
+       class and create a model object instance
+    2) Fit the model to the data using the created model object instance
+    3) Evaluate the model with a metric function or multiple metric functions in parallel
+    4) Extract all the metadata for the model for evaluation and reporting purposes
+    5) Store the model object (fitted model class algorithm), the data and the metadata in a dictionary
+       for full transparency and reproducibility
     """
     def __init__(
         self,
@@ -30,13 +38,6 @@ class ModelObject:
         self.score = None
         self.model_saving_info = None
 
-    # The idea of the two following class methods is that we cant place them in the __init__
-    # because we want to be able to create an empty model object and then set the model
-    # and the data later because we also want to use the class to load already fitted models
-    # from a file and then use the class methods to predict and evaluate
-    # and extract the metadata
-    # So we need to be able to set the model and the data after the object is created
-    # and not only at the time of creation
     ######################## Internal helper methods #########################
     def __check_path_existence(
         self,
@@ -63,11 +64,25 @@ class ModelObject:
             os.mkdir(folder_path)
             logging.info(f"Folder: {folder_name} created in path: {path}")
 
-
+    # The idea of the two following class methods is that we cant place them in the __init__
+    # because we want to be able to create an empty model object and then set the model
+    # and the data later because we also want to use the class to load already fitted models
+    # from a file and then use the class methods to predict and evaluate
+    # and extract the metadata
+    # So we need to be able to set the model and the data after the object is created
+    # and not only at the time of creation
     def __get_init_params(
         self,
-        model
+        model: sklearn.base.BaseEstimator
         ) -> Dict[str, Any]:
+        """Get the initialization parameters of a scikit-learn model.
+
+        Args:
+            model (sklearn.base.BaseEstimator): The model object to get parameters from.
+
+        Returns:
+            Dict[str, Any]: A dictionary of the model's initialization parameters.
+        """
         sig = inspect.signature(model.__class__.__init__)
         param_names = [p for p in sig.parameters if p != 'self']
         params = {}
@@ -84,7 +99,10 @@ class ModelObject:
         self,
         model_object: sklearn.base.BaseEstimator,
         ) -> None:
-        """Setting the model object.
+        """Setting the model object. The idea is to be able to also set a (fitted) model class
+           and have directly access to all the methods of the class instance. Predominantly useful
+           when loading already fitted models from files or wanting to save model evaluation metadata
+           for later reporting.
 
         Args:
             classifier_model_object (sklearn.base.BaseEstimator): The classifier model object to set.
@@ -105,7 +123,8 @@ class ModelObject:
         training_data: pd.DataFrame,
         testing_data: pd.DataFrame, 
         ) -> None:
-        """Setting the data for the model.
+        """Setting the data for the model. For now only supports very simple setting of train and test data,
+           can be optimized further in the future to support more complex data structures.
 
         Args:
             training_data (pd.DataFrame): The training data to set.
@@ -154,7 +173,10 @@ class ModelObject:
         self,
         **kwargs
         ) -> None:
-        """Fit the model to the data."""
+        """Fit the model to the data. Supports the fitting of both sklearn-style models
+           and statsmodels-style models. Through the **kwargs parameter it is possible to
+           pass any fitting parameters that are supported by the model's fit() method.
+        """
         logging.info(f"Fitting model: {self.model_object.__class__.__name__}")
 
         # Statsmodels-style model: already has data inside
