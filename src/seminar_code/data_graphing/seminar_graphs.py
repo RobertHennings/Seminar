@@ -1411,6 +1411,15 @@ data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_dat
     end_date=end_date
     )
 spot_exchange_rate_data_df = pd.concat(list(data_dict.values()), axis=1).dropna()
+# Save the data locally
+data_loading_instance.export_dataframe(
+    df=spot_exchange_rate_data_df,
+    file_name="chap_07_spot_exchange_rate_data_df",
+    excel_sheet_name="07",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=True,
+)
 # Transform to log values and take first difference
 log_spot_exchange_rate_data_df = np.log(spot_exchange_rate_data_df)
 log_diff_spot_exchange_rate_data_df = log_spot_exchange_rate_data_df.diff().dropna()
@@ -1863,6 +1872,14 @@ data_loading_instance.export_dataframe(
         save_excel=True,
         save_index=False,
         )
+data_loading_instance.export_dataframe(
+        df=granger_test_result_df_oil,
+        file_name="granger_causality_test_oil_raw_series",
+        excel_sheet_name="Granger Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        save_excel=True,
+        save_index=False,
+        )
 # Plotting the results
 variables = granger_test_result_df_oil['Metric'].unique()
 secondary_y_variables = ["p-value"]
@@ -1921,6 +1938,14 @@ data_loading_instance.export_dataframe(
         save_excel=True,
         save_index=False,
         )
+data_loading_instance.export_dataframe(
+        df=granger_test_result_df_gas,
+        file_name="granger_causality_test_gas_raw_series",
+        excel_sheet_name="Granger Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        save_excel=True,
+        save_index=False,
+        )
 # Plotting the results
 variables = granger_test_result_df_gas['Metric'].unique()
 secondary_y_variables = ["p-value"]
@@ -1968,6 +1993,14 @@ data_loading_instance.export_dataframe(
         file_name="granger_causality_test_oil_log_diff",
         excel_sheet_name="Granger Test Results",
         excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+        save_excel=True,
+        save_index=False,
+        )
+data_loading_instance.export_dataframe(
+        df=granger_test_result_df_oil,
+        file_name="granger_causality_test_oil_log_diff",
+        excel_sheet_name="Granger Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
         save_excel=True,
         save_index=False,
         )
@@ -2026,6 +2059,14 @@ data_loading_instance.export_dataframe(
         file_name="granger_causality_test_gas_log_diff",
         excel_sheet_name="Granger Test Results",
         excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
+        save_excel=True,
+        save_index=False,
+        )
+data_loading_instance.export_dataframe(
+        df=granger_test_result_df_gas,
+        file_name="granger_causality_test_gas_log_diff",
+        excel_sheet_name="Granger Test Results",
+        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
         save_excel=True,
         save_index=False,
         )
