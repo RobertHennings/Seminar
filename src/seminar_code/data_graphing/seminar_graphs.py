@@ -1,12 +1,13 @@
 import logging
-import json
 import os
+import json
 import pandas as pd
 import numpy as np
 import yfinance as yf
 
 SEMINAR_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar"
 SEMINAR_CODE_PATH = rf"{SEMINAR_PATH}/src/seminar_code"
+MODELS_PATH = rf"{SEMINAR_CODE_PATH}/models"
 FIGURES_PATH = rf"{SEMINAR_PATH}/reports/figures"
 TABLES_PATH = rf"{SEMINAR_PATH}/reports/tables"
 DATA_PATH = rf"{SEMINAR_PATH}/data"
@@ -14,6 +15,7 @@ PRESENTATION_DATA = rf"{SEMINAR_PATH}/reports/presentation_latex_version/data"
 NUM_YEARS_INTERVAL_X_AXIS = 5
 RENDERER = "vscode+browser"
 CAU_COLOR_SCALE = ["#9b0a7d", "grey", "black", "darkgrey", "lightgrey"]
+
 print(os.getcwd())
 os.chdir(SEMINAR_CODE_PATH)
 print(os.getcwd())
@@ -25,6 +27,14 @@ from utils.evaluation import adf_test, \
     granger_causality_test, \
     cointegration_test, \
     test_data_for_normality
+
+from utils.evaluation import get_model_metadata_df,\
+    extract_predicted_labels_from_metadata_df,\
+    get_recoded_predicted_labels_df, \
+    get_regime_counts_df, \
+    get_overlapping_regimes_df, \
+    get_periods_overlaying_df, \
+    parse_summary_file
 
 from data_loading.data_loader import DataLoading
 from data_graphing.data_grapher import DataGraphing
@@ -109,613 +119,6 @@ fig_deviations_from_ppp = data_graphing_instance.get_fig_deviations_ppp(
         )
 # Show the figure
 fig_deviations_from_ppp.show(renderer="browser")
-# ----------------------------------------------------------------------------------------
-# 01 - Modern Commodities Markets - The current state - Oil: Global Production and Consumption over time
-# ----------------------------------------------------------------------------------------
-series_dict_mapping = {
-    "Oil Consumption": "https://ourworldindata.org/grapher/oil-consumption-by-country",
-    "Oil Production": "https://ourworldindata.org/grapher/oil-production-by-country",
-    "Gas Consumption": "https://ourworldindata.org/grapher/gas-consumption-by-country",
-    "Gas Production": "https://ourworldindata.org/grapher/gas-production-by-country",
-}
-data_dict, data_full_info_dict = data_loading_instance.get_oil_gas_prod_con_data(
-    series_dict_mapping=series_dict_mapping
-    )
-data_full_info_df = pd.concat([pd.DataFrame(index=range(len(data_full_info_dict.get(key))), data=data_full_info_dict.get(key)) for key in data_full_info_dict.keys()]).reset_index(drop=True)
-# Save the data accordingly
-oil_consumption_df = data_dict.get("Oil Consumption")
-oil_production_df = data_dict.get("Oil Production").rename(mapper={"oil_production__twh": "oil_production_twh"}, axis=1)
-gas_consumption_df = data_dict.get("Gas Consumption")
-gas_production_df = data_dict.get("Gas Production").rename(mapper={"gas_production__twh": "gas_production_twh"}, axis=1)
-# Save the data locally
-data_loading_instance.export_dataframe(
-    df=oil_consumption_df,
-    file_name="chap_07_oil_consumption_data",
-    excel_sheet_name="07",
-    excel_path=PRESENTATION_DATA,
-    save_excel=True,
-    save_index=True,
-)
-data_loading_instance.export_dataframe(
-    df=oil_production_df,
-    file_name="chap_07_oil_production_data",
-    excel_sheet_name="07",
-    excel_path=PRESENTATION_DATA,
-    save_excel=True,
-    save_index=True,
-)
-data_loading_instance.export_dataframe(
-    df=gas_consumption_df,
-    file_name="chap_07_gas_consumption_data",
-    excel_sheet_name="07",
-    excel_path=PRESENTATION_DATA,
-    save_excel=True,
-    save_index=True,
-)
-data_loading_instance.export_dataframe(
-    df=gas_production_df,
-    file_name="chap_07_gas_production_data",
-    excel_sheet_name="07",
-    excel_path=PRESENTATION_DATA,
-    save_excel=True,
-    save_index=True,
-)
-# ----------------------------------------------------------------------------------------
-# 01 - Modern Commodities Markets - The current state - Oil Consumption
-# ----------------------------------------------------------------------------------------
-variables = ["United States", "China", "India", "Japan", "Russia", "Saudi Arabia", "South Korea", "Canada", "Brazil", "European Union (27)"]
-secondary_y_variables = ["World"]
-# Figure out the common start date for a shared x-axis
-start_year_consumption = oil_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
-end_year_consumption = oil_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
-start_year_production = oil_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
-end_year_production = oil_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
-
-oil_start_year = max(start_year_consumption, start_year_production)
-
-start_year = oil_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
-end_year = oil_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
-title = f"Yearly oil consumption by country (in terawatt-hours) over the time: {start_year} - {end_year}"
-x_axis_title = "Time"
-y_axis_title = "Oil consumption (in terawatt-hours)"
-secondary_y_axis_title = "World oil consumption (in terawatt-hours)"
-
-
-custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
-    start_hex="#9b0a7d",
-    end_hex="black",
-    center_color="grey",
-    steps=round((len(variables)+1)/2),
-    lightening_factor=0.8,
-)
-# Extract only the hex color codes from the created list
-custom_color_scale_codes = [color[1] for color in custom_color_scale]
-world_color = "red"  # Fixed color for the "World" category
-# Create a mapping for the colors
-color_mapping = {var: custom_color_scale_codes[i % len(custom_color_scale_codes)] for i, var in enumerate(variables)}
-color_mapping["World"] = world_color  # Assign the fixed color for "World"
-
-oil_consumption_df["Year"] = pd.to_datetime(oil_consumption_df["Year"], format="%Y")
-oil_consumption_df = oil_consumption_df.pivot(index="Year", columns="Entity", values="oil_consumption_twh")
-oil_consumption_df = oil_consumption_df[variables + secondary_y_variables]
-
-# See if the overall pricture get better when we restrict the data to only the relative share of the US
-oil_consumption_df_usa = oil_consumption_df[["United States", "World"]]
-# Calculate the relative share of the US in world oil consumption
-oil_consumption_df_usa["United States Share of World"] = oil_consumption_df_usa["United States"] / oil_consumption_df_usa["World"]
-
-fig_oil_consumption = data_graphing_instance.get_fig_consumption_production_oil_gas(
-        data=oil_consumption_df,
-        variables=variables,
-        secondary_y_variables=secondary_y_variables,
-        title=title,
-        x_axis_title=x_axis_title,
-        y_axis_title=y_axis_title,
-        secondary_y_axis_title=secondary_y_axis_title,
-        color_mapping_dict=color_mapping,
-        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
-        save_fig=False,
-        file_name="chap_01_yearly_oil_consumption_by_country",
-        file_path=FIGURES_PATH,
-        width=1200,
-        height=800,
-        scale=3
-        )
-# Show the figure
-fig_oil_consumption.show(renderer="browser")
-# ----------------------------------------------------------------------------------------
-# 01 - Modern Commodities Markets - The current state - Oil Production
-# ----------------------------------------------------------------------------------------
-variables = ["United States", "Russia", "Saudi Arabia", "Canada", "Iran", "China", "Brazil", "Norway", "European Union (27)"]
-secondary_y_variables = ["World"]
-
-oil_production_df = oil_production_df[oil_production_df.Year >= oil_start_year]
-start_year = oil_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
-end_year = oil_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
-
-title = f"Yearly oil production by country (in terawatt-hours) over the time: {start_year} - {end_year}"
-x_axis_title = "Time"
-y_axis_title = "Oil production (in terawatt-hours)"
-secondary_y_axis_title = "World oil production (in terawatt-hours)"
-
-custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
-    start_hex="#9b0a7d",
-    end_hex="black",
-    center_color="grey",
-    steps=round((len(variables)+1)/2),
-    lightening_factor=0.8,
-)
-# Extract only the hex color codes from the created list
-custom_color_scale_codes = [color[1] for color in custom_color_scale]
-world_color = "red"  # Fixed color for the "World" category
-
-# Create a mapping for the colors
-color_mapping = {var: custom_color_scale_codes[i % len(custom_color_scale_codes)] for i, var in enumerate(variables)}
-color_mapping["World"] = world_color  # Assign the fixed color for "World"
-
-oil_production_df["Year"] = pd.to_datetime(oil_production_df["Year"], format="%Y")
-oil_production_df = oil_production_df.pivot(index="Year", columns="Entity", values="oil_production_twh")
-oil_production_df = oil_production_df[variables + secondary_y_variables]
-
-
-fig_oil_production = data_graphing_instance.get_fig_consumption_production_oil_gas(
-        data=oil_production_df,
-        variables=variables,
-        secondary_y_variables=secondary_y_variables,
-        title=title,
-        x_axis_title=x_axis_title,
-        y_axis_title=y_axis_title,
-        secondary_y_axis_title=secondary_y_axis_title,
-        color_mapping_dict=color_mapping,
-        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
-        save_fig=False,
-        file_name="chap_01_yearly_oil_production_by_country",
-        file_path=FIGURES_PATH,
-        width=1200,
-        height=800,
-        scale=3
-        )
-# Show the figure
-fig_oil_production.show(renderer="browser")
-# ----------------------------------------------------------------------------------------
-# 01 - Modern Commodities Markets - The current state - Oil Production and Consumption
-# ----------------------------------------------------------------------------------------
-subplot_titles=(
-    f"Yearly oil consumption by country (in terawatt-hours) over the time: {start_year} - {end_year}",
-    f"Yearly oil production by country (in terawatt-hours) over the time: {start_year} - {end_year}")
-title = f"Yearly oil consumption and production by country (in terawatt-hours) over the time: {start_year} - {end_year}"
-x_axis_title = "Time"
-secondary_y_variable = "World"
-
-fig_oil_consumption_production_combine = data_graphing_instance.get_combined_production_consumption_graph(
-        subplot_titles=list(subplot_titles),
-        title="",
-        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
-        x_axis_title=x_axis_title,
-        secondary_y_variable=secondary_y_variable,
-        rows=2,
-        cols=1,
-        shared_xaxes=False,
-        vertical_spacing=0.25,
-        specs=[[{"secondary_y": True}], [{"secondary_y": True}]],
-        fig_production=fig_oil_production,
-        fig_consumption=fig_oil_consumption,
-        save_fig=False,
-        file_name="chap_01_yearly_oil_consumption_production_combined_graph",
-        file_path=FIGURES_PATH,
-        width=1200,
-        height=800,
-        scale=3
-        )
-# Show the figure
-fig_oil_consumption_production_combine.show(renderer="browser")
-# ----------------------------------------------------------------------------------------
-# 01 - Modern Commodities Markets - The current state - Gas Consumption
-# ----------------------------------------------------------------------------------------
-variables = ["United States", "China", "Russia", "Iran", "Canada", "Australia", "Saudi Arabia", "European Union (27)"]
-secondary_y_variables = ["World"]
-# Figure out the common start date for a shared x-axis
-start_year_consumption = gas_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
-end_year_consumption = gas_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
-start_year_production = gas_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
-end_year_production = gas_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
-gas_start_year = max(start_year_consumption, start_year_production)
-
-start_year = gas_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
-end_year = gas_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
-
-title = f"Yearly gas consumption by country (in terawatt-hours) over the time: {start_year} - {end_year}"
-x_axis_title = "Time"
-y_axis_title = "Gas consumption (in terawatt-hours)"
-secondary_y_axis_title = "World gas consumption (in terawatt-hours)"
-
-custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
-    start_hex="#9b0a7d",
-    end_hex="black",
-    center_color="grey",
-    steps=round((len(variables)+1)/2),
-    lightening_factor=0.8,
-)
-# Extract only the hex color codes from the created list
-custom_color_scale_codes = [color[1] for color in custom_color_scale]
-world_color = "red"  # Fixed color for the "World" category
-
-# Create a mapping for the colors
-color_mapping = {var: custom_color_scale_codes[i % len(custom_color_scale_codes)] for i, var in enumerate(variables)}
-color_mapping["World"] = world_color  # Assign the fixed color for "World"
-
-gas_consumption_df["Year"] = pd.to_datetime(gas_consumption_df["Year"], format="%Y")
-gas_consumption_df = gas_consumption_df.pivot(index="Year", columns="Entity", values="gas_consumption_twh")
-gas_consumption_df = gas_consumption_df[variables + secondary_y_variables]
-
-fig_gas_consumption = data_graphing_instance.get_fig_consumption_production_oil_gas(
-        data=gas_consumption_df,
-        variables=variables,
-        secondary_y_variables=secondary_y_variables,
-        title=title,
-        x_axis_title=x_axis_title,
-        y_axis_title=y_axis_title,
-        secondary_y_axis_title=secondary_y_axis_title,
-        color_mapping_dict=color_mapping,
-        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
-        save_fig=False,
-        file_name="chap_01_yearly_gas_consumption_by_country",
-        file_path=FIGURES_PATH,
-        width=1200,
-        height=800,
-        scale=3
-        )
-# Show the figure
-fig_gas_consumption.show(renderer="browser")
-# ----------------------------------------------------------------------------------------
-# 01 - Modern Commodities Markets - The current state - Gas Production
-# ----------------------------------------------------------------------------------------
-variables = ["United States", "China", "Iran", "Canada", "Saudi Arabia", "Mexico", "European Union (27)"]
-secondary_y_variables = ["World"]
-
-start_year = gas_start_year
-end_year = gas_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
-
-gas_production_df = gas_production_df[gas_production_df.Year >= gas_start_year]
-
-title = f"Yearly gas production by country (in terawatt-hours) over the time: {start_year} - {end_year}"
-x_axis_title = "Time"
-y_axis_title = "Production (in terawatt-hours)"
-secondary_y_axis_title = "World gas production (in terawatt-hours)"
-
-
-custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
-    start_hex="#9b0a7d",
-    end_hex="black",
-    center_color="grey",
-    steps=round((len(variables)+1)/2),
-    lightening_factor=0.8,
-)
-# Extract only the hex color codes from the created list
-custom_color_scale_codes = [color[1] for color in custom_color_scale]
-world_color = "red"  # Fixed color for the "World" category
-
-# Create a mapping for the colors
-color_mapping = {var: custom_color_scale_codes[i % len(custom_color_scale_codes)] for i, var in enumerate(variables)}
-color_mapping["World"] = world_color  # Assign the fixed color for "World"
-
-gas_production_df["Year"] = pd.to_datetime(gas_production_df["Year"], format="%Y")
-gas_production_df = gas_production_df.pivot(index="Year", columns="Entity", values="gas_production_twh")
-gas_production_df = gas_production_df[variables + secondary_y_variables]
-
-fig_gas_production = data_graphing_instance.get_fig_consumption_production_oil_gas(
-        data=gas_production_df,
-        variables=variables,
-        secondary_y_variables=secondary_y_variables,
-        title=title,
-        x_axis_title=x_axis_title,
-        y_axis_title=y_axis_title,
-        secondary_y_axis_title=secondary_y_axis_title,
-        color_mapping_dict=color_mapping,
-        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
-        save_fig=False,
-        file_name="chap_01_yearly_gas_production_by_country",
-        file_path=FIGURES_PATH,
-        width=1200,
-        height=800,
-        scale=3
-        )
-# Show the figure
-fig_gas_production.show(renderer="browser")
-# ----------------------------------------------------------------------------------------
-# 01 - Modern Commodities Markets - The current state - Gas Consumption and Production
-# ----------------------------------------------------------------------------------------
-subplot_titles=(f"Yearly gas consumption by country (in terawatt-hours) over the time: {start_year} - {end_year}",
-                f"Yearly gas production by country (in terawatt-hours) over the time: {start_year} - {end_year}")
-title = f"Yearly gas consumption and production by country (in terawatt-hours) over the time: {start_year} - {end_year}"
-x_axis_title = "Time"
-secondary_y_variable = "World"
-
-fig_gas_consumption_production_combine = data_graphing_instance.get_combined_production_consumption_graph(
-        subplot_titles=subplot_titles,
-        title="",
-        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
-        x_axis_title=x_axis_title,
-        secondary_y_variable=secondary_y_variable,
-        rows=2,
-        cols=1,
-        shared_xaxes=False,
-        vertical_spacing=0.25,
-        specs=[[{"secondary_y": True}], [{"secondary_y": True}]],
-        fig_production=fig_gas_production,
-        fig_consumption=fig_gas_consumption,
-        save_fig=False,
-        file_name="chap_01_yearly_gas_consumption_production_combined_graph",
-        file_path=FIGURES_PATH,
-        width=1200,
-        height=800,
-        scale=3
-        )
-# Show the figure
-fig_gas_consumption_production_combine.show(renderer="browser")
-# ----------------------------------------------------------------------------------------
-# 01 - Modern Commodities Markets - The current state - Financial Markets: Oil and Gas OI over time
-# ----------------------------------------------------------------------------------------
-start_date = "1995-01-01"
-end_date = "2025-01-01"
-report_type = "Futures-and-Options Combined Reports"
-save_files_locally = False
-save_path = r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/figures"
-
-cftc_data = data_loading_instance.get_cftc_commitment_of_traders(
-    start_date=start_date,
-    end_date=end_date,
-    report_type=report_type,
-    save_files_locally=save_files_locally,
-    save_path=save_path
-)
-cftc_data["As of Date in Form YYYY-MM-DD"] = pd.to_datetime(cftc_data["As of Date in Form YYYY-MM-DD"])
-
-# Loading from Files
-file_path = r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/figures"
-file_name = r"cftc_Futures-and-Options Combined Reports_1995-01-01_to_2025-01-01.csv"
-
-full_path = f"{file_path}/{file_name}"
-cftc_data = pd.read_csv(full_path)
-print(f"Dimension: {cftc_data.shape}")
-cftc_data["Market and Exchange Names"] = cftc_data["Market and Exchange Names"].str.strip()
-
-oil_gas_products_list = [
-                         "CRUDE OIL, LIGHT SWEET - NEW YORK MERCANTILE EXCHANGE",
-                         "NATURAL GAS - NEW YORK MERCANTILE EXCHANGE",
-                         "NAT GAS NYME - NEW YORK MERCANTILE EXCHANGE",
-                         "WTI-PHYSICAL - NEW YORK MERCANTILE EXCHANGE"
-                         ]
-
-cftc_data_oil_gas = cftc_data[
-    cftc_data["Market and Exchange Names"].isin(oil_gas_products_list)
-].sort_values(by=["As of Date in Form YYYY-MM-DD"]).reset_index(drop=True)
-
-
-cftc_data_oil_gas.columns = cftc_data_oil_gas.columns.str.strip()
-
-columns_keep = [
-    "As of Date in Form YYYY-MM-DD",
-    "Market and Exchange Names",
-    "Open Interest (All)",
-    "Noncommercial Positions-Long (All)",
-    "Noncommercial Positions-Short (All)",
-    "Commercial Positions-Long (All)",
-    "Commercial Positions-Short (All)",
-    "Total Reportable Positions-Long (All)",
-    "Total Reportable Positions-Short (All)",
-    "Noncommercial Positions-Spreading (All)",
-    ]
-cftc_data_oil_gas = cftc_data_oil_gas[columns_keep]
-
-
-cftc_data_oil_gas["Market and Exchange Names"] = cftc_data_oil_gas["Market and Exchange Names"].str.replace(" - NEW YORK MERCANTILE EXCHANGE", "")
-# Gas
-cftc_data_oil_gas["Market and Exchange Names"] = cftc_data_oil_gas["Market and Exchange Names"].str.replace("NATURAL GAS", "Gas")
-cftc_data_oil_gas["Market and Exchange Names"] = cftc_data_oil_gas["Market and Exchange Names"].str.replace("NAT GAS NYME", "Gas")
-# Oil
-cftc_data_oil_gas["Market and Exchange Names"] = cftc_data_oil_gas["Market and Exchange Names"].str.replace("CRUDE OIL, LIGHT SWEET", "Oil")
-cftc_data_oil_gas["Market and Exchange Names"] = cftc_data_oil_gas["Market and Exchange Names"].str.replace("WTI-PHYSICAL", "Oil")
-# Date
-cftc_data_oil_gas = cftc_data_oil_gas.rename(columns={"Market and Exchange Names": "Product"})
-cftc_data_oil_gas["Date"] = pd.to_datetime(cftc_data_oil_gas["As of Date in Form YYYY-MM-DD"], format="%Y-%m-%d")
-cftc_data_oil_gas = cftc_data_oil_gas.drop(columns=["As of Date in Form YYYY-MM-DD"])
-
-
-# cftc_data_oil_gas
-# Pivot the data to create separate columns for each unique Product
-cftc_data_oil_gas_pivoted = cftc_data_oil_gas.pivot_table(
-    index="Date",  # Use Date as the index
-    columns="Product",  # Create columns for each unique Product
-    values="Open Interest (All)",  # Populate with Open Interest (All) values
-    aggfunc="sum"  # Use sum in case of duplicate entries
-).reset_index()
-
-# Rename the columns for clarity
-cftc_data_oil_gas_pivoted.columns.name = None  # Remove the columns' name
-cftc_data_oil_gas_pivoted = cftc_data_oil_gas_pivoted.rename_axis(None, axis=1)  # Remove the index name
-
-# Display the resulting DataFrame
-cftc_data_oil_gas_pivoted = cftc_data_oil_gas_pivoted.dropna().reset_index(drop=True).set_index("Date", drop=True)
-
-
-# Load the USD Prices of the nearest Future and merge with the CFTC data for WTI Oil and Natural Gas
-wti_contract_size = 1000  # barrels
-ng_contract_size = 10000  # mmBtu
-# Can be checked via:
-# cftc_data_oil_gas["Contract Units"].unique()
-wti_prices = yf.download(
-    tickers="CL=F",
-    start="1995-01-01",
-    end="2025-01-01",
-    interval="1d",
-    progress=True,
-    auto_adjust=False)
-ng_prices = yf.download(
-    tickers="NG=F",
-    start="1995-01-01",
-    end="2025-01-01",
-    interval="1d",
-    progress=True,
-    auto_adjust=False)
-# Merge the price data with the CFTC data
-mask_wti = wti_prices.index.isin(cftc_data_oil_gas_pivoted.index)
-mask_ng = ng_prices.index.isin(cftc_data_oil_gas_pivoted.index)
-
-wti_prices_filtered = wti_prices[mask_wti]["Adj Close"]
-ng_prices_filtered = ng_prices[mask_ng]["Adj Close"]
-
-prices_df = wti_prices_filtered.merge(
-   right=ng_prices_filtered,
-    left_index=True,
-    right_index=True,
-    how="outer")
-
-
-prices_oi_df = pd.merge(
-    left=cftc_data_oil_gas_pivoted,
-    right=prices_df,
-    left_index=True,
-    right_index=True
-).dropna()
-prices_oi_df["Gas Open Interest USD"] = prices_oi_df["Gas"] * prices_oi_df["NG=F"] * ng_contract_size
-prices_oi_df["Oil Open Interest USD"] = prices_oi_df["Oil"] * prices_oi_df["CL=F"] * wti_contract_size
-# ----------------------------------------------------------------------------------------
-# Open Interest from Reuters
-# ----------------------------------------------------------------------------------------
-oi_tv_oil_gas_reuters_df = pd.read_excel(r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/open_interest_trading_volume_oil_gas_reuters.xlsx")
-oi_tv_oil_gas_reuters_df["Date"] = pd.to_datetime(oi_tv_oil_gas_reuters_df["Date"], format="%Y-%m-%d")
-oi_tv_oil_gas_reuters_df = oi_tv_oil_gas_reuters_df.set_index("Date", drop=True)
-# Separate out the Open-Interest
-oi_columns = [col for col in oi_tv_oil_gas_reuters_df.columns if "open interest" in col.lower()]
-tv_columns = [col for col in oi_tv_oil_gas_reuters_df.columns if "volume" in col.lower()]
-oi_tv_oil_gas_reuters_df[oi_columns].dropna()
-oi_tv_oil_gas_reuters_df[tv_columns].dropna()
-# ----------------------------------------------------------------------------------------
-# 01 - Modern Commodities Markets - The current state - Oil Open Interest
-# ----------------------------------------------------------------------------------------
-variables = ["Oil"]
-secondary_y_variables = ["Oil Open Interest USD"]
-
-start_year = prices_oi_df.index.min().year
-end_year = prices_oi_df.index.max().year
-
-title = f"Weekly oil open interest as total number of contracts and in USD over the time: {start_year} - {end_year}"
-x_axis_title = "Time"
-y_axis_title = "Open interest (number of contracts)"
-secondary_y_axis_title = "Open interest (in USD)"
-
-custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
-    start_hex="#9b0a7d",
-    end_hex="black",
-    center_color="grey",
-    steps=round((len(variables)+1)/2),
-    lightening_factor=0.8,
-)
-# Extract only the hex color codes from the created list
-custom_color_scale_codes = [color[1] for color in custom_color_scale]
-oi_usd_color = "black"  # Fixed color for the "World" category
-
-# Create a mapping for the colors
-color_mapping = {var: custom_color_scale_codes[i % len(custom_color_scale_codes)] for i, var in enumerate(variables)}
-color_mapping["Oil Open Interest USD"] = oi_usd_color
-
-fig_oil_oi = data_graphing_instance.get_fig_open_interest(
-        data=prices_oi_df,
-        variables=variables,
-        secondary_y_variables=secondary_y_variables,
-        title=title,
-        x_axis_title=x_axis_title,
-        y_axis_title=y_axis_title,
-        secondary_y_axis_title=secondary_y_axis_title,
-        color_mapping_dict=color_mapping,
-        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
-        save_fig=False,
-        file_name="chap_01_weekly_oil_open_interest",
-        file_path=FIGURES_PATH,
-        width=1200,
-        height=800,
-        scale=3
-        )
-# Show the figure
-fig_oil_oi.show(renderer="browser")
-# ----------------------------------------------------------------------------------------
-# 01 - Modern Commodities Markets - The current state - Gas Open Interest
-# ----------------------------------------------------------------------------------------
-variables = ["Gas"]
-secondary_y_variables = ["Gas Open Interest USD"]
-
-
-title = f"Weekly gas open interest as total number of contracts and in USD over the time: {start_year} - {end_year}"
-x_axis_title = "Time"
-y_axis_title = "Open interest (number of contracts)"
-secondary_y_axis_title = "Open interest (in USD)"
-
-custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
-    start_hex="#9b0a7d",
-    end_hex="black",
-    center_color="grey",
-    steps=round((len(variables)+1)/2),
-    lightening_factor=0.8,
-)
-# Extract only the hex color codes from the created list
-custom_color_scale_codes = [color[1] for color in custom_color_scale]
-oi_usd_color = "black"  # Fixed color for the "World" category
-
-# Create a mapping for the colors
-color_mapping = {var: custom_color_scale_codes[i % len(custom_color_scale_codes)] for i, var in enumerate(variables)}
-color_mapping["Gas Open Interest USD"] = oi_usd_color
-
-fig_gas_oi = data_graphing_instance.get_fig_open_interest(
-        data=prices_oi_df,
-        variables=variables,
-        secondary_y_variables=secondary_y_variables,
-        title=title,
-        x_axis_title=x_axis_title,
-        y_axis_title=y_axis_title,
-        secondary_y_axis_title=secondary_y_axis_title,
-        color_mapping_dict=color_mapping,
-        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
-        save_fig=False,
-        file_name="chap_01_weekly_gas_open_interest",
-        file_path=FIGURES_PATH,
-        width=1200,
-        height=800,
-        scale=3
-        )
-# Show the figure
-fig_gas_oi.show(renderer="browser")
-# ----------------------------------------------------------------------------------------
-# 01 - Modern Commodities Markets - The current state - Oil and Gas Open Interest
-# ----------------------------------------------------------------------------------------
-subplot_titles=(f"Weekly oil open interest as total number of contracts and in USD over the time: {prices_oi_df.index.min().strftime('%Y')} - {prices_oi_df.index.max().strftime('%Y')}",
-                f"Weekly gas open interest as total number of contracts and in USD over the time: {prices_oi_df.index.min().strftime('%Y')} - {prices_oi_df.index.max().strftime('%Y')}")
-start_year = fig_gas_oi.data[0].x[0]
-end_year = fig_gas_oi.data[0].x[-1]
-title = f"Weekly open interest of oil and gas products over the time: {pd.Timestamp(start_year).strftime('%Y')} - {pd.Timestamp(end_year).strftime('%Y')}"
-x_axis_title = "Time"
-
-fig_gas_oil_open_interest_combine = data_graphing_instance.get_combined_open_interest_graph(
-        subplot_titles=subplot_titles,
-        title="",
-        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
-        x_axis_title=x_axis_title,
-        rows=2,
-        cols=1,
-        shared_xaxes=False,
-        vertical_spacing=0.25,
-        specs=[[{"secondary_y": True}], [{"secondary_y": True}]],
-        fig_oil_oi=fig_oil_oi,
-        fig_gas_oi=fig_gas_oi,
-        save_fig=False,
-        file_name="chap_01_weekly_open_interest_oil_gas_combined_graph.pdf",
-        file_path=FIGURES_PATH,
-        width=1200,
-        height=800,
-        scale=3
-        )
-# Show the figure
-fig_gas_oil_open_interest_combine.show(renderer="browser")
 #----------------------------------------------------------------------------------------
 # 02 - Research Hypothesis - Inflation Dynamics and the Role of Energy Prices
 #----------------------------------------------------------------------------------------
@@ -872,6 +275,7 @@ contributions_sorted = pd.DataFrame(
     index=contributions.index,
     columns=[f"{i+1}" for i in range(len(bar_components))]
 )
+# Next, get the names for the columns for legend and color mapping
 labels_sorted = contributions[bar_components].apply(get_sorted_labels, axis=1)
 
 variables = list(contributions.columns)
@@ -908,63 +312,6 @@ fig_inflation_decomp_euro_area = data_graphing_instance.get_fig_inflation_contri
         )
 # Show the figure
 fig_inflation_decomp_euro_area.show(renderer="browser")
-#----------------------------------------------------------------------------------------
-# 02 - Research Hypothesis - Main Relationships between Oil, Gas and EUR/USD
-#----------------------------------------------------------------------------------------
-# EUR/USD Spot Exchange Rate
-# US WTI Oil Price of Front Months Futures
-# US Natural Gas Price of Front Month Futures
-eur_usd_ticker = "EURUSD=X"
-us_oil_ticker = "CL=F"
-us_ng_ticker = "NG=F"
-
-us_data = yf.download(
-    tickers=[eur_usd_ticker, us_oil_ticker, us_ng_ticker],
-    start="2000-01-01",
-    end="2024-12-31",
-    interval="1d",
-    progress=True,
-    auto_adjust=False
-)
-us_data = us_data["Adj Close"].dropna()
-us_data = us_data.rename(columns={
-    "EURUSD=X": "EUR/USD",
-    "CL=F": "WTI Oil",
-    "NG=F": "Natural Gas"
-})
-
-data = us_data.copy()
-variables = ["EUR/USD", "WTI Oil"]
-secondary_yaxis_variables = ["Natural Gas"]
-color_discrete_sequence = ["grey", "black", "#9b0a7d"]
-title = f"WTI Oil, Natural Gas and USD Index over the time: {data.index[0].year} - {data.index[-1].year}"
-x_axis_title = "Date"
-y_axis_title = "WTI Oil & USD Index"
-secondary_yaxis_title = "Natural Gas"
-color_mapping = {
-    'EUR/USD': "grey",
-    'WTI Oil': "black",
-    'Natural Gas': "#9b0a7d",
-}
-fig_main_relationships_commodities_fx = data_graphing_instance.get_fig_relationship_main_vars(
-        data=data,
-        variables=variables,
-        secondary_y_variables=secondary_yaxis_variables,
-        title=title,
-        secondary_y_axis_title=secondary_yaxis_title,
-        color_discrete_sequence=color_discrete_sequence,
-        x_axis_title=x_axis_title,
-        y_axis_title=y_axis_title,
-        color_mapping_dict=color_mapping,
-        save_fig=False,
-        file_name="oil_gas_usd_index",
-        file_path=FIGURES_PATH,
-        width=1200,
-        height=800,
-        scale=3
-        )
-# Show the figure
-fig_main_relationships_commodities_fx.show(renderer="browser")
 #----------------------------------------------------------------------------------------
 # 02 - Research Hypothesis - Main Relationships between Oil, Gas and EUR/USD
 #----------------------------------------------------------------------------------------
@@ -1125,7 +472,7 @@ fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_h
     num_years_interval_x_axis=5,
     showlegend=False,
     save_fig=False,
-    file_name="chap_02_daily_exchange_rate_oil_log_diff_vola_normalized_crisis_periods_highlighted",
+    file_name="chap_02_exchange_rate_oil_raw_vola_normalized_crisis_periods_highlighted",
     file_path=FIGURES_PATH,
     width=1200,
     height=800,
@@ -1258,6 +605,996 @@ fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_h
 # Show the figure
 fig_crisis_periods_highlighted.show(renderer="browser")
 #----------------------------------------------------------------------------------------
+# 07 - Model Results - Model comparison and selection bar plot
+#----------------------------------------------------------------------------------------
+all_models_comp_df = get_model_metadata_df(
+    full_model_info_path=MODELS_PATH,
+    )
+
+data_loading_instance.export_dataframe(
+        df=all_models_comp_df,
+        file_name="chap_04_all_models_comp_df",
+        excel_sheet_name="04",
+        excel_path=PRESENTATION_DATA,
+        save_excel=True,
+        save_index=False,
+        )
+# Plot the model training results as a bar plot with the used features as index
+unique_df = all_models_comp_df.drop_duplicates(subset=["model_type", "silhouette_score", "feature_names_in"]).dropna(subset=["silhouette_score"])
+
+predicted_labels_df = extract_predicted_labels_from_metadata_df(
+    metadata_df=all_models_comp_df,
+)
+for column in predicted_labels_df.columns:
+    if predicted_labels_df[column].max() > 1 or predicted_labels_df[column].min() <0 or (predicted_labels_df[column].dropna() == 0.0).all():
+        print(f"Removing column: {column}")
+        predicted_labels_df = predicted_labels_df.drop(columns=[column])
+
+keep_models = [model.replace(":", "-") for model in predicted_labels_df.columns]
+keep_models = [model.replace(" ", "_") for model in keep_models]
+exact_model = unique_df["model_type"] + "_" + unique_df["time_last_fitted"].str.replace(":", "-").str.replace(" ", "_")
+unique_df["model_file_name"] = exact_model
+unique_df = unique_df[unique_df["model_file_name"].isin(keep_models)]
+
+title="Model comparison using the silhouette score (1 being best, 0 indicating overlapping clusters, -1 being worst) for various regime identification model configurations"
+fig_model_comp_bar_plot = data_graphing_instance.get_model_comparison_bar_plot(
+    data=unique_df,
+    evaluation_score_col_name="silhouette_score",
+    title="",
+    x_axis_title="Feature names",
+    y_axis_title="Silhouette score (1 best - 0 overlapping clusters - -1 worst)",
+    color_mapping_dict={
+        "KMeans": "black",
+        "AgglomerativeClustering": "darkgrey",
+        "DBSCAN": "blue",
+        "MeanShift": "red",
+        "MarkovRegression": "#9b0a7d",
+        "GaussianMixture": "lightgrey",
+        "Birch": "pink",
+        "AffinityPropagation": "gray",
+        "OPTICS": "olive",
+        "MiniBatchKMeans": "#00677c"
+    },
+    save_fig=True,
+    file_name="chap_07_model_comparison_bar_plot",
+    file_path=FIGURES_PATH,
+    showlegend=False,
+    textfont_size=8.5,
+    width=1400,
+    height=800,
+    scale=3
+    )
+fig_model_comp_bar_plot.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 07 - Model Results - Predicted Regimes - Evolution over time with highlighted Crisis Periods
+#----------------------------------------------------------------------------------------
+# Now also load in the table of crisis periods and overlay these time periods as well
+# to see if regime changes have been picked up
+# Construct the rolling 30 day std of the log first differences as a measure of realized volatility
+series_dict_mapping = {
+    'EUR/USD': 'DEXUSEU',
+    'WTI Oil': 'DCOILWTICO',
+    "Nat Gas": "DHHNGSP",
+}
+
+start_date = "1960-01-01"
+end_date = "2025-10-01"
+
+data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_data(
+    series_dict_mapping=series_dict_mapping,
+    start_date=start_date,
+    end_date=end_date
+    )
+
+spot_exchange_rate_data_df = pd.concat(list(data_dict.values()), axis=1).dropna()
+spot_exchange_rate_data_df_log_diff = np.log(spot_exchange_rate_data_df).diff().dropna()
+window_size = 30
+rolling_std_df = spot_exchange_rate_data_df_log_diff.rolling(window=window_size).std().dropna()
+# Normalize the rolling std to be between 0 and 1 for better visualization
+rolling_std_df = (rolling_std_df - rolling_std_df.min()) / (rolling_std_df.max() - rolling_std_df.min())
+
+graphing_df = pd.concat(
+    [rolling_std_df, predicted_labels_df],
+    axis=1
+)
+
+with open("/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/crisis_periods_dict.json", "r") as f:
+    crisis_periods_dict = json.load(f)
+
+custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
+    start_hex="#9b0a7d",
+    end_hex="black",
+    center_color="grey",
+    steps=round((len(graphing_df.columns)+1)/2),
+    lightening_factor=0.8,
+)
+# Extract only the hex color codes from the created list
+custom_color_scale_codes = [color[1] for color in custom_color_scale]
+color_mapping = {var: custom_color_scale_codes[i % len(custom_color_scale_codes)] for i, var in enumerate(graphing_df.columns.tolist())}
+
+for column in graphing_df.columns:
+    if not column == "EUR/USD":
+        if graphing_df[column].max() > 1 or graphing_df[column].min() <0 or (graphing_df[column].dropna() == 0.0).all():
+            print(f"Removing column: {column}")
+            graphing_df = graphing_df.drop(columns=[column])
+# graphing_df = graphing_df.drop(["WTI Oil", "Nat Gas"], axis=1)
+
+title=f"Resulting predicted model regimes for various variants with highlighted crisis periods over the time: {graphing_df.index[0].year} - {graphing_df.index[-1].year}",
+fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_highlighted(
+    data=graphing_df.dropna(),
+    crisis_periods_dict=crisis_periods_dict,
+    variables=["EUR/USD"],
+    secondary_y_variables=graphing_df.columns[1:].tolist(),
+    recession_shading_color="rgba(155, 10, 125, 0.3)",
+    title="",
+    secondary_y_axis_title="Predicted model regimes (N=2)",
+    x_axis_title="Date",
+    y_axis_title="Normalized 30-day rolling volatility of Spot exchange rate EUR/USD, WTI Oil and Nat Gas (log first differences)",
+    color_mapping_dict=color_mapping,
+    num_years_interval_x_axis=5,
+    showlegend=True,
+    save_fig=False,
+    file_name="chap_07_predicted_model_regimes_with_crisis_periods_highlighted",
+    file_path=FIGURES_PATH,
+    width=1200,
+    height=800,
+    scale=3
+    )
+# Show the figure
+fig_crisis_periods_highlighted.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 07 - Model Results - Predicted Regimes - Relative Share of Regimes across Models
+#----------------------------------------------------------------------------------------
+# Now also map the regimes across the models correctly, in that we assume the high vola regime is encoded as 1 and the low vola regime is a 0
+# KMeans is already correctly encoded
+# AgglomerativeClustering needs to be encoded
+# MeanShift is also correctly encoded
+# MarkovRegression needs to be encoded
+# For a proper evaluation now, loading all full_info.json files and compare the evaluation scores
+all_models_comp_df = get_model_metadata_df(
+    full_model_info_path=MODELS_PATH,
+    )
+
+# Plot the model training results as a bar plot with the used features as index
+unique_df = all_models_comp_df.drop_duplicates(subset=["model_type", "silhouette_score", "feature_names_in"]).dropna(subset=["silhouette_score"])
+
+predicted_labels_df = extract_predicted_labels_from_metadata_df(
+    metadata_df=all_models_comp_df,
+)
+for column in predicted_labels_df.columns:
+    if predicted_labels_df[column].max() > 1 or predicted_labels_df[column].min() <0 or (predicted_labels_df[column].dropna() == 0.0).all():
+        print(f"Removing column: {column}")
+        predicted_labels_df = predicted_labels_df.drop(columns=[column])
+
+keep_models = [model.replace(":", "-") for model in predicted_labels_df.columns]
+keep_models = [model.replace(" ", "_") for model in keep_models]
+exact_model = unique_df["model_type"] + "_" + unique_df["time_last_fitted"].str.replace(":", "-").str.replace(" ", "_")
+unique_df["model_file_name"] = exact_model
+unique_df = unique_df[unique_df["model_file_name"].isin(keep_models)]
+
+predicted_labels_df = get_recoded_predicted_labels_df(
+    predicted_labels_df=predicted_labels_df,
+    label_mapping_dict={0: 1, 1: 0},
+    column_names_list=["AgglomerativeClustering", "MarkovRegression"]
+    )
+# Compare the fitted in sample regimes
+regime_counts_df = get_regime_counts_df(
+    predicted_labels_df=predicted_labels_df
+    )
+
+unique_df["model_file_name_mapping"] = unique_df["model_file_name"].astype(str).str.replace(
+    r'_(\d{2})-(\d{2})-(\d{2})$',
+    r' \1:\2:\3',
+    regex=True
+)
+# Map the used variables to the regime counts df columns
+regime_counts_df_transposed = regime_counts_df.T.copy()
+unique_df = regime_counts_df_transposed.merge(
+    unique_df,
+    left_index=True,
+    right_on="model_file_name_mapping",
+    how="inner"
+)
+
+fig_model_regime_counts_bar_plot = data_graphing_instance.get_model_comparison_regime_counts_bar_plot(
+        data=unique_df,
+        evaluation_score_col_name="silhouette_score",
+        title="",
+        counts_display="relative",
+        color_class_0="grey",
+        color_class_1="#9b0a7d",
+        x_axis_title="Feature names",
+        y_axis_title="Relative Regime Counts (Class 0: lower stack, Class 1: upper stack)",
+        color_mapping_dict={
+        "KMeans": "black",
+        "AgglomerativeClustering": "darkgrey",
+        "DBSCAN": "blue",
+        "MeanShift": "red",
+        "MarkovRegression": "#9b0a7d",
+        "GaussianMixture": "lightgrey",
+        "Birch": "pink",
+        "AffinityPropagation": "gray",
+        "OPTICS": "olive",
+        "MiniBatchKMeans": "#00677c"
+        },
+        save_fig=False,
+        file_name="chap_07_predicted_model_regimes_rel_share_overlap",
+        file_path=FIGURES_PATH,
+        showlegend=False,
+        textfont_size=8.5,
+        width=1400,
+        height=800,
+        scale=3
+        )
+fig_model_regime_counts_bar_plot.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 07 - Model Results - Predicted Regimes - Relative Share of Overlapping Regimes across Models
+#----------------------------------------------------------------------------------------
+predicted_labels_overlap_df = get_overlapping_regimes_df(
+    predicted_labels_df=predicted_labels_df
+    )
+predicted_labels_overlap_df.sort_values(by=["Overlap (percentage of total obs.)"], ascending=False).reset_index(drop=True)
+#----------------------------------------------------------------------------------------
+# 07 - Model Results - Predicted Regimes - Relative Share of Overlapping Regimes across Models with theoretically formulated crisis periods
+#----------------------------------------------------------------------------------------
+# evaluate numerically if the models were able to identify the crisis periods
+# by checking how many of the crisis period data points were classified as high volatility regime
+# by each model
+with open("/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/crisis_periods_dict.json", "r") as f:
+    crisis_periods_dict = json.load(f)
+crisis_periods_df = pd.DataFrame(crisis_periods_dict).T.reset_index().rename(columns={"index": "Crisis", "start": "Start-date", "end": "End-date"})
+overlay_df = get_periods_overlaying_df(
+    crisis_periods_df=crisis_periods_df,
+    predicted_labels_df=predicted_labels_df,
+    predicted_labels_df_column_names_list=predicted_labels_df.columns[1:].tolist(),
+)
+# overlay_df.sort_values(by=["High Volatility Percentage"], ascending=False)
+unique_df = overlay_df.merge(
+    unique_df,
+    left_on="Model",
+    right_on="model_file_name_mapping",
+    how="inner"
+)
+# Save the data locally
+data_loading_instance.export_dataframe(
+    df=unique_df.reset_index(drop=True),
+    file_name="chap_04_unique_df_full",
+    excel_sheet_name="04",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=False,
+)
+
+fig_model_comp_bar_plot = data_graphing_instance.get_model_comparison_bar_plot(
+    data=unique_df,
+    evaluation_score_col_name="High Volatility Percentage",
+    title="",
+    x_axis_title="Feature names",
+    y_axis_title="High Volatility Percentage",
+    color_mapping_dict={
+        "KMeans": "black",
+        "AgglomerativeClustering": "darkgrey",
+        "DBSCAN": "blue",
+        "MeanShift": "red",
+        "MarkovRegression": "#9b0a7d",
+        "GaussianMixture": "lightgrey",
+        "Birch": "pink",
+        "AffinityPropagation": "gray",
+        "OPTICS": "olive",
+        "MiniBatchKMeans": "#00677c"
+    },
+    save_fig=False,
+    file_name="chap_07_predicted_model_regimes_rel_share_overlap_theo_crisis_regimes",
+    file_path=FIGURES_PATH,
+    showlegend=True,
+    textfont_size=8.5,
+    display_red_line_at_y_equals_1=False,
+    width=1400,
+    height=800,
+    scale=3
+    )
+fig_model_comp_bar_plot.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 07 - Model Results - Predicted Regimes - UIP estimation - benchmark models
+#----------------------------------------------------------------------------------------
+file_name = r"chap_04_combined_model_coefs_df.xlsx" # comes from file model_benchmark.py
+full_file_path = rf"{PRESENTATION_DATA}/{file_name}"
+combined_model_coefs_df = pd.read_excel(full_file_path, index_col=0)
+
+columns_keep = ["coef", "std_err", "ci_lower", "ci_upper", "t", "model_file_name"]
+combined_model_coefs_df = combined_model_coefs_df[columns_keep]
+
+fig = data_graphing_instance.plot_coefs_with_ci(
+    data=combined_model_coefs_df.reset_index(),
+    model_col="model_file_name",
+    coef_col="coef",
+    ci_lower_col="ci_lower",
+    ci_upper_col="ci_upper",
+    t_col="t",
+    param_index_name="param",
+    title="",
+    marker_color="#9b0a7d",
+    group_width=0.4,
+    marker_size=11,
+    save_fig=False,
+    file_name="chap_07_uip_estimation_benchmark_models",
+    file_path=FIGURES_PATH,
+    width=1400,
+    height=800,
+    scale=3
+    )
+fig.show(renderer="browser")
+#----------------------------------------------------------------------------------------
+# 07 - Model Results - Predicted Regimes - UIP estimation - identiﬁed regimes
+#----------------------------------------------------------------------------------------
+file_name = r"chap_04_uip_identified_regimes_results_df.xlsx" # comes from file model_benchmark.py
+full_file_path = rf"{PRESENTATION_DATA}/{file_name}"
+uip_identified_regimes_results_df = pd.read_excel(full_file_path)
+
+fig = data_graphing_instance.plot_coefs_with_ci(
+    data=uip_identified_regimes_results_df,
+    model_col="model_name",
+    coef_col="coef",
+    ci_lower_col="ci_lower",
+    ci_upper_col="ci_upper",
+    t_col="t",
+    param_index_name="param",
+    title="",
+    marker_color="#9b0a7d",
+    group_width=0.8,
+    marker_size=9,
+    save_fig=False,
+    file_name="chap_07_uip_estimation_identified_regimes",
+    file_path=FIGURES_PATH,
+    width=1400,
+    height=800,
+    scale=3
+    )
+fig.show(renderer="browser")
+# ----------------------------------------------------------------------------------------
+# 01 - Modern Commodities Markets - The current state - Oil: Global Production and Consumption over time
+# ----------------------------------------------------------------------------------------
+series_dict_mapping = {
+    "Oil Consumption": "https://ourworldindata.org/grapher/oil-consumption-by-country",
+    "Oil Production": "https://ourworldindata.org/grapher/oil-production-by-country",
+    "Gas Consumption": "https://ourworldindata.org/grapher/gas-consumption-by-country",
+    "Gas Production": "https://ourworldindata.org/grapher/gas-production-by-country",
+}
+data_dict, data_full_info_dict = data_loading_instance.get_oil_gas_prod_con_data(
+    series_dict_mapping=series_dict_mapping
+    )
+data_full_info_df = pd.concat([pd.DataFrame(index=range(len(data_full_info_dict.get(key))), data=data_full_info_dict.get(key)) for key in data_full_info_dict.keys()]).reset_index(drop=True)
+# Save the data accordingly
+oil_consumption_df = data_dict.get("Oil Consumption")
+oil_production_df = data_dict.get("Oil Production").rename(mapper={"oil_production__twh": "oil_production_twh"}, axis=1)
+gas_consumption_df = data_dict.get("Gas Consumption")
+gas_production_df = data_dict.get("Gas Production").rename(mapper={"gas_production__twh": "gas_production_twh"}, axis=1)
+# Save the data locally
+data_loading_instance.export_dataframe(
+    df=oil_consumption_df,
+    file_name="chap_06_oil_consumption_data",
+    excel_sheet_name="06",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=False,
+)
+data_loading_instance.export_dataframe(
+    df=oil_production_df,
+    file_name="chap_06_oil_production_data",
+    excel_sheet_name="06",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=False,
+)
+data_loading_instance.export_dataframe(
+    df=gas_consumption_df,
+    file_name="chap_06_gas_consumption_data",
+    excel_sheet_name="06",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=False,
+)
+data_loading_instance.export_dataframe(
+    df=gas_production_df,
+    file_name="chap_06_gas_production_data",
+    excel_sheet_name="06",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=False,
+)
+# ----------------------------------------------------------------------------------------
+# 01 - Modern Commodities Markets - The current state - Oil Consumption
+# ----------------------------------------------------------------------------------------
+variables = ["United States", "China", "India", "Japan", "Russia", "Saudi Arabia", "South Korea", "Canada", "Brazil", "European Union (27)"]
+secondary_y_variables = ["World"]
+# Figure out the common start date for a shared x-axis
+start_year_consumption = oil_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
+end_year_consumption = oil_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
+start_year_production = oil_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
+end_year_production = oil_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
+
+oil_start_year = max(start_year_consumption, start_year_production)
+
+start_year = oil_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
+end_year = oil_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
+title = f"Yearly oil consumption by country (in terawatt-hours) over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
+y_axis_title = "Oil consumption (in terawatt-hours)"
+secondary_y_axis_title = "World oil consumption (in terawatt-hours)"
+
+custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
+    start_hex="#9b0a7d",
+    end_hex="black",
+    center_color="grey",
+    steps=round((len(variables)+1)/2),
+    lightening_factor=0.8,
+)
+# Extract only the hex color codes from the created list
+custom_color_scale_codes = [color[1] for color in custom_color_scale]
+world_color = "red"  # Fixed color for the "World" category
+# Create a mapping for the colors
+color_mapping = {var: custom_color_scale_codes[i % len(custom_color_scale_codes)] for i, var in enumerate(variables)}
+color_mapping["World"] = world_color  # Assign the fixed color for "World"
+
+oil_consumption_df["Year"] = pd.to_datetime(oil_consumption_df["Year"], format="%Y")
+oil_consumption_df = oil_consumption_df.pivot(index="Year", columns="Entity", values="oil_consumption_twh")
+oil_consumption_df = oil_consumption_df[variables + secondary_y_variables]
+
+# See if the overall pricture get better when we restrict the data to only the relative share of the US
+oil_consumption_df_usa = oil_consumption_df[["United States", "World"]]
+# Calculate the relative share of the US in world oil consumption
+oil_consumption_df_usa["United States Share of World"] = oil_consumption_df_usa["United States"] / oil_consumption_df_usa["World"]
+
+fig_oil_consumption = data_graphing_instance.get_fig_consumption_production_oil_gas(
+        data=oil_consumption_df,
+        variables=variables,
+        secondary_y_variables=secondary_y_variables,
+        title=title,
+        x_axis_title=x_axis_title,
+        y_axis_title=y_axis_title,
+        secondary_y_axis_title=secondary_y_axis_title,
+        color_mapping_dict=color_mapping,
+        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
+        save_fig=False,
+        file_name="chap_06_yearly_oil_consumption_by_country",
+        file_path=FIGURES_PATH,
+        width=1200,
+        height=800,
+        scale=3
+        )
+# Show the figure
+fig_oil_consumption.show(renderer="browser")
+# ----------------------------------------------------------------------------------------
+# 01 - Modern Commodities Markets - The current state - Oil Production
+# ----------------------------------------------------------------------------------------
+variables = ["United States", "Russia", "Saudi Arabia", "Canada", "Iran", "China", "Brazil", "Norway", "European Union (27)"]
+secondary_y_variables = ["World"]
+
+oil_production_df = oil_production_df[oil_production_df.Year >= oil_start_year]
+start_year = oil_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
+end_year = oil_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
+
+title = f"Yearly oil production by country (in terawatt-hours) over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
+y_axis_title = "Oil production (in terawatt-hours)"
+secondary_y_axis_title = "World oil production (in terawatt-hours)"
+
+custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
+    start_hex="#9b0a7d",
+    end_hex="black",
+    center_color="grey",
+    steps=round((len(variables)+1)/2),
+    lightening_factor=0.8,
+)
+# Extract only the hex color codes from the created list
+custom_color_scale_codes = [color[1] for color in custom_color_scale]
+world_color = "red"  # Fixed color for the "World" category
+
+# Create a mapping for the colors
+color_mapping = {var: custom_color_scale_codes[i % len(custom_color_scale_codes)] for i, var in enumerate(variables)}
+color_mapping["World"] = world_color  # Assign the fixed color for "World"
+
+oil_production_df["Year"] = pd.to_datetime(oil_production_df["Year"], format="%Y")
+oil_production_df = oil_production_df.pivot(index="Year", columns="Entity", values="oil_production_twh")
+oil_production_df = oil_production_df[variables + secondary_y_variables]
+
+
+fig_oil_production = data_graphing_instance.get_fig_consumption_production_oil_gas(
+        data=oil_production_df,
+        variables=variables,
+        secondary_y_variables=secondary_y_variables,
+        title=title,
+        x_axis_title=x_axis_title,
+        y_axis_title=y_axis_title,
+        secondary_y_axis_title=secondary_y_axis_title,
+        color_mapping_dict=color_mapping,
+        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
+        save_fig=False,
+        file_name="chap_06_yearly_oil_production_by_country",
+        file_path=FIGURES_PATH,
+        width=1200,
+        height=800,
+        scale=3
+        )
+# Show the figure
+fig_oil_production.show(renderer="browser")
+# ----------------------------------------------------------------------------------------
+# 01 - Modern Commodities Markets - The current state - Oil Production and Consumption
+# ----------------------------------------------------------------------------------------
+subplot_titles=(
+    f"Yearly oil consumption by country (in terawatt-hours) over the time: {start_year} - {end_year}",
+    f"Yearly oil production by country (in terawatt-hours) over the time: {start_year} - {end_year}")
+title = f"Yearly oil consumption and production by country (in terawatt-hours) over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
+secondary_y_variable = "World"
+
+fig_oil_consumption_production_combine = data_graphing_instance.get_combined_production_consumption_graph(
+        subplot_titles=list(subplot_titles),
+        title="",
+        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
+        x_axis_title=x_axis_title,
+        secondary_y_variable=secondary_y_variable,
+        rows=2,
+        cols=1,
+        shared_xaxes=False,
+        vertical_spacing=0.25,
+        specs=[[{"secondary_y": True}], [{"secondary_y": True}]],
+        fig_production=fig_oil_production,
+        fig_consumption=fig_oil_consumption,
+        save_fig=False,
+        file_name="chap_06_yearly_oil_consumption_production_combined_graph",
+        file_path=FIGURES_PATH,
+        width=1200,
+        height=800,
+        scale=3
+        )
+# Show the figure
+fig_oil_consumption_production_combine.show(renderer="browser")
+# ----------------------------------------------------------------------------------------
+# 01 - Modern Commodities Markets - The current state - Gas Consumption
+# ----------------------------------------------------------------------------------------
+variables = ["United States", "China", "Russia", "Iran", "Canada", "Australia", "Saudi Arabia", "European Union (27)"]
+secondary_y_variables = ["World"]
+# Figure out the common start date for a shared x-axis
+start_year_consumption = gas_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
+end_year_consumption = gas_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
+start_year_production = gas_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
+end_year_production = gas_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
+gas_start_year = max(start_year_consumption, start_year_production)
+
+start_year = gas_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.min()
+end_year = gas_consumption_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
+
+title = f"Yearly gas consumption by country (in terawatt-hours) over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
+y_axis_title = "Gas consumption (in terawatt-hours)"
+secondary_y_axis_title = "World gas consumption (in terawatt-hours)"
+
+custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
+    start_hex="#9b0a7d",
+    end_hex="black",
+    center_color="grey",
+    steps=round((len(variables)+1)/2),
+    lightening_factor=0.8,
+)
+# Extract only the hex color codes from the created list
+custom_color_scale_codes = [color[1] for color in custom_color_scale]
+world_color = "red"  # Fixed color for the "World" category
+
+# Create a mapping for the colors
+color_mapping = {var: custom_color_scale_codes[i % len(custom_color_scale_codes)] for i, var in enumerate(variables)}
+color_mapping["World"] = world_color  # Assign the fixed color for "World"
+
+gas_consumption_df["Year"] = pd.to_datetime(gas_consumption_df["Year"], format="%Y")
+gas_consumption_df = gas_consumption_df.pivot(index="Year", columns="Entity", values="gas_consumption_twh")
+gas_consumption_df = gas_consumption_df[variables + secondary_y_variables]
+
+fig_gas_consumption = data_graphing_instance.get_fig_consumption_production_oil_gas(
+        data=gas_consumption_df,
+        variables=variables,
+        secondary_y_variables=secondary_y_variables,
+        title=title,
+        x_axis_title=x_axis_title,
+        y_axis_title=y_axis_title,
+        secondary_y_axis_title=secondary_y_axis_title,
+        color_mapping_dict=color_mapping,
+        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
+        save_fig=False,
+        file_name="chap_06_yearly_gas_consumption_by_country",
+        file_path=FIGURES_PATH,
+        width=1200,
+        height=800,
+        scale=3
+        )
+# Show the figure
+fig_gas_consumption.show(renderer="browser")
+# ----------------------------------------------------------------------------------------
+# 01 - Modern Commodities Markets - The current state - Gas Production
+# ----------------------------------------------------------------------------------------
+variables = ["United States", "China", "Iran", "Canada", "Saudi Arabia", "Mexico", "European Union (27)"]
+secondary_y_variables = ["World"]
+
+start_year = gas_start_year
+end_year = gas_production_df.query("Entity.isin(@variables) or Entity.isin(@secondary_y_variables)").Year.max()
+
+gas_production_df = gas_production_df[gas_production_df.Year >= gas_start_year]
+
+title = f"Yearly gas production by country (in terawatt-hours) over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
+y_axis_title = "Production (in terawatt-hours)"
+secondary_y_axis_title = "World gas production (in terawatt-hours)"
+
+
+custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
+    start_hex="#9b0a7d",
+    end_hex="black",
+    center_color="grey",
+    steps=round((len(variables)+1)/2),
+    lightening_factor=0.8,
+)
+# Extract only the hex color codes from the created list
+custom_color_scale_codes = [color[1] for color in custom_color_scale]
+world_color = "red"  # Fixed color for the "World" category
+
+# Create a mapping for the colors
+color_mapping = {var: custom_color_scale_codes[i % len(custom_color_scale_codes)] for i, var in enumerate(variables)}
+color_mapping["World"] = world_color  # Assign the fixed color for "World"
+
+gas_production_df["Year"] = pd.to_datetime(gas_production_df["Year"], format="%Y")
+gas_production_df = gas_production_df.pivot(index="Year", columns="Entity", values="gas_production_twh")
+gas_production_df = gas_production_df[variables + secondary_y_variables]
+
+fig_gas_production = data_graphing_instance.get_fig_consumption_production_oil_gas(
+        data=gas_production_df,
+        variables=variables,
+        secondary_y_variables=secondary_y_variables,
+        title=title,
+        x_axis_title=x_axis_title,
+        y_axis_title=y_axis_title,
+        secondary_y_axis_title=secondary_y_axis_title,
+        color_mapping_dict=color_mapping,
+        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
+        save_fig=False,
+        file_name="chap_06_yearly_gas_production_by_country",
+        file_path=FIGURES_PATH,
+        width=1200,
+        height=800,
+        scale=3
+        )
+# Show the figure
+fig_gas_production.show(renderer="browser")
+# ----------------------------------------------------------------------------------------
+# 01 - Modern Commodities Markets - The current state - Gas Consumption and Production
+# ----------------------------------------------------------------------------------------
+subplot_titles=(f"Yearly gas consumption by country (in terawatt-hours) over the time: {start_year} - {end_year}",
+                f"Yearly gas production by country (in terawatt-hours) over the time: {start_year} - {end_year}")
+title = f"Yearly gas consumption and production by country (in terawatt-hours) over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
+secondary_y_variable = "World"
+
+fig_gas_consumption_production_combine = data_graphing_instance.get_combined_production_consumption_graph(
+        subplot_titles=subplot_titles,
+        title="",
+        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
+        x_axis_title=x_axis_title,
+        secondary_y_variable=secondary_y_variable,
+        rows=2,
+        cols=1,
+        shared_xaxes=False,
+        vertical_spacing=0.25,
+        specs=[[{"secondary_y": True}], [{"secondary_y": True}]],
+        fig_production=fig_gas_production,
+        fig_consumption=fig_gas_consumption,
+        save_fig=True,
+        file_name="chap_06_yearly_gas_consumption_production_combined_graph",
+        file_path=FIGURES_PATH,
+        width=1200,
+        height=800,
+        scale=3
+        )
+# Show the figure
+fig_gas_consumption_production_combine.show(renderer="browser")
+# ----------------------------------------------------------------------------------------
+# 01 - Modern Commodities Markets - The current state - Financial Markets: Oil and Gas OI over time
+# ----------------------------------------------------------------------------------------
+start_date = "1995-01-01"
+end_date = "2025-01-01"
+report_type = "Futures-and-Options Combined Reports"
+save_files_locally = False
+save_path = r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw"
+
+cftc_data = data_loading_instance.get_cftc_commitment_of_traders(
+    start_date=start_date,
+    end_date=end_date,
+    report_type=report_type,
+    save_files_locally=save_files_locally,
+    save_path=save_path
+)
+cftc_data["As of Date in Form YYYY-MM-DD"] = pd.to_datetime(cftc_data["As of Date in Form YYYY-MM-DD"])
+
+# Loading from Files
+file_path = r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw"
+file_name = r"cftc_Futures-and-Options Combined Reports_1995-01-01_to_2025-01-01.csv"
+
+full_path = f"{file_path}/{file_name}"
+cftc_data = pd.read_csv(full_path)
+print(f"Dimension: {cftc_data.shape}")
+cftc_data["Market and Exchange Names"] = cftc_data["Market and Exchange Names"].str.strip()
+
+oil_gas_products_list = [
+                         "CRUDE OIL, LIGHT SWEET - NEW YORK MERCANTILE EXCHANGE",
+                         "NATURAL GAS - NEW YORK MERCANTILE EXCHANGE",
+                         "NAT GAS NYME - NEW YORK MERCANTILE EXCHANGE",
+                         "WTI-PHYSICAL - NEW YORK MERCANTILE EXCHANGE"
+                         ]
+
+cftc_data_oil_gas = cftc_data[
+    cftc_data["Market and Exchange Names"].isin(oil_gas_products_list)
+].sort_values(by=["As of Date in Form YYYY-MM-DD"]).reset_index(drop=True)
+
+
+cftc_data_oil_gas.columns = cftc_data_oil_gas.columns.str.strip()
+
+columns_keep = [
+    "As of Date in Form YYYY-MM-DD",
+    "Market and Exchange Names",
+    "Open Interest (All)",
+    "Noncommercial Positions-Long (All)",
+    "Noncommercial Positions-Short (All)",
+    "Commercial Positions-Long (All)",
+    "Commercial Positions-Short (All)",
+    "Total Reportable Positions-Long (All)",
+    "Total Reportable Positions-Short (All)",
+    "Noncommercial Positions-Spreading (All)",
+    ]
+cftc_data_oil_gas = cftc_data_oil_gas[columns_keep]
+
+
+cftc_data_oil_gas["Market and Exchange Names"] = cftc_data_oil_gas["Market and Exchange Names"].str.replace(" - NEW YORK MERCANTILE EXCHANGE", "")
+# Gas
+cftc_data_oil_gas["Market and Exchange Names"] = cftc_data_oil_gas["Market and Exchange Names"].str.replace("NATURAL GAS", "Gas")
+cftc_data_oil_gas["Market and Exchange Names"] = cftc_data_oil_gas["Market and Exchange Names"].str.replace("NAT GAS NYME", "Gas")
+# Oil
+cftc_data_oil_gas["Market and Exchange Names"] = cftc_data_oil_gas["Market and Exchange Names"].str.replace("CRUDE OIL, LIGHT SWEET", "Oil")
+cftc_data_oil_gas["Market and Exchange Names"] = cftc_data_oil_gas["Market and Exchange Names"].str.replace("WTI-PHYSICAL", "Oil")
+# Date
+cftc_data_oil_gas = cftc_data_oil_gas.rename(columns={"Market and Exchange Names": "Product"})
+cftc_data_oil_gas["Date"] = pd.to_datetime(cftc_data_oil_gas["As of Date in Form YYYY-MM-DD"], format="%Y-%m-%d")
+cftc_data_oil_gas = cftc_data_oil_gas.drop(columns=["As of Date in Form YYYY-MM-DD"])
+
+
+# cftc_data_oil_gas
+# Pivot the data to create separate columns for each unique Product
+cftc_data_oil_gas_pivoted = cftc_data_oil_gas.pivot_table(
+    index="Date",  # Use Date as the index
+    columns="Product",  # Create columns for each unique Product
+    values="Open Interest (All)",  # Populate with Open Interest (All) values
+    aggfunc="sum"  # Use sum in case of duplicate entries
+).reset_index()
+
+# Rename the columns for clarity
+cftc_data_oil_gas_pivoted.columns.name = None  # Remove the columns' name
+cftc_data_oil_gas_pivoted = cftc_data_oil_gas_pivoted.rename_axis(None, axis=1)  # Remove the index name
+
+# Display the resulting DataFrame
+cftc_data_oil_gas_pivoted = cftc_data_oil_gas_pivoted.dropna().reset_index(drop=True).set_index("Date", drop=True)
+
+
+# Load the USD Prices of the nearest Future and merge with the CFTC data for WTI Oil and Natural Gas
+wti_contract_size = 1000  # barrels
+ng_contract_size = 10000  # mmBtu
+# Can be checked via:
+# cftc_data_oil_gas["Contract Units"].unique()
+# wti_prices = yf.download(
+#     tickers="CL=F",
+#     start="1995-01-01",
+#     end="2025-01-01",
+#     interval="1d",
+#     progress=True,
+#     auto_adjust=False)
+# ng_prices = yf.download(
+#     tickers="NG=F",
+#     start="1995-01-01",
+#     end="2025-01-01",
+#     interval="1d",
+#     progress=True,
+#     auto_adjust=False)
+series_dict_mapping = {
+    'WTI Oil': 'DCOILWTICO',
+    "Nat Gas": "DHHNGSP",
+}
+
+start_date = "1960-01-01"
+end_date = "2025-10-01"
+
+data_dict, data_full_info_dict, lowest_freq = data_loading_instance.get_fred_data(
+    series_dict_mapping=series_dict_mapping,
+    start_date=start_date,
+    end_date=end_date
+    )
+wti_prices = data_dict.get("WTI Oil")
+ng_prices = data_dict.get("Nat Gas")
+# Merge the price data with the CFTC data
+mask_wti = wti_prices.index.isin(cftc_data_oil_gas_pivoted.index)
+mask_ng = ng_prices.index.isin(cftc_data_oil_gas_pivoted.index)
+
+wti_prices_filtered = wti_prices[mask_wti].to_frame()
+ng_prices_filtered = ng_prices[mask_ng].to_frame()
+
+prices_df = wti_prices_filtered.merge(
+   right=ng_prices_filtered,
+    left_index=True,
+    right_index=True,
+    how="outer")
+
+
+prices_oi_df = pd.merge(
+    left=cftc_data_oil_gas_pivoted,
+    right=prices_df,
+    left_index=True,
+    right_index=True
+).dropna()
+# prices_oi_df["Gas Open Interest USD"] = prices_oi_df["Gas"] * prices_oi_df["NG=F"] * ng_contract_size
+# prices_oi_df["Oil Open Interest USD"] = prices_oi_df["Oil"] * prices_oi_df["CL=F"] * wti_contract_size
+prices_oi_df["Gas Open Interest USD"] = prices_oi_df["Gas"] * prices_oi_df["Nat Gas"] * ng_contract_size
+prices_oi_df["Oil Open Interest USD"] = prices_oi_df["Oil"] * prices_oi_df["WTI Oil"] * wti_contract_size
+
+# ----------------------------------------------------------------------------------------
+# Open Interest from Reuters
+# ----------------------------------------------------------------------------------------
+oi_tv_oil_gas_reuters_df = pd.read_excel(r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/open_interest_trading_volume_oil_gas_reuters.xlsx")
+oi_tv_oil_gas_reuters_df["Date"] = pd.to_datetime(oi_tv_oil_gas_reuters_df["Date"], format="%Y-%m-%d")
+oi_tv_oil_gas_reuters_df = oi_tv_oil_gas_reuters_df.set_index("Date", drop=True)
+# Separate out the Open-Interest
+oi_columns = [col for col in oi_tv_oil_gas_reuters_df.columns if "open interest" in col.lower()]
+tv_columns = [col for col in oi_tv_oil_gas_reuters_df.columns if "volume" in col.lower()]
+oi_tv_oil_gas_reuters_df[oi_columns].dropna()
+oi_tv_oil_gas_reuters_df[tv_columns].dropna()
+
+# Add and merge based on the index to the prices and oi df
+prices_oi_df = prices_oi_df.merge(
+    right=oi_tv_oil_gas_reuters_df[oi_columns],
+    left_index=True,
+    right_index=True,
+    how="inner"
+)
+
+# Save the data locally
+data_loading_instance.export_dataframe(
+    df=prices_oi_df,
+    file_name="chap_06_prices_oi_df",
+    excel_sheet_name="06",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=True,
+)
+
+# ----------------------------------------------------------------------------------------
+# 01 - Modern Commodities Markets - The current state - Oil Open Interest
+# ----------------------------------------------------------------------------------------
+variables = ["Oil"]
+secondary_y_variables = ["Oil Open Interest USD"]
+
+start_year = prices_oi_df.index.min().year
+end_year = prices_oi_df.index.max().year
+
+title = f"Weekly oil open interest as total number of contracts and in USD over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
+y_axis_title = "Open interest (number of contracts)"
+secondary_y_axis_title = "Open interest (in USD)"
+
+custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
+    start_hex="#9b0a7d",
+    end_hex="black",
+    center_color="grey",
+    steps=round((len(variables)+1)/2),
+    lightening_factor=0.8,
+)
+# Extract only the hex color codes from the created list
+custom_color_scale_codes = [color[1] for color in custom_color_scale]
+oi_usd_color = "black"  # Fixed color for the "World" category
+
+# Create a mapping for the colors
+color_mapping = {var: custom_color_scale_codes[i % len(custom_color_scale_codes)] for i, var in enumerate(variables)}
+color_mapping["Oil Open Interest USD"] = oi_usd_color
+
+fig_oil_oi = data_graphing_instance.get_fig_open_interest(
+        data=prices_oi_df,
+        variables=variables,
+        secondary_y_variables=secondary_y_variables,
+        title=title,
+        x_axis_title=x_axis_title,
+        y_axis_title=y_axis_title,
+        secondary_y_axis_title=secondary_y_axis_title,
+        color_mapping_dict=color_mapping,
+        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
+        save_fig=False,
+        file_name="chap_06_weekly_oil_open_interest",
+        file_path=FIGURES_PATH,
+        width=1200,
+        height=800,
+        scale=3
+        )
+# Show the figure
+fig_oil_oi.show(renderer="browser")
+# ----------------------------------------------------------------------------------------
+# 01 - Modern Commodities Markets - The current state - Gas Open Interest
+# ----------------------------------------------------------------------------------------
+variables = ["Gas"]
+secondary_y_variables = ["Gas Open Interest USD"]
+
+
+title = f"Weekly gas open interest as total number of contracts and in USD over the time: {start_year} - {end_year}"
+x_axis_title = "Time"
+y_axis_title = "Open interest (number of contracts)"
+secondary_y_axis_title = "Open interest (in USD)"
+
+custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
+    start_hex="#9b0a7d",
+    end_hex="black",
+    center_color="grey",
+    steps=round((len(variables)+1)/2),
+    lightening_factor=0.8,
+)
+# Extract only the hex color codes from the created list
+custom_color_scale_codes = [color[1] for color in custom_color_scale]
+oi_usd_color = "black"  # Fixed color for the "World" category
+
+# Create a mapping for the colors
+color_mapping = {var: custom_color_scale_codes[i % len(custom_color_scale_codes)] for i, var in enumerate(variables)}
+color_mapping["Gas Open Interest USD"] = oi_usd_color
+
+fig_gas_oi = data_graphing_instance.get_fig_open_interest(
+        data=prices_oi_df,
+        variables=variables,
+        secondary_y_variables=secondary_y_variables,
+        title=title,
+        x_axis_title=x_axis_title,
+        y_axis_title=y_axis_title,
+        secondary_y_axis_title=secondary_y_axis_title,
+        color_mapping_dict=color_mapping,
+        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
+        save_fig=False,
+        file_name="chap_06_weekly_gas_open_interest",
+        file_path=FIGURES_PATH,
+        width=1200,
+        height=800,
+        scale=3
+        )
+# Show the figure
+fig_gas_oi.show(renderer="browser")
+# ----------------------------------------------------------------------------------------
+# 01 - Modern Commodities Markets - The current state - Oil and Gas Open Interest
+# ----------------------------------------------------------------------------------------
+subplot_titles=(f"Weekly oil open interest as total number of contracts and in USD over the time: {prices_oi_df.index.min().strftime('%Y')} - {prices_oi_df.index.max().strftime('%Y')}",
+                f"Weekly gas open interest as total number of contracts and in USD over the time: {prices_oi_df.index.min().strftime('%Y')} - {prices_oi_df.index.max().strftime('%Y')}")
+start_year = fig_gas_oi.data[0].x[0]
+end_year = fig_gas_oi.data[0].x[-1]
+title = f"Weekly open interest of oil and gas products over the time: {pd.Timestamp(start_year).strftime('%Y')} - {pd.Timestamp(end_year).strftime('%Y')}"
+x_axis_title = "Time"
+
+fig_gas_oil_open_interest_combine = data_graphing_instance.get_combined_open_interest_graph(
+        subplot_titles=subplot_titles,
+        title="",
+        num_years_interval_x_axis=NUM_YEARS_INTERVAL_X_AXIS,
+        x_axis_title=x_axis_title,
+        rows=2,
+        cols=1,
+        shared_xaxes=False,
+        vertical_spacing=0.25,
+        specs=[[{"secondary_y": True}], [{"secondary_y": True}]],
+        fig_oil_oi=fig_oil_oi,
+        fig_gas_oi=fig_gas_oi,
+        save_fig=False,
+        file_name="chap_06_weekly_open_interest_oil_gas_combined_graph.pdf",
+        file_path=FIGURES_PATH,
+        width=1200,
+        height=800,
+        scale=3
+        )
+# Show the figure
+fig_gas_oil_open_interest_combine.show(renderer="browser")
+#----------------------------------------------------------------------------------------
 # 06 - Data Characteristics and Stylized Facts - Interest Rate Comparison: BIS Central Bank Policy Rates vs. 3M Interbank rates
 #----------------------------------------------------------------------------------------
 interbank_rates_df = pd.read_csv(r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/irates3m.csv", sep=";")
@@ -1289,8 +1626,8 @@ interest_rate_comparison_df.columns = ["USD 3M", "EUR 3M", "USD CBPR", "EUR CBPR
 # Save the data locally
 data_loading_instance.export_dataframe(
     df=interest_rate_comparison_df,
-    file_name="chap_07_interest_rate_comparison_df",
-    excel_sheet_name="07",
+    file_name="chap_06_interest_rate_comparison_df",
+    excel_sheet_name="06",
     excel_path=PRESENTATION_DATA,
     save_excel=True,
     save_index=True,
@@ -1320,7 +1657,7 @@ fig_interest_rate_comp = data_graphing_instance.get_fig_relationship_main_vars(
         x_axis_title=x_axis_title,
         y_axis_title=y_axis_title,
         color_mapping_dict=color_mapping,
-        save_fig=False,
+        save_fig=True,
         file_name="chap_06_interest_rate_comparison_bis_cbpr_vs_3m_interbank",
         file_path=FIGURES_PATH,
         width=1200,
@@ -1414,8 +1751,8 @@ spot_exchange_rate_data_df = pd.concat(list(data_dict.values()), axis=1).dropna(
 # Save the data locally
 data_loading_instance.export_dataframe(
     df=spot_exchange_rate_data_df,
-    file_name="chap_07_spot_exchange_rate_data_df",
-    excel_sheet_name="07",
+    file_name="chap_06_spot_exchange_rate_data_df",
+    excel_sheet_name="06",
     excel_path=PRESENTATION_DATA,
     save_excel=True,
     save_index=True,
@@ -1426,8 +1763,8 @@ log_diff_spot_exchange_rate_data_df = log_spot_exchange_rate_data_df.diff().drop
 # Save the data locally
 data_loading_instance.export_dataframe(
     df=log_diff_spot_exchange_rate_data_df,
-    file_name="chap_07_normed_histogram_data_log_first_differences",
-    excel_sheet_name="07",
+    file_name="chap_06_normed_histogram_data_log_first_differences",
+    excel_sheet_name="06",
     excel_path=PRESENTATION_DATA,
     save_excel=True,
     save_index=True,
@@ -1439,8 +1776,8 @@ spot_exchange_rate_data_df_normed = (spot_exchange_rate_data_df - spot_exchange_
 # Save the data locally
 data_loading_instance.export_dataframe(
     df=spot_exchange_rate_data_df_normed,
-    file_name="chap_07_normed_histogram_data",
-    excel_sheet_name="07",
+    file_name="chap_06_normed_histogram_data_log_first_differences_rolling_volatility",
+    excel_sheet_name="06",
     excel_path=PRESENTATION_DATA,
     save_excel=True,
     save_index=True,
@@ -1530,25 +1867,17 @@ normality_test_results = test_data_for_normality(
 # Export results
 data_loading_instance.export_dataframe(
         df=normality_test_results,
-        file_name="norm_test_raw_series",
+        file_name="chap_06_norm_test_raw_series",
         excel_sheet_name="ADF Test Results",
-        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
-        save_excel=True,
-        save_index=False,
-        )
-data_loading_instance.export_dataframe(
-        df=normality_test_results,
-        file_name="norm_test_raw_series",
-        excel_sheet_name="ADF Test Results",
-        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        excel_path=PRESENTATION_DATA,
         save_excel=True,
         save_index=False,
         )
 # Also export to Latex
 data_loading_instance.export_dataframe(
         df=normality_test_results.round(3),
-        file_name="norm_test_raw_series",
-        latex_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables",
+        file_name="chap_06_norm_test_raw_series",
+        latex_path=PRESENTATION_DATA,
         save_latex=True,
         save_index=False,
         )
@@ -1567,7 +1896,7 @@ normality_test_results = test_data_for_normality(
 # Export results
 data_loading_instance.export_dataframe(
         df=normality_test_results,
-        file_name="norm_test_log_diff",
+        file_name="chap_06_norm_test_log_diff",
         excel_sheet_name="ADF Test Results",
         excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
         save_excel=True,
@@ -1575,16 +1904,16 @@ data_loading_instance.export_dataframe(
         )
 data_loading_instance.export_dataframe(
         df=normality_test_results,
-        file_name="norm_test_log_diff",
+        file_name="chap_06_norm_test_log_diff",
         excel_sheet_name="ADF Test Results",
-        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        excel_path=PRESENTATION_DATA,
         save_excel=True,
         save_index=False,
         )
 # Also export to Latex
 data_loading_instance.export_dataframe(
         df=normality_test_results.round(3),
-        file_name="norm_test_log_diff",
+        file_name="chap_06_norm_test_log_diff",
         latex_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables",
         save_latex=True,
         save_index=False,
@@ -1621,16 +1950,16 @@ data_loading_instance.export_dataframe(
         )
 data_loading_instance.export_dataframe(
         df=adf_test_df,
-        file_name="adf_test_raw_series",
+        file_name="chap_06_adf_test_raw_series",
         excel_sheet_name="ADF Test Results",
-        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        excel_path=PRESENTATION_DATA,
         save_excel=True,
         save_index=False,
         )
 # Also export to Latex
 data_loading_instance.export_dataframe(
         df=adf_test_df[['ADF Statistic', 'p-value', 'Start Time:', 'End Time:', 'Regression Type', 'Observations:', "Variable", "Result"]].round(3),
-        file_name="adf_test_raw_series",
+        file_name="chap_06_adf_test_raw_series",
         latex_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables",
         save_latex=True,
         save_index=False,
@@ -1660,7 +1989,7 @@ adf_test_df["Result"] = np.where(adf_test_df["p-value"] < 0.05, "Stationary", "N
 # Export results
 data_loading_instance.export_dataframe(
         df=adf_test_df,
-        file_name="adf_test_log_diff",
+        file_name="chap_06_adf_test_log_diff",
         # excel_sheet_name="ADF Test Results Log Diff",
         excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
         save_excel=True,
@@ -1668,16 +1997,16 @@ data_loading_instance.export_dataframe(
         )
 data_loading_instance.export_dataframe(
         df=adf_test_df,
-        file_name="adf_test_log_diff",
+        file_name="chap_06_adf_test_log_diff",
         excel_sheet_name="ADF Test Results",
-        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        excel_path=PRESENTATION_DATA,
         save_excel=True,
         save_index=False,
         )
 # Also export to Latex
 data_loading_instance.export_dataframe(
         df=adf_test_df[['ADF Statistic', 'p-value', 'Start Time:', 'End Time:', 'Regression Type', 'Observations:', "Variable", "Result"]].round(3),
-        file_name="adf_test_log_diff",
+        file_name="chap_06_adf_test_log_diff",
         latex_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables",
         save_latex=True,
         save_index=False,
@@ -1705,7 +2034,7 @@ cointegration_test_df["Result"] = np.where(cointegration_test_df["p-value"] < 0.
 # Export results
 data_loading_instance.export_dataframe(
         df=cointegration_test_df,
-        file_name="cointegration_test_raw_series",
+        file_name="chap_06_cointegration_test_raw_series",
         excel_sheet_name="Granger Test Results",
         excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
         save_excel=True,
@@ -1713,16 +2042,16 @@ data_loading_instance.export_dataframe(
         )
 data_loading_instance.export_dataframe(
         df=cointegration_test_df,
-        file_name="cointegration_test_raw_series",
+        file_name="chap_06_cointegration_test_raw_series",
         excel_sheet_name="Granger Test Results",
-        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        excel_path=PRESENTATION_DATA,
         save_excel=True,
         save_index=False,
         )
 # Also export to Latex
 data_loading_instance.export_dataframe(
         df=cointegration_test_df[['Cointegration Score', 'p-value', 'Start Time', 'End Time', 'Observations', 'Trend','Variable X', 'Variable Y', 'Result']].round(3),
-        file_name="cointegration_test_raw_series",
+        file_name="chap_06_cointegration_test_raw_series",
         latex_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables",
         save_latex=True,
         save_index=False,
@@ -1750,7 +2079,7 @@ cointegration_test_df["Result"] = np.where(cointegration_test_df["p-value"] < 0.
 # Export results
 data_loading_instance.export_dataframe(
         df=cointegration_test_df,
-        file_name="cointegration_test_log_diff",
+        file_name="chap_06_cointegration_test_log_diff",
         # excel_sheet_name="Granger Test Results",
         excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
         save_excel=True,
@@ -1758,16 +2087,16 @@ data_loading_instance.export_dataframe(
         )
 data_loading_instance.export_dataframe(
         df=cointegration_test_df,
-        file_name="cointegration_test_log_diff",
+        file_name="chap_06_cointegration_test_log_diff",
         excel_sheet_name="Granger Test Results",
-        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        excel_path=PRESENTATION_DATA,
         save_excel=True,
         save_index=False,
         )
 # Also export to Latex
 data_loading_instance.export_dataframe(
         df=cointegration_test_df[['Cointegration Score', 'p-value', 'Start Time', 'End Time', 'Observations', 'Trend','Variable X', 'Variable Y', 'Result']].round(3),
-        file_name="cointegration_test_log_diff",
+        file_name="chap_06_cointegration_test_log_diff",
         latex_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables",
         save_latex=True,
         save_index=False,
@@ -1866,7 +2195,7 @@ granger_test_result_df_oil["Result"] = np.where(granger_test_result_df_oil["p-va
 # Export results
 data_loading_instance.export_dataframe(
         df=granger_test_result_df_oil,
-        file_name="granger_causality_test_oil_raw_series",
+        file_name="chap_06_granger_causality_test_oil_raw_series",
         excel_sheet_name="Granger Test Results",
         excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
         save_excel=True,
@@ -1874,14 +2203,14 @@ data_loading_instance.export_dataframe(
         )
 data_loading_instance.export_dataframe(
         df=granger_test_result_df_oil,
-        file_name="granger_causality_test_oil_raw_series",
+        file_name="chap_06_granger_causality_test_oil_raw_series",
         excel_sheet_name="Granger Test Results",
-        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        excel_path=PRESENTATION_DATA,
         save_excel=True,
         save_index=False,
         )
 # Plotting the results
-variables = granger_test_result_df_oil['Metric'].unique()
+variables = pd.Series(granger_test_result_df_oil['Metric'].unique()).values
 secondary_y_variables = ["p-value"]
 color_mapping_dict = {
     'p-value': 'red',
@@ -1911,7 +2240,7 @@ granger_causality_test_plot = data_graphing_instance.plot_granger_test_results(
             b=10   # Bottom margin
             ),
     showlegend=False,
-    save_fig=False,
+    save_fig=True,
     file_name="chap_06_granger_causality_test_oil_raw_series",
     file_path=FIGURES_PATH
     )
@@ -1932,7 +2261,7 @@ granger_test_result_df_gas["Result"] = np.where(granger_test_result_df_gas["p-va
 # Export results
 data_loading_instance.export_dataframe(
         df=granger_test_result_df_gas,
-        file_name="granger_causality_test_gas_raw_series",
+        file_name="chap_06_granger_causality_test_gas_raw_series",
         excel_sheet_name="Granger Test Results",
         excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
         save_excel=True,
@@ -1940,14 +2269,14 @@ data_loading_instance.export_dataframe(
         )
 data_loading_instance.export_dataframe(
         df=granger_test_result_df_gas,
-        file_name="granger_causality_test_gas_raw_series",
+        file_name="chap_06_granger_causality_test_gas_raw_series",
         excel_sheet_name="Granger Test Results",
-        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        excel_path=PRESENTATION_DATA,
         save_excel=True,
         save_index=False,
         )
 # Plotting the results
-variables = granger_test_result_df_gas['Metric'].unique()
+variables = pd.Series(granger_test_result_df_gas['Metric'].unique()).values
 secondary_y_variables = ["p-value"]
 title=f"Granger causality test results testing granger causality of daily observations of gas for EUR/USD over the time: {spot_exchange_rate_data_df.index.min().strftime('%Y')} - {spot_exchange_rate_data_df.index.max().strftime('%Y')}"
 
@@ -1990,7 +2319,7 @@ granger_test_result_df_oil["Result"] = np.where(granger_test_result_df_oil["p-va
 # Export results
 data_loading_instance.export_dataframe(
         df=granger_test_result_df_oil,
-        file_name="granger_causality_test_oil_log_diff",
+        file_name="chap_06_granger_causality_test_oil_log_diff",
         excel_sheet_name="Granger Test Results",
         excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
         save_excel=True,
@@ -1998,14 +2327,14 @@ data_loading_instance.export_dataframe(
         )
 data_loading_instance.export_dataframe(
         df=granger_test_result_df_oil,
-        file_name="granger_causality_test_oil_log_diff",
+        file_name="chap_06_granger_causality_test_oil_log_diff",
         excel_sheet_name="Granger Test Results",
-        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        excel_path=PRESENTATION_DATA,
         save_excel=True,
         save_index=False,
         )
 # Plotting the results
-variables = granger_test_result_df_oil['Metric'].unique()
+variables = pd.Series(granger_test_result_df_oil['Metric'].unique()).values
 secondary_y_variables = ["p-value"]
 color_mapping_dict = {
     'p-value': 'red',
@@ -2056,7 +2385,7 @@ granger_test_result_df_gas["Result"] = np.where(granger_test_result_df_gas["p-va
 # Export results
 data_loading_instance.export_dataframe(
         df=granger_test_result_df_gas,
-        file_name="granger_causality_test_gas_log_diff",
+        file_name="chap_06_granger_causality_test_gas_log_diff",
         excel_sheet_name="Granger Test Results",
         excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results",
         save_excel=True,
@@ -2064,14 +2393,14 @@ data_loading_instance.export_dataframe(
         )
 data_loading_instance.export_dataframe(
         df=granger_test_result_df_gas,
-        file_name="granger_causality_test_gas_log_diff",
+        file_name="chap_06_granger_causality_test_gas_log_diff",
         excel_sheet_name="Granger Test Results",
-        excel_path=r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/presentation_latex_version/data",
+        excel_path=PRESENTATION_DATA,
         save_excel=True,
         save_index=False,
         )
 # Plotting the results
-variables = granger_test_result_df_gas['Metric'].unique()
+variables = pd.Series(granger_test_result_df_gas['Metric'].unique()).values
 secondary_y_variables = ["p-value"]
 title=f"Granger causality test results testing granger causality of daily observations (log first differences) of gas for EUR/USD over the time: {spot_exchange_rate_data_df_log_diff.index.min().strftime('%Y')} - {spot_exchange_rate_data_df_log_diff.index.max().strftime('%Y')}"
 
@@ -2098,8 +2427,9 @@ granger_causality_test_plot = data_graphing_instance.plot_granger_test_results(
     file_path=FIGURES_PATH
     )
 granger_causality_test_plot.show(renderer="browser")
+
 #----------------------------------------------------------------------------------------
 # 08 - Appendix - Data and Definitions - Crisis Periods
 #----------------------------------------------------------------------------------------
 crisi_periods_df = pd.read_excel(r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables/crisis_periods.xlsx", header=0, index_col=0)
-crisi_periods_df.to_latex(r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables/crisis_periods.tex")
+# crisi_periods_df.to_latex(r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/tables/crisis_periods.tex")

@@ -3,6 +3,7 @@ import logging
 import os
 import json
 from datetime import datetime
+from io import StringIO
 import re
 import ast
 import pandas as pd
@@ -659,3 +660,199 @@ def extract_best_params(
         })
 
     return best_params_list
+
+
+def parse_statsmodels_coef_table(summary_text: str) -> pd.DataFrame:
+    """
+    Extract coefficient table from a statsmodels OLS/GLM summary text.
+    Returns DataFrame with columns: ['param','coef','std_err','t','p','ci_lower','ci_upper'].
+    """
+    _float_re = r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?'  # matches floats + scientific notation
+    # locate the start of the table by finding the header line containing "coef" and "std err"
+    lines = summary_text.splitlines()
+    header_idx = None
+    dash_idx = None
+    for i, ln in enumerate(lines):
+        if re.search(r'\bcoef\b', ln) and re.search(r'\bstd err\b', ln, flags=re.I):
+            header_idx = i
+            # next non-empty line often is the dashed separator (------)
+            for j in range(i+1, min(i+6, len(lines))):
+                if re.match(r'[-\s]{4,}$', lines[j].strip()) or re.match(r'^[-]{5,}', lines[j]):
+                    dash_idx = j
+                    break
+            break
+
+    if header_idx is None:
+        raise ValueError("Could not find the coefficient table header in the provided summary text.")
+
+    # table lines start after the dashed separator (or after header if dash not found)
+    start = dash_idx + 1 if dash_idx is not None else header_idx + 1
+    table_lines = []
+    for ln in lines[start:]:
+        # stop at block delimiter or empty line followed by other summary blocks
+        if ln.strip().startswith('===') or ln.strip().startswith('Omnibus:') or ln.strip() == '':
+            break
+        table_lines.append(ln.rstrip())
+
+    rows = []
+    for ln in table_lines:
+        # find all numeric tokens in the line
+        matches = list(re.finditer(_float_re, ln))
+        if len(matches) < 6:
+            # skip lines that do not look like a coef row
+            continue
+        # take the last 6 numeric tokens as the table values
+        last6 = matches[-6:]
+        nums = [float(ln[m.start():m.end()]) for m in last6]
+        # parameter name is text before the first of these last 6 numbers
+        name_end = last6[0].start()
+        param = ln[:name_end].strip()
+        rows.append([param] + nums)
+
+    df = pd.DataFrame(rows, columns=['param','coef','std_err','t','p','ci_lower','ci_upper'])
+    # coerce numeric columns (already floats) and set index
+    df = df.set_index('param')
+    return df
+
+
+def parse_markov_coef_table(summary_text: str) -> pd.DataFrame:
+    """
+    Parse a statsmodels MarkovRegression / Markov-switching summary text and extract coefficient rows
+    for each block (e.g. "Regime 0 parameters", "Regime 1 parameters", "Regime transition parameters").
+    Returns a DataFrame with columns:
+      ['param', 'coef', 'std_err', 'z', 'p', 'ci_lower', 'ci_upper', 'regime_section']
+    """
+    import re
+    from typing import List
+    lines = summary_text.splitlines()
+    # sections we want (order matters)
+    section_names = [
+        r'Regime\s*0\s*parameters',
+        r'Regime\s*1\s*parameters',
+        r'Regime\s*2\s*parameters',  # keep generic in case more regimes exist
+        r'Regime\s*\d+\s*parameters',
+        r'Regime transition parameters',
+        r'Regime\s*transition\s*parameters'
+    ]
+    # canonicalize found sections to one of three target labels
+    canonical_map = {
+        'regime_params': 'Regime parameters',
+        'regime_transition': 'Regime transition parameters'
+    }
+
+    float_re = r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?'
+
+    # find indices of section headers
+    section_indices = []
+    for i, ln in enumerate(lines):
+        for pat in section_names:
+            if re.search(rf'^{pat}\s*$', ln.strip(), flags=re.I):
+                section_indices.append((i, ln.strip()))
+                break
+
+    # Also include explicit "Regime transition parameters" if not matched above
+    # If no section headers found, try to match blocks using the header line containing "coef    std err"
+    if not section_indices:
+        for i, ln in enumerate(lines):
+            if re.search(r'\bcoef\b', ln, flags=re.I) and re.search(r'\bstd err\b', ln, flags=re.I):
+                # guess this is a table header; find preceding non-empty line as section name
+                sec_name = lines[i-1].strip() if i > 0 else "Unknown section"
+                section_indices.append((i-1, sec_name))
+
+    # Build a list of (start_line_index, section_title)
+    parsed_sections = []
+    for idx, title_line in section_indices:
+        title = title_line
+        parsed_sections.append((idx, title))
+
+    # If still empty, bail
+    if not parsed_sections:
+        raise ValueError("Could not locate Markov summary parameter sections in text.")
+
+    # For each parsed section, find the dashed separator and then collect rows until a blank or next section
+    rows = []
+    # create list of indices where other known summary blocks start to stop parsing (e.g. 'Warnings:', 'Omnibus:', '===')
+    stop_markers = re.compile(r'^(Warnings:|Omnibus:|Notes:|={3,}|$)', flags=re.I)
+    # Create sorted list of section starts
+    starts = [p[0] for p in parsed_sections]
+    for si, title in parsed_sections:
+        # find the dashed separator after title
+        dash_idx = None
+        header_idx = None
+        # search forward for header line containing 'coef' and 'std err'
+        for j in range(si, min(si + 12, len(lines))):
+            if re.search(r'\bcoef\b', lines[j], flags=re.I) and re.search(r'\bstd err\b', lines[j], flags=re.I):
+                header_idx = j
+                # next line commonly is dashes; mark start after that
+                # find first line after header that contains a '-' sequence
+                for k in range(j + 1, min(j + 4, len(lines))):
+                    if re.search(r'^-+\s*$', lines[k].strip()):
+                        dash_idx = k
+                        break
+                break
+        start = (dash_idx + 1) if dash_idx is not None else (header_idx + 1 if header_idx is not None else si + 1)
+
+        # determine end: next section start or stop marker
+        # find next known section index greater than start
+        next_sec = min([p for p in starts if p > si], default=None)
+        end = next_sec if next_sec is not None else len(lines)
+        # but cut earlier if a stop marker appears
+        for k in range(start, end):
+            if stop_markers.match(lines[k].strip()):
+                end = k
+                break
+
+        # collect candidate table lines
+        table_lines: List[str] = []
+        for ln in lines[start:end]:
+            if ln.strip() == '':
+                # blank line -> likely end of table
+                break
+            # ignore purely dashed separator lines
+            if re.match(r'^\s*-{3,}\s*$', ln):
+                continue
+            table_lines.append(ln.rstrip())
+
+        # parse each table line extracting last 6 numeric tokens
+        for ln in table_lines:
+            matches = list(re.finditer(float_re, ln))
+            if len(matches) < 6:
+                # skip lines that don't look like coefficient rows
+                continue
+            last6 = matches[-6:]
+            nums = [float(ln[m.start():m.end()]) for m in last6]
+            name_end = last6[0].start()
+            param = ln[:name_end].strip()
+            # normalize section name:
+            sect = title
+            # tidy section label
+            if re.search(r'Regime\s*\d+\s*parameters', title, flags=re.I):
+                # capture regime number if present
+                m = re.search(r'Regime\s*(\d+)\s*parameters', title, flags=re.I)
+                if m:
+                    sect = f"Regime {m.group(1)} parameters"
+                else:
+                    sect = "Regime parameters"
+            elif re.search(r'Regime\s*transition', title, flags=re.I):
+                sect = "Regime transition parameters"
+            else:
+                sect = title
+
+            rows.append([param] + nums + [sect])
+
+    if not rows:
+        raise ValueError("No coefficient rows parsed from Markov summary text.")
+
+    df = pd.DataFrame(rows, columns=['param', 'coef', 'std_err', 'z', 'p', 'ci_lower', 'ci_upper', 'regime_section'])
+    df = df.set_index('param')
+    return df
+
+
+def parse_summary_file(path: str, summary_file_type: str) -> pd.DataFrame:
+    with open(path, 'r', encoding='utf-8', errors='replace') as f:
+        txt = f.read()
+    if summary_file_type == "statsmodels_coef_table":
+        coef_df = parse_statsmodels_coef_table(txt)
+    else:
+        coef_df = parse_markov_coef_table(txt)
+    return coef_df
