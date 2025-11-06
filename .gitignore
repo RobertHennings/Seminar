@@ -8,6 +8,8 @@ credentials.json
 idea/
 info/
 data/raw/
+# Ignore a large file for now
+data/raw/cftc_Futures-and-Options Combined Reports_1995-01-01_to_2025-01-01.csv
 # ################## Project related stuff - LaTex Main document
 seminar/*.toc
 seminar/*.aux
@@ -43,8 +45,6 @@ reports/presentation_latex_version/*.snm
 ~$* # Ignore all temporary windows files in the whole repo
 ~$*.pptx
 <del>$* **/</del>$*
-# Ignore a large file for now
-reports/figures/cftc_Futures-and-Options Combined Reports_1995-01-01_to_2025-01-01.csv
 # ################## Python related stuff
 __pycache__
 # ################## Mac related stuff
