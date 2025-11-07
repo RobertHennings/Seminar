@@ -2,7 +2,11 @@
 # Identifying (volatility-)regimes in the the EUR/USD spot exchange rate using clustering algorithms: An Oil and Gas Perspective on Parity Conditions.
 Seminar in Applied Financial Economics: Applied Econometrics of FX Markets - Professor Reitz
 
-[PDF Presentation]()
+[PDF Presentation](https://github.com/RobertHennings/Seminar/blob/main/reports/presentation_latex_version/main.pdf)
+
+**NOTE: The in the presentation included graphs can be viewed as interactive, online html version by just clicking on them, or by just completing the url in a new browser tab: https://roberthennings.github.io/Seminar/graph_name.html**
+
+All graphs can be accessed in the respective subfolder in the reports section.
 
 ## Installation
 1. Either click on download in the GitHub UI
@@ -15,7 +19,7 @@ cd some/path/to/store
 git clone https://github.com/RobertHennings/Seminar 
 ```
 
-## The seminar paper
+## The seminar project
 ### Abstract
 The seminar paper deals with the question, if alternative regime identification methods, including additional explanatory variables in the framework of clustering algorithms, can help to better identify (volatility driven) market regimes in the EUR/USD spot exchange rate. Especially including different variations of energy commodity prices (and their rolling volatility) is tested for an improved regime identification performance, with variations of the Markov-Switching Model
 as benchmark. Finally, after having separated the Time-series of the EUR/USD spot exchange rate into different (volatility-) regimes, the standard UIP relationship is tested and compared among the regimes.
@@ -25,9 +29,17 @@ Main considered energy commodity prices are (USA):
 1. [WTI Crue Oil - Cushing, Oklahoma - Spot Prices - Daily](https://fred.stlouisfed.org/series/DCOILWTICO)
 2. [Natural Gas - Henry Hub - Spot Prices - Daily](https://fred.stlouisfed.org/series/DHHNGSP)
 
+Main considered interest rate data (USA, EU Area):
+
+1. [Central Bank Policy Rate (CBPR) - Daily - USA - Bank for International Settlements](https://data.bis.org/topics/CBPOL/BIS,WS_CBPOL,1.0/D.US)
+2. [Central Bank Policy Rate (CBPR) - Daily - EU Area - Bank for International Settlements](https://data.bis.org/topics/CBPOL/BIS,WS_CBPOL,1.0/D.XM)
+
 Data sources are primarily:
 
 1. [FRED](https://fred.stlouisfed.org)
+2. [ECB](https://data.ecb.europa.eu)
+3. [BIS](https://data.bis.org/topics/CBPOL)
+4. [Our World in Data](https://ourworldindata.org/energy#explore-data-on-energy)
 
 <br>
 <u>Main Research Hypothesis:</u>
@@ -64,32 +76,24 @@ Seminar
 ├── MANIFEST.in
 ├── README.md
 ├── data <- folder containing all used data
-│   ├── features
-│   ├── processed
 │   ├── raw
 │   └── results
 ├── docs
-│   └── core
 ├── literature <- folder containing all used literature
 ├── notebooks <- folder containing quick explorations and tests using Jupyter Notebooks
-│   ├── 01_eda.ipynb
-│   └── experiments.ipynb
+│   ├── Seminar_Fella_Hennings_Graphs_Presentation.ipynb
+│   └── Seminar_Fella_Hennings_Modelling.ipynb
 ├── pyproject.toml
 ├── reports <- folder contining all report types accompanying the project
 │   ├── PPTX_WiSo_Template.pptx
 │   ├── figures
 │   ├── logs
-│   ├── poster <- raw unused poster templates
-│   │   ├── poster_CAU.ppt
-│   │   ├── poster_Math.ppt
-│   │   └── poster_WISO.ppt
-│   ├── presentation <- raw unused presentation templates
-│   │   ├── PPTX_CAU_Template.pptx
-│   │   ├── PPTX_Math_Template.pptx
+│   ├── presentation_pptx_version <- raw unused presentation templates
 │   │   └── PPTX_WiSo_Template.pptx
 │   ├── presentation_latex_version <- The LaTex  presentation
 │   │   ├── chapters <- single chapter files pulled together in main.tex
 │   │   │   ├── appendix.tex
+│   │   │   ├── acknowledgements.tex
 │   │   │   ├── chapter-00.tex
 │   │   │   ├── chapter-01.tex
 │   │   │   ├── chapter-02.tex
@@ -98,8 +102,14 @@ Seminar
 │   │   │   ├── chapter-05.tex
 │   │   │   ├── chapter-06.tex
 │   │   │   ├── chapter-07.tex
+│   │   │   ├── chapter-08.tex
+│   │   │   ├── closing.tex
+│   │   │   ├── list-of-figures.tex
+│   │   │   ├── list-of-tables.tex
+│   │   │   ├── closing-discussion.tex
 │   │   │   └── references.tex
 │   │   ├── code
+│   │   ├── data
 │   │   ├── figures <- all figures used in the presentation
 │   │   ├── main.pdf <- the presentation document itself
 │   │   └── main.tex
@@ -107,10 +117,6 @@ Seminar
 ├── requirements <- requirements that need to be fullfilled running the project (code)
 │   ├── environment.yml
 │   └── requirements.txt <- main packages used
-├── scripts
-│   ├── evaluate_results.py
-│   ├── run_backtest.py
-│   └── run_training.py
 ├── seminar <- the seminar paper itself as LaTex project
 │   ├── bibliography.bib
 │   ├── chapters
@@ -149,13 +155,7 @@ Seminar
 ├── setup.py
 └── src <- the seminar code
     ├── seminar_code
-    │   ├── backtesting
-    │   │   ├── metrics.py
-    │   │   └── portfolio.py
     │   ├── data_graphing
-    │   │   ├── __pycache__
-    │   │   │   ├── config.cpython-313.pyc
-    │   │   │   └── data_grapher.cpython-313.pyc
     │   │   ├── config.py
     │   │   ├── data_grapher.py
     │   │   └── seminar_graphs.py
@@ -177,13 +177,6 @@ Seminar
     │   └── utils
     │       ├── config.py
     │       └── helpers.py
-    └── tests
-        ├── __init__.py
-        ├── test_backtest.py
-        ├── test_data.py
-        ├── test_features.py
-        ├── test_models.py
-        └── test_strategy.py
 ```
 
 <u>**seminar** subfolder:</u>
@@ -267,23 +260,21 @@ pip3 list
 ## Citation
 ### BibTex
 ```bibtex
-@software{Fella_Hennings_Seminar,
-  author = {Fella, Josef; Hennings, Robert},
-  title = {Seminar},
-  year = {2025},
-  version = {1.0.0},
-  url = {
-author = {Fella, Josef; Hennings, Robert},
-doi = {10.1234/example-doi},
-license = {MIT},
-title = {{Seminar}},
-url = {https://github.com/RobertHennings/Seminar},
-version = {1.0.0}
+@misc{FellaHenningsSeminar2025,
+  author        = {Fella, Josef; Hennings, Robert},
+  title         = {Seminar},
+  year          = {2025},
+  version       = {0.0.1},
+  author        = {Fella, Josef; Hennings, Robert},
+  license       = {MIT},
+  title         = {Identifying (volatility-)regimes in the the EUR/USD spot exchange rate using clustering algorithms: An Oil and Gas Perspective on Parity Conditions.},
+  url           = {https://github.com/RobertHennings/Seminar},
+  note          = {Submitted: 10.11.2025, Presentation held: 14.11.2025, Seminar project at the chair of economics, Prof. Dr. Stefan Reitz; QBER - Kiel}
 }
 ```
 ### APA
 ```apa
-Fella, J.; Hennings, R. Seminar (Version 1.0.0) [Computer software]. https://doi.org/10.1234/example-doi
+Fella, J.; Hennings, R. Seminar (Version 1.0.0) [Computer software]. https://github.com/RobertHennings/Seminar
 ```
 ## Contributing
 ### Commit Style
