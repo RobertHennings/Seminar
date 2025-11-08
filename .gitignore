@@ -43,6 +43,7 @@ reports/presentation_latex_version/*.blg
 reports/presentation_latex_version/main-blx.bib
 .latex-preview-cache/
 **/.latex-preview-cache/
+main-blx.bib
 **/~$* # Ignore all temporary windows files in the whole repo
 ~$* # Ignore all temporary windows files in the whole repo
 ~$*.pptx
@@ -50,4 +51,4 @@ reports/presentation_latex_version/main-blx.bib
 # ################## Python related stuff
 __pycache__
 # ################## Mac related stuff
-.DS_Store
+.DS_Storemain-blx.bib
