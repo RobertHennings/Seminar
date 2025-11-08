@@ -44,6 +44,7 @@ data_loading_instance = DataLoading(
     credential_path=r"/Users/Robert_Hennings/Projects/SettingsPackages",
     credential_file_name=r"credentials.json"
 )
+
 # Instantiate the data graphing class
 data_graphing_instance = DataGraphing()
 # Convention for Figure Titles: [Data Frequency] + [Variable Description] + [Country/Region] + [Time Period as only years]
@@ -119,6 +120,8 @@ fig_deviations_from_ppp = data_graphing_instance.get_fig_deviations_ppp(
         )
 # Show the figure
 fig_deviations_from_ppp.show(renderer="browser")
+
+
 #----------------------------------------------------------------------------------------
 # 02 - Research Hypothesis - Inflation Dynamics and the Role of Energy Prices
 #----------------------------------------------------------------------------------------
@@ -186,6 +189,8 @@ def get_sorted_labels(row):
     return labels
 
 labels_sorted = contributions[bar_components].apply(get_sorted_labels, axis=1)
+
+
 #----------------------------------------------------------------------------------------
 # 02 - Research Hypothesis - Energy Price Contribution to US Inflation
 #----------------------------------------------------------------------------------------
@@ -221,6 +226,8 @@ fig_inflation_decomp_usa = data_graphing_instance.get_fig_inflation_contribution
         scale=3
         )
 fig_inflation_decomp_usa.show(renderer="browser")
+
+
 #----------------------------------------------------------------------------------------
 # 02 - Research Hypothesis - Energy Price Contribution to Eu Area Inflation
 #----------------------------------------------------------------------------------------
@@ -312,6 +319,8 @@ fig_inflation_decomp_euro_area = data_graphing_instance.get_fig_inflation_contri
         )
 # Show the figure
 fig_inflation_decomp_euro_area.show(renderer="browser")
+
+
 #----------------------------------------------------------------------------------------
 # 02 - Research Hypothesis - Main Relationships between Oil, Gas and EUR/USD
 #----------------------------------------------------------------------------------------
@@ -370,6 +379,8 @@ fig_main_relationships_commodities_fx = data_graphing_instance.get_fig_relations
         )
 # Show the figure
 fig_main_relationships_commodities_fx.show(renderer="browser")
+
+
 #----------------------------------------------------------------------------------------
 # 02 - Research Hypothesis - Main Relationships between Oil, Gas and EUR/USD - log diffs
 #----------------------------------------------------------------------------------------
@@ -405,6 +416,8 @@ fig_main_relationships_commodities_fx = data_graphing_instance.get_fig_relations
         )
 # Show the figure
 fig_main_relationships_commodities_fx.show(renderer="browser")
+
+
 #----------------------------------------------------------------------------------------
 # 02 - Research Hypothesis - Normalized Exchange rate volatilty, wti oil and natural gas with highlighted crisis periods - rolling volatility
 #----------------------------------------------------------------------------------------
@@ -445,6 +458,8 @@ data_loading_instance.export_dataframe(
     save_excel=True,
     save_index=True,
 )
+
+
 #----------------------------------------------------------------------------------------
 # 02 - Research Hypothesis - Normalized Exchange rate volatilty, wti oil and natural gas with highlighted crisis periods
 #----------------------------------------------------------------------------------------
@@ -480,6 +495,8 @@ fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_h
     )
 # Show the figure
 fig_crisis_periods_highlighted.show(renderer="browser")
+
+
 #----------------------------------------------------------------------------------------
 # 02 - Research Hypothesis - Rolling correlation (normalised) of exchange rates, wti oil and natural gas with highlighted crisis periods
 #----------------------------------------------------------------------------------------
@@ -604,6 +621,8 @@ fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_h
     )
 # Show the figure
 fig_crisis_periods_highlighted.show(renderer="browser")
+
+
 #----------------------------------------------------------------------------------------
 # 07 - Model Results - Model comparison and selection bar plot
 #----------------------------------------------------------------------------------------
@@ -665,6 +684,8 @@ fig_model_comp_bar_plot = data_graphing_instance.get_model_comparison_bar_plot(
     scale=3
     )
 fig_model_comp_bar_plot.show(renderer="browser")
+
+
 #----------------------------------------------------------------------------------------
 # 07 - Model Results - Predicted Regimes - Evolution over time with highlighted Crisis Periods
 #----------------------------------------------------------------------------------------
@@ -742,6 +763,8 @@ fig_crisis_periods_highlighted = data_graphing_instance.get_fig_crisis_periods_h
     )
 # Show the figure
 fig_crisis_periods_highlighted.show(renderer="browser")
+
+
 #----------------------------------------------------------------------------------------
 # 07 - Model Results - Predicted Regimes - Relative Share of Regimes across Models
 #----------------------------------------------------------------------------------------
@@ -827,6 +850,7 @@ fig_model_regime_counts_bar_plot = data_graphing_instance.get_model_comparison_r
         scale=3
         )
 fig_model_regime_counts_bar_plot.show(renderer="browser")
+
 #----------------------------------------------------------------------------------------
 # 07 - Model Results - Predicted Regimes - Relative Share of Overlapping Regimes across Models
 #----------------------------------------------------------------------------------------
@@ -834,6 +858,7 @@ predicted_labels_overlap_df = get_overlapping_regimes_df(
     predicted_labels_df=predicted_labels_df
     )
 predicted_labels_overlap_df.sort_values(by=["Overlap (percentage of total obs.)"], ascending=False).reset_index(drop=True)
+
 #----------------------------------------------------------------------------------------
 # 07 - Model Results - Predicted Regimes - Relative Share of Overlapping Regimes across Models with theoretically formulated crisis periods
 #----------------------------------------------------------------------------------------
@@ -894,6 +919,7 @@ fig_model_comp_bar_plot = data_graphing_instance.get_model_comparison_bar_plot(
     scale=3
     )
 fig_model_comp_bar_plot.show(renderer="browser")
+
 #----------------------------------------------------------------------------------------
 # 07 - Model Results - Predicted Regimes - UIP estimation - benchmark models
 #----------------------------------------------------------------------------------------
@@ -924,6 +950,7 @@ fig = data_graphing_instance.plot_coefs_with_ci(
     scale=3
     )
 fig.show(renderer="browser")
+
 #----------------------------------------------------------------------------------------
 # 07 - Model Results - Predicted Regimes - UIP estimation - identiﬁed regimes
 #----------------------------------------------------------------------------------------
@@ -951,6 +978,7 @@ fig = data_graphing_instance.plot_coefs_with_ci(
     scale=3
     )
 fig.show(renderer="browser")
+
 # ----------------------------------------------------------------------------------------
 # 01 - Modern Commodities Markets - The current state - Oil: Global Production and Consumption over time
 # ----------------------------------------------------------------------------------------
@@ -1064,6 +1092,7 @@ fig_oil_consumption = data_graphing_instance.get_fig_consumption_production_oil_
         )
 # Show the figure
 fig_oil_consumption.show(renderer="browser")
+
 # ----------------------------------------------------------------------------------------
 # 01 - Modern Commodities Markets - The current state - Oil Production
 # ----------------------------------------------------------------------------------------
@@ -1118,6 +1147,7 @@ fig_oil_production = data_graphing_instance.get_fig_consumption_production_oil_g
         )
 # Show the figure
 fig_oil_production.show(renderer="browser")
+
 # ----------------------------------------------------------------------------------------
 # 01 - Modern Commodities Markets - The current state - Oil Production and Consumption
 # ----------------------------------------------------------------------------------------
@@ -1150,6 +1180,7 @@ fig_oil_consumption_production_combine = data_graphing_instance.get_combined_pro
         )
 # Show the figure
 fig_oil_consumption_production_combine.show(renderer="browser")
+
 # ----------------------------------------------------------------------------------------
 # 01 - Modern Commodities Markets - The current state - Gas Consumption
 # ----------------------------------------------------------------------------------------
@@ -1208,6 +1239,7 @@ fig_gas_consumption = data_graphing_instance.get_fig_consumption_production_oil_
         )
 # Show the figure
 fig_gas_consumption.show(renderer="browser")
+
 # ----------------------------------------------------------------------------------------
 # 01 - Modern Commodities Markets - The current state - Gas Production
 # ----------------------------------------------------------------------------------------
@@ -1263,6 +1295,7 @@ fig_gas_production = data_graphing_instance.get_fig_consumption_production_oil_g
         )
 # Show the figure
 fig_gas_production.show(renderer="browser")
+
 # ----------------------------------------------------------------------------------------
 # 01 - Modern Commodities Markets - The current state - Gas Consumption and Production
 # ----------------------------------------------------------------------------------------
@@ -1517,6 +1550,7 @@ fig_oil_oi = data_graphing_instance.get_fig_open_interest(
         )
 # Show the figure
 fig_oil_oi.show(renderer="browser")
+
 # ----------------------------------------------------------------------------------------
 # 01 - Modern Commodities Markets - The current state - Gas Open Interest
 # ----------------------------------------------------------------------------------------
@@ -1563,6 +1597,7 @@ fig_gas_oi = data_graphing_instance.get_fig_open_interest(
         )
 # Show the figure
 fig_gas_oi.show(renderer="browser")
+
 # ----------------------------------------------------------------------------------------
 # 01 - Modern Commodities Markets - The current state - Oil and Gas Open Interest
 # ----------------------------------------------------------------------------------------
@@ -1594,6 +1629,7 @@ fig_gas_oil_open_interest_combine = data_graphing_instance.get_combined_open_int
         )
 # Show the figure
 fig_gas_oil_open_interest_combine.show(renderer="browser")
+
 #----------------------------------------------------------------------------------------
 # 06 - Data Characteristics and Stylized Facts - Interest Rate Comparison: BIS Central Bank Policy Rates vs. 3M Interbank rates
 #----------------------------------------------------------------------------------------
@@ -1666,6 +1702,7 @@ fig_interest_rate_comp = data_graphing_instance.get_fig_relationship_main_vars(
         )
 # Show the figure
 fig_interest_rate_comp.show(renderer="browser")
+
 #----------------------------------------------------------------------------------------
 # 06 - Data Characteristics and Stylized Facts - Interest Rate Comparison: BIS Central Bank Policy Rates vs. 3M Interbank rates - Interest Rate Differentials
 #----------------------------------------------------------------------------------------
