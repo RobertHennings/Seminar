@@ -1,5 +1,4 @@
 import os
-import json
 import datetime as dt
 import pandas as pd
 import numpy as np
@@ -92,13 +91,15 @@ exchange_rates_vola_df.columns = [f"{col}_log_diff_rol_vol" for col in exchange_
 log_diff_rolling_vola_df = pd.concat([spot_exchange_rate_data_df_log_diff, exchange_rates_vola_df], axis=1).dropna().drop(columns=["EUR/USD_log_diff_rol_vol", "WTI Oil_log_diff", "Nat Gas_log_diff"])
 
 # Add the trading volume as proxy for degree of financial market integration
-oi_tv_oil_gas_reuters_df = pd.read_excel(r"/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/open_interest_trading_volume_oil_gas_reuters.xlsx")
+file_name = r"chap_04_open_interest_trading_volume_oil_gas_reuters.xlsx"
+full_file_path = rf"{PRESENTATION_DATA}/{file_name}"
+oi_tv_oil_gas_reuters_df = pd.read_excel(full_file_path)
+
 oi_tv_oil_gas_reuters_df["Date"] = pd.to_datetime(oi_tv_oil_gas_reuters_df["Date"], format="%Y-%m-%d")
 oi_tv_oil_gas_reuters_df = oi_tv_oil_gas_reuters_df.set_index("Date", drop=True)
 # Separate out the Open-Interest
 oi_columns = [col for col in oi_tv_oil_gas_reuters_df.columns if "open interest" in col.lower()]
 tv_columns = [col for col in oi_tv_oil_gas_reuters_df.columns if "volume" in col.lower()]
-oi_tv_oil_gas_reuters_df[tv_columns].dropna()
 
 tv_oil_gas_reuters_df = oi_tv_oil_gas_reuters_df[tv_columns].dropna()
 
@@ -114,7 +115,24 @@ data_list = [
     log_diff_rolling_vola_df, # 6) The log first difference of the spot exchange rate EUR/US and rolling volatility of WTI Oil and Nat Gas as external variables
     log_diff_rolling_vola_df_tv_added, # 7) The log first difference of the spot exchange rate EUR/US, rolling volatility of WTI Oil and Nat Gas plus trading volume of oil and gas as external variables
 ]
-# Ensure that every data item in the data_list os of type pd.DataFrame
+# Save the data of the data list all together in an excel file, each data item in a separate sheet
+file_name = r"chap_04_model_input_data_list.xlsx"
+full_file_path = rf"{PRESENTATION_DATA}/{file_name}"
+with pd.ExcelWriter(full_file_path) as writer:
+    for i, data in enumerate(data_list):
+        sheet_name = f"data_item_{i+1}"
+        data.to_excel(writer, sheet_name=sheet_name, index=True)
+
+# Reading the data back in
+file_name = r"chap_04_model_input_data_list.xlsx"
+full_file_path = rf"{PRESENTATION_DATA}/{file_name}"
+data_list = []
+with pd.ExcelFile(full_file_path) as xls:
+    for sheet_name in xls.sheet_names:
+        data = pd.read_excel(xls, sheet_name=sheet_name, index_col=0)
+        data_list.append(data)
+
+# Ensure that every data item in the data_list is of type pd.DataFrame
 for i, data in enumerate(data_list):
     if type(data) == pd.Series:
         data_list[i] = data.to_frame()
@@ -306,7 +324,23 @@ interest_rate_diff_df = interest_rate_diff_df.rename(
 # Now combine both datasets
 uip_data_df = pd.concat([log_spot_rate_diff_df, interest_rate_diff_df], axis=1).dropna()
 
-def run_uip_regression(dep_var: str, indep_var: str, data: pd.DataFrame, cov_type: str="nonrobust", use_t: bool=True):
+# Save the data locally
+data_loading_instance.export_dataframe(
+    df=uip_data_df,
+    file_name="chap_04_uip_data_df",
+    excel_sheet_name="04",
+    excel_path=PRESENTATION_DATA,
+    save_excel=True,
+    save_index=True,
+)
+
+def run_uip_regression(
+        dep_var: str,
+        indep_var: str,
+        data: pd.DataFrame,
+        cov_type: str="nonrobust",
+        use_t: bool=True
+        ):
     import statsmodels.api as sm
     X = sm.add_constant(data[indep_var])
     y = data[dep_var]
@@ -314,7 +348,9 @@ def run_uip_regression(dep_var: str, indep_var: str, data: pd.DataFrame, cov_typ
     return model
 
 # Now pull in the identified regimes and among them test again for the UIP condition
-predicted_labels_df = pd.read_excel(r"/Users/Robert_Hennings/Uni/Master/Seminar/data/results/predicted_labels_df.xlsx", index_col=0)
+file_name = r"chap_04_predicted_labels_df.xlsx"
+full_file_path = rf"{PRESENTATION_DATA}/{file_name}"
+predicted_labels_df = pd.read_excel(full_file_path, index_col=0)
 
 # Relevel the predicted labels df to have the same index as the UIP data df
 predicted_labels_df = predicted_labels_df.reindex(uip_data_df.index).dropna()
@@ -332,9 +368,9 @@ for model_name in predicted_labels_df.columns:
             indep_var = f'i_diff_{currency}'
             if len(regime_data) < 10:  # Skip regimes with too few data points
                 continue
-            model = run_uip_regression(dep_var, indep_var, regime_data)
+            model = run_uip_regression(dep_var=dep_var, indep_var=indep_var, data=regime_data, cov_type="HC1")
             regime_uip_results[model_name][regime][currency] = model
-# Print the summary of the UIP regressions for each regime
+
 # Extract the estimated coefficients and save them in a master table along the model name and regime
 uip_identified_regimes_results_list = []
 for model_name, regimes in regime_uip_results.items():

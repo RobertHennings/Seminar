@@ -177,3 +177,23 @@
 \setbeamerfont{bibliography entry title}{size=\tiny}
 \setbeamerfont{bibliography entry location}{size=\tiny}
 \setbeamerfont{bibliography entry note}{size=\tiny}
+%----------------------------------------------------------------------------------------
+%	HYPERREF/LINKS SETTINGS
+%----------------------------------------------------------------------------------------
+\hypersetup{
+  hidelinks,
+  pdfauthor={Josef Fella and Robert Hennings},
+  pdftitle={Identifying (volatility-)regimes in the EUR/USD},
+  pdfsubject={Seminar presentation},
+  pdfstartview=FitH
+}
+
+% convenience macro to insert a clickable figure:
+% usage: \clickablefigure[<includegraphics options>]{<file>}{<caption>}{<url>}
+\newcommand{\clickablefigure}[4][]{%
+  \begin{figure}
+    \centering
+    \href{#4}{\includegraphics[#1]{#2}}%
+    \caption{#3}%
+  \end{figure}
+}
