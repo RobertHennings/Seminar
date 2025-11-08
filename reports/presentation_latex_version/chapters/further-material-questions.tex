@@ -1,0 +1,146 @@
+%----------------------------------------------------------------------------------------
+%	NEW CHAPTER TITLE SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{~}
+	\begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
+            \includegraphics[width=1.7cm]{wiso_logo.png}
+        };
+		\node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
+            \tikz\node[opacity=0.15] {
+                \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
+            };
+        };
+    \end{tikzpicture}
+	% \begin{block}{} % Empty block title % Set background color (adjust 'blue!20' as needed)
+    %     \centering
+    %     {\large \textbf{References}} % Slightly smaller text
+    % \end{block}
+	\begin{center}
+        \begin{minipage}{0.6\textwidth} % Adjust the width of the block
+            \begin{block}{} % Empty block title
+                \centering
+                {\large \textbf{Further Material for Illustrations \\ - \\ Questions}} % Slightly smaller text
+            \end{block}
+        \end{minipage}
+    \end{center}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{Why the silhouette score?}
+    \tiny{
+    The silhouette score is a measure of how similar an object is to its own cluster compared to other clusters. It provides a way to assess the quality of clustering results.
+    \begin{equation}
+        \text{Silhouette Score} = \frac{b - a}{\max\left(a, b\right)}
+    \end{equation}
+    where:
+    \begin{itemize}
+        \item \( a \) is the average distance between a data point and all other points in the same cluster.
+        \item \( b \) is the average distance between a data point and all points in the nearest cluster.
+    \end{itemize}
+
+    \begin{itemize}
+        \item \textbf{Range:} The silhouette score ranges from -1 to 1. A score close to 1 indicates that the data point is well clustered, while a score close to -1 suggests that it may be in the wrong cluster.
+        \item \textbf{Interpretation:} A high silhouette score indicates that the clusters are well separated and distinct, while a low score suggests overlapping or poorly defined clusters.
+        \item \textbf{Advantages:} It provides a clear and interpretable metric for evaluating clustering performance, allowing for easy comparison between different clustering algorithms or parameter settings.
+        \item \textbf{Disadvantages:} The silhouette score may not perform well with clusters of varying densities or non-convex shapes, and it can be sensitive to noise and outliers in the data.
+        \item \textbf{Alternatives:} Other clustering evaluation metrics include the Davies-Bouldin index, the Calinski-Harabasz index, and the Dunn index, each with its own strengths and weaknesses.
+    \end{itemize}
+    }
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+    \frametitle{What are other clustering evaluation metrics?}
+    \tiny{
+    \begin{itemize}
+        \item \textbf{Davies--Bouldin Index:}
+        \[
+            \mathrm{DB}=\frac{1}{K}\sum_{i=1}^K \max_{j\neq i}\frac{s_i+s_j}{d(c_i,c_j)}
+        \]
+        where \(s_i\) is the average intra-cluster distance for cluster \(i\) and \(d(c_i,c_j)\) is the distance between centroids.
+        \item \textbf{Calinski--Harabasz Index:}
+        \[
+            \mathrm{CH}=\frac{\operatorname{tr}(B_K)/(K-1)}{\operatorname{tr}(W_K)/(n-K)}
+        \]
+        with \(\operatorname{tr}(B_K)\) the between-cluster dispersion trace and \(\operatorname{tr}(W_K)\) the within-cluster dispersion trace.
+        \item \textbf{Dunn Index:}
+        \[
+            \mathrm{Dunn}=\frac{\min_{i\neq j}\delta(C_i,C_j)}{\max_k\operatorname{diam}(C_k)}
+        \]
+        where \(\delta(C_i,C_j)\) is inter-cluster distance and \(\operatorname{diam}(C_k)\) the diameter of cluster \(k\).
+        \item \textbf{Adjusted Rand Index (ARI):}
+        \[
+            \mathrm{ARI}=\frac{\sum_{ij}\binom{n_{ij}}{2}-\dfrac{\sum_i\binom{a_i}{2}\sum_j\binom{b_j}{2}}{\binom{n}{2}}}
+            {\dfrac{1}{2}\left(\sum_i\binom{a_i}{2}+\sum_j\binom{b_j}{2}\right)-\dfrac{\sum_i\binom{a_i}{2}\sum_j\binom{b_j}{2}}{\binom{n}{2}}}
+        \]
+        with \(n_{ij}\) cell counts of the contingency table, \(a_i=\sum_j n_{ij}\), \(b_j=\sum_i n_{ij}\).
+        \item \textbf{Normalized Mutual Information (NMI):}
+        \[
+            \mathrm{NMI}=\frac{I(U;V)}{\sqrt{H(U)\,H(V)}}
+        \]
+        where \(I(U;V)\) is mutual information and \(H(\cdot)\) are entropies (alternative normalisations like the arithmetic mean of entropies are also used).
+    \end{itemize}
+    }
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+    \frametitle{Why exactly Volatility?}
+    \scriptsize{
+        \begin{itemize}
+            \item Exchange rates often exhibit \textbf{volatility clustering}: high volatility periods followed by similar periods.
+            \item Capturing these clusters helps identify different \textbf{regimes} in the market with distinct risk-return profiles.
+            \item Regime detection aids in modeling and forecasting exchange rate dynamics better.
+            \item Clustering methods group time periods with similar volatility patterns to discover these regimes.
+        \end{itemize}
+    }
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+    \frametitle{Why Clustering Algorithms?}
+    \scriptsize{
+    \begin{itemize}
+        \item Used clustering for unsupervised regime detection without prespecified labels.
+        \item Gaussian Mixture Model (GMM) chosen for its ability to model overlapping regimes and handle mixed distributions.
+        \item Hyperparameter tuning optimizes number of clusters and covariance structure for best fit.
+        \item Silhouette Score used for evaluating cluster cohesion and separation.
+        \item Limitations include sensitivity to initial parameters and possible overfitting.
+    \end{itemize}
+    }
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+    \frametitle{Why including Commodity Variables in Regime Detection?}
+    \scriptsize{
+    \begin{itemize}
+        \item Inclusion of WTI crude oil, natural gas prices, and their volatilities leverages the commodity-export-import link to EUR/USD.
+        \item Commodity variables capture economic fundamentals related to inflation, trade balances, and macro stability.
+        \item Results show improvement in regime identification quality, suggesting commodity influence on exchange rate volatility regimes.
+        \item Reflects structural changes in markets driven by global commodity price shifts.
+    \end{itemize}
+    }
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+    \frametitle{Why the CBPR and not the real 3M Interbank rates?}
+    \scriptsize{
+    Using Reuters it was hard to identify the correct, needed 3-month interbank lending rates series for the countries involved. Especially the LIBOR or now the SOFR semed to not be accessible with the current university license. Also the EURIBOR seemed to not be available.
+    \begin{itemize}
+        \item The CBPR rates seemed to at least roughly proxy the behavior of the 3M interbank rates.
+        \item The CBPR rates are not `tradable` in that sense or directly market-inferred, what makes them less robust/reliable in mirroring the real market states.
+        \item The big advantage of using the CBPR rates is that they are freely available, easy to query, transparent in their calculation and cover all the needed currencies on a long daily historic frequency.
+    \end{itemize}
+    }
+\end{frame}

@@ -1,0 +1,54 @@
+%----------------------------------------------------------------------------------------
+%	NEW CHAPTER TITLE SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+	\frametitle{~}
+	\begin{tikzpicture}[remember picture, overlay]
+        \node[anchor=north east, xshift=-0.1cm, yshift=+0.1cm] at (current page.north east) {
+            \includegraphics[width=1.7cm]{wiso_logo.png}
+        };
+		\node[anchor=center, xshift=5.5cm, yshift=-1.5cm] at (current page.center) {
+            \tikz\node[opacity=0.15] {
+                \includegraphics[width=\paperwidth, height=\paperheight, keepaspectratio]{siegel.pdf}
+            };
+        };
+    \end{tikzpicture}
+	% \begin{block}{} % Empty block title % Set background color (adjust 'blue!20' as needed)
+    %     \centering
+    %     {\large \textbf{Modern Energy Commodity Markets - The current state}} % Slightly smaller text
+    % \end{block}
+	\begin{center}
+        \begin{minipage}{0.6\textwidth} % Adjust the width of the block
+            \begin{block}{} % Empty block title
+                \centering
+                {\large \textbf{Appendix - Abbreviations}} % Slightly smaller text
+            \end{block}
+        \end{minipage}
+    \end{center}
+\end{frame}
+%----------------------------------------------------------------------------------------
+%	NEW SLIDE
+%----------------------------------------------------------------------------------------
+\begin{frame}
+    \frametitle{Abbreviations}
+    \vfill
+    \centering\tiny
+    \begin{tabular}{@{}l l@{}}
+        \textbf{PPP} & Purchasing Power Parity \\
+        \textbf{CPI} & Consumer Price Index \\
+        \textbf{OPEC} & Organization of the Petroleum Exporting Countries \\
+        \textbf{BIS} & Bank for International Settlements \\
+        \textbf{RCM} & Regime Classification Measure \\
+        \textbf{UIP} & Uncovered Interest Parity \\
+        \textbf{NEER} & Nominal Effective Exchange Rate \\
+        \textbf{REER} & Real Effective Exchange Rate \\
+        \textbf{NER} & Nominal Exchange Rate \\
+        \textbf{RER} & Real Exchange Rate \\
+        \textbf{PPI} & Producer Price Index \\
+        \textbf{GDP} & Gross Domestic Product \\
+        \textbf{OI} & Open Interest \\
+        \textbf{ACF} & Autocorrelation Function \\
+        \textbf{PACF} & Partial Autocorrelation Function
+    \end{tabular}
+    \vfill
+\end{frame}
