@@ -73,27 +73,51 @@ Formal guidelines for the $\LaTeX$ format offered by the CAU can be found [here]
 Seminar
 ├── CITATION.cff <- Citation file allowing for quick citation of the repo
 ├── LICENSE
-├── MANIFEST.in
 ├── README.md
 ├── data <- folder containing all used data
 │   ├── raw
 │   └── results
+│       ├── chap_00_exchange_rates_ppp_deviations.xlsx
+│       ├── chap_01_daily_exchange_rate_oil_log_diff_vola_normalized_crisis_periods_highlighted.xlsx
+│       ├── chap_01_eu_inflation_contribution_data.xlsx
+│       ├── chap_01_us_inflation_contribution_data.xlsx
+│       ├── chap_04_all_models_comp_df.xlsx
+│       ├── chap_04_combined_model_coefs_df.xlsx
+│       ├── chap_04_predicted_labels_df.xlsx
+│       ├── chap_04_uip_identified_regimes_results_df.xlsx
+│       ├── chap_04_unique_df_full.xlsx
+│       ├── chap_06_adf_test_log_diff.xlsx
+│       ├── chap_06_adf_test_raw_series.xlsx
+│       ├── chap_06_cointegration_test_log_diff.xlsx
+│       ├── chap_06_cointegration_test_raw_series.xlsx
+│       ├── chap_06_gas_consumption_data.xlsx
+│       ├── chap_06_gas_production_data.xlsx
+│       ├── chap_06_granger_causality_test_gas_log_diff.xlsx
+│       ├── chap_06_granger_causality_test_gas_raw_series.xlsx
+│       ├── chap_06_granger_causality_test_oil_log_diff.xlsx
+│       ├── chap_06_granger_causality_test_oil_raw_series.xlsx
+│       ├── chap_06_interest_rate_comparison_df.xlsx
+│       ├── chap_06_norm_test_log_diff.xlsx
+│       ├── chap_06_norm_test_raw_series.xlsx
+│       ├── chap_06_normed_histogram_data_log_first_differences.xlsx
+│       ├── chap_06_normed_histogram_data_log_first_differences_rolling_volatility.xlsx
+│       ├── chap_06_oil_consumption_data.xlsx
+│       ├── chap_06_oil_production_data.xlsx
+│       ├── chap_06_prices_oi_df.xlsx
+│       ├── chap_06_spot_exchange_rate_data_df.xlsx
+│       └── crisis_periods_dict.json
 ├── docs
 ├── literature <- folder containing all used literature
-├── notebooks <- folder containing quick explorations and tests using Jupyter Notebooks
+├── notebooks <- folder containing the final submission Notebooks
 │   ├── Seminar_Fella_Hennings_Graphs_Presentation.ipynb
-│   └── Seminar_Fella_Hennings_Modelling.ipynb
-├── pyproject.toml
+│   ├── Seminar_Fella_Hennings_Modelling_Benchmark.ipynb
+│   └── Seminar_Fella_Hennings_Modelling_Clustering.ipynb
 ├── reports <- folder contining all report types accompanying the project
-│   ├── PPTX_WiSo_Template.pptx
-│   ├── figures
-│   ├── logs
-│   ├── presentation_pptx_version <- raw unused presentation templates
-│   │   └── PPTX_WiSo_Template.pptx
 │   ├── presentation_latex_version <- The LaTex  presentation
 │   │   ├── chapters <- single chapter files pulled together in main.tex
-│   │   │   ├── appendix.tex
+│   │   │   ├── abbreviations.tex
 │   │   │   ├── acknowledgements.tex
+│   │   │   ├── appendix.tex
 │   │   │   ├── chapter-00.tex
 │   │   │   ├── chapter-01.tex
 │   │   │   ├── chapter-02.tex
@@ -103,80 +127,265 @@ Seminar
 │   │   │   ├── chapter-06.tex
 │   │   │   ├── chapter-07.tex
 │   │   │   ├── chapter-08.tex
+│   │   │   ├── closing-discussion.tex
 │   │   │   ├── closing.tex
+│   │   │   ├── further-material-questions.tex
 │   │   │   ├── list-of-figures.tex
 │   │   │   ├── list-of-tables.tex
-│   │   │   ├── closing-discussion.tex
 │   │   │   └── references.tex
-│   │   ├── code
-│   │   ├── data
-│   │   ├── figures <- all figures used in the presentation
+│   │   ├── data <- all data used to produce the graphs in the presentation
+│   │   │   ├── chap_00_exchange_rates_ppp_deviations.xlsx
+│   │   │   ├── chap_01_daily_exchange_rate_oil_log_diff_vola_normalized_crisis_periods_highlighted.xlsx
+│   │   │   ├── chap_01_eu_inflation_contribution_data.xlsx
+│   │   │   ├── chap_01_us_inflation_contribution_data.xlsx
+│   │   │   ├── chap_04_all_models_comp_df.xlsx
+│   │   │   ├── chap_04_combined_model_coefs_df.xlsx
+│   │   │   ├── chap_04_model_input_data_list.xlsx
+│   │   │   ├── chap_04_open_interest_trading_volume_oil_gas_reuters.xlsx
+│   │   │   ├── chap_04_predicted_labels_df.xlsx
+│   │   │   ├── chap_04_uip_data_df.xlsx
+│   │   │   ├── chap_04_uip_data_df_3m_interbank_lending_rates.xlsx
+│   │   │   ├── chap_04_uip_data_df_3m_interbank_lending_rates_b2.xlsx
+│   │   │   ├── chap_04_uip_data_df_3m_interbank_lending_rates_oil_gas_rol_vol_model_b2.xlsx
+│   │   │   ├── chap_04_uip_data_df_central_bank_policy_rates_oil_gas_rol_vol_b1.xlsx
+│   │   │   ├── chap_04_uip_identified_regimes_results_df.xlsx
+│   │   │   ├── chap_04_unique_df_full.xlsx
+│   │   │   ├── chap_06_adf_test_log_diff.xlsx
+│   │   │   ├── chap_06_adf_test_raw_series.xlsx
+│   │   │   ├── chap_06_cointegration_test_log_diff.xlsx
+│   │   │   ├── chap_06_cointegration_test_raw_series.xlsx
+│   │   │   ├── chap_06_gas_consumption_data.xlsx
+│   │   │   ├── chap_06_gas_production_data.xlsx
+│   │   │   ├── chap_06_granger_causality_test_gas_log_diff.xlsx
+│   │   │   ├── chap_06_granger_causality_test_gas_raw_series.xlsx
+│   │   │   ├── chap_06_granger_causality_test_oil_log_diff.xlsx
+│   │   │   ├── chap_06_granger_causality_test_oil_raw_series.xlsx
+│   │   │   ├── chap_06_interest_rate_comparison_df.xlsx
+│   │   │   ├── chap_06_norm_test_log_diff.xlsx
+│   │   │   ├── chap_06_norm_test_raw_series.xlsx
+│   │   │   ├── chap_06_normed_histogram_data_log_first_differences.xlsx
+│   │   │   ├── chap_06_normed_histogram_data_log_first_differences_rolling_volatility.xlsx
+│   │   │   ├── chap_06_oil_consumption_data.xlsx
+│   │   │   ├── chap_06_oil_production_data.xlsx
+│   │   │   ├── chap_06_prices_oi_df.xlsx
+│   │   │   ├── chap_06_spot_exchange_rate_data_df.xlsx
+│   │   │   └── crisis_periods_dict.json
+│   │   ├── figures <- all included graphs as .pdf version
+│   │   │   ├── chap_00_deviations_of_usd_spotrates_from_ppp_values.pdf
+│   │   │   ├── chap_02_eu_area_cpi_inflation_decomposition.pdf
+│   │   │   ├── chap_02_exchange_rate_oil_raw_vola_normalized_crisis_periods_highlighted.pdf
+│   │   │   ├── chap_02_us_cpi_inflation_decomposition.pdf
+│   │   │   ├── chap_03_literature_systematic_overview.pdf
+│   │   │   ├── chap_04_theo_framework_prices_measures.pdf
+│   │   │   ├── chap_04_theo_framework_simple_model.pdf
+│   │   │   ├── chap_04_theo_framework_theoretical_framework_I.pdf
+│   │   │   ├── chap_04_theo_framework_theoretical_framework_II.pdf
+│   │   │   ├── chap_04_theo_framework_theoretical_framework_III.pdf
+│   │   │   ├── chap_04_theo_framework_theoretical_framework_IV.pdf
+│   │   │   ├── chap_04_theo_framework_theoretical_framework_full.pdf
+│   │   │   ├── chap_06_acf_plot_log_diff.pdf
+│   │   │   ├── chap_06_acf_plot_raw_series.pdf
+│   │   │   ├── chap_06_granger_causality_test_gas_log_diff.pdf
+│   │   │   ├── chap_06_granger_causality_test_gas_raw_series.pdf
+│   │   │   ├── chap_06_granger_causality_test_oil_log_diff.pdf
+│   │   │   ├── chap_06_granger_causality_test_oil_raw_series.pdf
+│   │   │   ├── chap_06_interest_rate_comparison_bis_cbpr_vs_3m_interbank.pdf
+│   │   │   ├── chap_06_interest_rate_comparison_bis_cbpr_vs_3m_interbank_diffs.pdf
+│   │   │   ├── chap_06_log_first_diff_histogram.pdf
+│   │   │   ├── chap_06_pacf_plot_log_diff.pdf
+│   │   │   ├── chap_06_pacf_plot_raw_series.pdf
+│   │   │   ├── chap_06_raw_data_normalized_histogram.pdf
+│   │   │   ├── chap_06_weekly_open_interest_oil_gas_combined_graph.pdf
+│   │   │   ├── chap_06_yearly_gas_consumption_production_combined_graph.pdf
+│   │   │   ├── chap_06_yearly_oil_consumption_production_combined_graph.pdf
+│   │   │   ├── chap_07_model_comparison_bar_plot.pdf
+│   │   │   ├── chap_07_predicted_model_regimes_rel_share_overlap.pdf
+│   │   │   ├── chap_07_predicted_model_regimes_rel_share_overlap_theo_crisis_regimes.pdf
+│   │   │   ├── chap_07_predicted_model_regimes_with_crisis_periods_highlighted.pdf
+│   │   │   ├── chap_07_predicted_model_regimes_with_crisis_periods_highlighted_I.pdf
+│   │   │   ├── chap_07_predicted_model_regimes_with_crisis_periods_highlighted_II.pdf
+│   │   │   ├── chap_07_predicted_model_regimes_with_crisis_periods_highlighted_III.pdf
+│   │   │   ├── chap_07_predicted_model_regimes_with_crisis_periods_highlighted_IV.pdf
+│   │   │   ├── chap_07_predicted_model_regimes_with_crisis_periods_highlighted_V.pdf
+│   │   │   ├── chap_07_uip_estimation_benchmark_models.pdf
+│   │   │   ├── chap_07_uip_estimation_identified_regimes.pdf
+│   │   │   ├── siegel.pdf
+│   │   │   └── wiso_logo.png
 │   │   ├── main.pdf <- the presentation document itself
-│   │   └── main.tex
+│   │   ├── main.sty <- the presentation style file
+│   │   ├── main.tex <- the presentation .tex main file
+│   │   ├── references.bib <- the presentation references.bib file holding all references
+│   │   ├── table_of_contents.tex
+│   │   └── titlepage.tex
+│   ├── presentation_pptx_version
+│   │   └── PPTX_WiSo_Template.pptx <- the .pptx presentation with some needed schematic graphs
 │   └── tables
-├── requirements <- requirements that need to be fullfilled running the project (code)
-│   ├── environment.yml
-│   └── requirements.txt <- main packages used
-├── seminar <- the seminar paper itself as LaTex project
-│   ├── bibliography.bib
-│   ├── chapters
-│   │   ├── 00-abstract.tex
-│   │   ├── 01-introduction.tex
-│   │   ├── 02-literature-review.tex
-│   │   ├── 03-methodology.tex
-│   │   ├── 04-data.tex
-│   │   ├── 05-experiments.tex
-│   │   ├── 06-results.tex
-│   │   ├── 07-discussion.tex
-│   │   ├── 08-conclusion.tex
-│   │   ├── 09-references.aux
-│   │   ├── 09-references.tex
-│   │   ├── 10-appendix.tex
-│   │   └── 11-affirmation.tex
-│   ├── committee_members.aux
-│   ├── figures
-│   ├── logos
-│   │   ├── Logo_Kiel_University.png
-│   │   ├── cau.png
-│   │   ├── cau_kiel_maths.png
-│   │   ├── cau_kiel_wiso.pdf
-│   │   ├── cau_kiel_wiso.png
-│   │   ├── cau_logo.pdf
-│   │   ├── cau_logo.png
-│   │   ├── vattenfall.pdf
-│   │   └── vattenfall.png
-│   ├── main.pdf
-│   ├── main.tex
-│   ├── preamble.tex
-│   ├── seminar.sty
-│   ├── tables
-│   └── titlepage.tex
-├── setup.cfg
-├── setup.py
-└── src <- the seminar code
-    ├── seminar_code
-    │   ├── data_graphing
-    │   │   ├── config.py
-    │   │   ├── data_grapher.py
-    │   │   └── seminar_graphs.py
-    │   ├── data_loading
-    │   │   ├── __pycache__
-    │   │   │   ├── ORDERBOOK_GENERATION.cpython-313.pyc
-    │   │   │   ├── config.cpython-313.pyc
-    │   │   │   └── data_loader.cpython-313.pyc
-    │   │   ├── config.py
-    │   │   ├── data_loader.py
-    │   │   └── seminar_data.py
-    │   ├── data_processing
-    │   │   └── feature_engineering.py
-    │   ├── model
-    │   │   ├── architecture.py
-    │   │   ├── model.py
-    │   │   └── training.py
-    │   ├── models
-    │   └── utils
-    │       ├── config.py
-    │       └── helpers.py
+│       ├── chap_06_adf_test_log_diff.tex
+│       ├── chap_06_adf_test_raw_series.tex
+│       ├── chap_06_cointegration_test_log_diff.tex
+│       ├── chap_06_cointegration_test_raw_series.tex
+│       ├── chap_06_norm_test_log_diff.tex
+│       ├── chap_06_norm_test_raw_series.tex
+│       ├── crisis_periods.tex
+│       ├── crisis_periods.txt
+│       └── crisis_periods.xlsx
+├── requirements
+│   └── requirements.txt <- the needed (python) libraries to run all the code
+└── src <-all the seminar code
+    └── seminar_code
+        ├── data_graphing
+        │   ├── config.py
+        │   ├── data_grapher.py
+        │   └── seminar_graphs.py
+        ├── data_loading
+        │   ├── config.py
+        │   ├── data_loader.py
+        │   └── seminar_data.py
+        ├── model
+        │   ├── architecture.py
+        │   ├── model.py
+        │   └── model_benchmark.py
+        ├── model_optimisation
+        │   ├── config.py
+        │   ├── model_optimisation.py
+        │   └── model_optimiser.py
+        ├── models
+        │   ├── AffinityPropagation_2025-10-15_17-06-20.json
+        │   ├── AffinityPropagation_2025-10-15_17-06-20.pkl
+        │   ├── AffinityPropagation_2025-10-15_17-10-02.json
+        │   ├── AffinityPropagation_2025-10-15_17-10-02.pkl
+        │   ├── AffinityPropagation_2025-10-15_17-14-15.json
+        │   ├── AffinityPropagation_2025-10-15_17-14-15.pkl
+        │   ├── AffinityPropagation_2025-10-15_17-19-17.json
+        │   ├── AffinityPropagation_2025-10-15_17-19-17.pkl
+        │   ├── AffinityPropagation_2025-10-15_17-22-32.json
+        │   ├── AffinityPropagation_2025-10-15_17-22-32.pkl
+        │   ├── AffinityPropagation_2025-10-15_20-49-20.json
+        │   ├── AffinityPropagation_2025-10-15_20-49-20.pkl
+        │   ├── AgglomerativeClustering_2025-10-08_19-37-45.json
+        │   ├── AgglomerativeClustering_2025-10-08_19-37-45.pkl
+        │   ├── AgglomerativeClustering_2025-10-15_17-03-27.json
+        │   ├── AgglomerativeClustering_2025-10-15_17-03-27.pkl
+        │   ├── AgglomerativeClustering_2025-10-15_17-06-41.json
+        │   ├── AgglomerativeClustering_2025-10-15_17-06-41.pkl
+        │   ├── AgglomerativeClustering_2025-10-15_17-10-32.json
+        │   ├── AgglomerativeClustering_2025-10-15_17-10-32.pkl
+        │   ├── AgglomerativeClustering_2025-10-15_17-14-46.json
+        │   ├── AgglomerativeClustering_2025-10-15_17-14-46.pkl
+        │   ├── AgglomerativeClustering_2025-10-15_17-19-41.json
+        │   ├── AgglomerativeClustering_2025-10-15_17-19-41.pkl
+        │   ├── AgglomerativeClustering_2025-10-15_20-46-37.json
+        │   ├── AgglomerativeClustering_2025-10-15_20-46-37.pkl
+        │   ├── Birch_2025-10-15_17-04-14.json
+        │   ├── Birch_2025-10-15_17-04-14.pkl
+        │   ├── Birch_2025-10-15_17-07-37.json
+        │   ├── Birch_2025-10-15_17-07-37.pkl
+        │   ├── Birch_2025-10-15_17-12-07.json
+        │   ├── Birch_2025-10-15_17-12-07.pkl
+        │   ├── Birch_2025-10-15_17-17-05.json
+        │   ├── Birch_2025-10-15_17-17-05.pkl
+        │   ├── Birch_2025-10-15_17-20-24.json
+        │   ├── Birch_2025-10-15_17-20-24.pkl
+        │   ├── Birch_2025-10-15_20-47-18.json
+        │   ├── Birch_2025-10-15_20-47-18.pkl
+        │   ├── DBSCAN_2025-10-08_19-37-49.json
+        │   ├── DBSCAN_2025-10-08_19-37-49.pkl
+        │   ├── DBSCAN_2025-10-15_17-03-29.json
+        │   ├── DBSCAN_2025-10-15_17-03-29.pkl
+        │   ├── DBSCAN_2025-10-15_17-06-42.json
+        │   ├── DBSCAN_2025-10-15_17-06-42.pkl
+        │   ├── DBSCAN_2025-10-15_17-10-34.json
+        │   ├── DBSCAN_2025-10-15_17-10-34.pkl
+        │   ├── DBSCAN_2025-10-15_17-14-47.json
+        │   ├── DBSCAN_2025-10-15_17-14-47.pkl
+        │   ├── DBSCAN_2025-10-15_17-19-43.json
+        │   ├── DBSCAN_2025-10-15_17-19-43.pkl
+        │   ├── DBSCAN_2025-10-15_20-46-38.json
+        │   ├── DBSCAN_2025-10-15_20-46-38.pkl
+        │   ├── GaussianMixture_2025-10-15_17-04-13.json
+        │   ├── GaussianMixture_2025-10-15_17-04-13.pkl
+        │   ├── GaussianMixture_2025-10-15_17-07-37.json
+        │   ├── GaussianMixture_2025-10-15_17-07-37.pkl
+        │   ├── GaussianMixture_2025-10-15_17-12-07.json
+        │   ├── GaussianMixture_2025-10-15_17-12-07.pkl
+        │   ├── GaussianMixture_2025-10-15_17-17-04.json
+        │   ├── GaussianMixture_2025-10-15_17-17-04.pkl
+        │   ├── GaussianMixture_2025-10-15_17-20-24.json
+        │   ├── GaussianMixture_2025-10-15_17-20-24.pkl
+        │   ├── GaussianMixture_2025-10-15_20-47-18.json
+        │   ├── GaussianMixture_2025-10-15_20-47-18.pkl
+        │   ├── KMeans_2025-10-08_19-37-34.json
+        │   ├── KMeans_2025-10-08_19-37-34.pkl
+        │   ├── KMeans_2025-10-15_17-03-22.json
+        │   ├── KMeans_2025-10-15_17-03-22.pkl
+        │   ├── KMeans_2025-10-15_17-06-38.json
+        │   ├── KMeans_2025-10-15_17-06-38.pkl
+        │   ├── KMeans_2025-10-15_17-10-29.json
+        │   ├── KMeans_2025-10-15_17-10-29.pkl
+        │   ├── KMeans_2025-10-15_17-14-43.json
+        │   ├── KMeans_2025-10-15_17-14-43.pkl
+        │   ├── KMeans_2025-10-15_17-19-38.json
+        │   ├── KMeans_2025-10-15_17-19-38.pkl
+        │   ├── KMeans_2025-10-15_20-46-33.json
+        │   ├── KMeans_2025-10-15_20-46-33.pkl
+        │   ├── MarkovRegression_2025-10-08_19-39-55.json
+        │   ├── MarkovRegression_2025-10-08_19-39-55.pkl
+        │   ├── MarkovRegression_2025-10-15_17-04-12.json
+        │   ├── MarkovRegression_2025-10-15_17-04-12.pkl
+        │   ├── MarkovRegression_2025-10-15_17-07-35.json
+        │   ├── MarkovRegression_2025-10-15_17-07-35.pkl
+        │   ├── MarkovRegression_2025-10-15_17-12-06.json
+        │   ├── MarkovRegression_2025-10-15_17-12-06.pkl
+        │   ├── MarkovRegression_2025-10-15_17-17-03.json
+        │   ├── MarkovRegression_2025-10-15_17-17-03.pkl
+        │   ├── MarkovRegression_2025-10-15_17-20-22.json
+        │   ├── MarkovRegression_2025-10-15_17-20-22.pkl
+        │   ├── MarkovRegression_2025-10-15_20-47-17.json
+        │   ├── MarkovRegression_2025-10-15_20-47-17.pkl
+        │   ├── MeanShift_2025-10-08_19-39-48.json
+        │   ├── MeanShift_2025-10-08_19-39-48.pkl
+        │   ├── MeanShift_2025-10-15_17-04-10.json
+        │   ├── MeanShift_2025-10-15_17-04-10.pkl
+        │   ├── MeanShift_2025-10-15_17-07-32.json
+        │   ├── MeanShift_2025-10-15_17-07-32.pkl
+        │   ├── MeanShift_2025-10-15_17-12-03.json
+        │   ├── MeanShift_2025-10-15_17-12-03.pkl
+        │   ├── MeanShift_2025-10-15_17-16-58.json
+        │   ├── MeanShift_2025-10-15_17-16-58.pkl
+        │   ├── MeanShift_2025-10-15_17-20-18.json
+        │   ├── MeanShift_2025-10-15_17-20-18.pkl
+        │   ├── MeanShift_2025-10-15_20-47-12.json
+        │   ├── MeanShift_2025-10-15_20-47-12.pkl
+        │   ├── MiniBatchKMeans_2025-10-15_17-06-37.json
+        │   ├── MiniBatchKMeans_2025-10-15_17-06-37.pkl
+        │   ├── MiniBatchKMeans_2025-10-15_17-10-28.json
+        │   ├── MiniBatchKMeans_2025-10-15_17-10-28.pkl
+        │   ├── MiniBatchKMeans_2025-10-15_17-14-42.json
+        │   ├── MiniBatchKMeans_2025-10-15_17-14-42.pkl
+        │   ├── MiniBatchKMeans_2025-10-15_17-19-37.json
+        │   ├── MiniBatchKMeans_2025-10-15_17-19-37.pkl
+        │   ├── MiniBatchKMeans_2025-10-15_17-22-49.json
+        │   ├── MiniBatchKMeans_2025-10-15_17-22-49.pkl
+        │   ├── MiniBatchKMeans_2025-10-15_20-49-39.json
+        │   ├── MiniBatchKMeans_2025-10-15_20-49-39.pkl
+        │   ├── OPTICS_2025-10-15_17-06-36.json
+        │   ├── OPTICS_2025-10-15_17-06-36.pkl
+        │   ├── OPTICS_2025-10-15_17-10-28.json
+        │   ├── OPTICS_2025-10-15_17-10-28.pkl
+        │   ├── OPTICS_2025-10-15_17-14-42.json
+        │   ├── OPTICS_2025-10-15_17-14-42.pkl
+        │   ├── OPTICS_2025-10-15_17-19-36.json
+        │   ├── OPTICS_2025-10-15_17-19-36.pkl
+        │   ├── OPTICS_2025-10-15_17-22-48.json
+        │   ├── OPTICS_2025-10-15_17-22-48.pkl
+        │   ├── OPTICS_2025-10-15_20-49-38.json
+        │   └── OPTICS_2025-10-15_20-49-38.pkl
+        ├── optimisation_results
+        └── utils
+            ├── config.py
+            ├── email_notification.py
+            ├── evaluation.py
+            └── evaluation_metrics.py
 ```
 
 <u>**seminar** subfolder:</u>
