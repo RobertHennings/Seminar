@@ -388,17 +388,13 @@ Seminar
             └── evaluation_metrics.py
 ```
 
-<u>**seminar** subfolder:</u>
-<br>
-The ($ \LaTeX $) Thesis project can be found in the subfolder called "seminar".
-</br>
 <u>**reports** subfolder:</u>
 <br>
 The "reports" subfolder contains everything related to the final seminar presentation ($ \LaTeX $). Itself has the subfolders "presentation_latex_version", that holds the final $ \LaTeX $ presentation with its subfolders "chapters", "figures" and "code". In the folder "presentation_pptx_version", an accompanying PPTX presentation is available that includes flow and schema figures. There are also the folders "figures", "tables" and "logs" that house all material, whereas in the "presentation_" folders there are only the figures and tables included that are actually used in the documents.
 </br>
 <u>**src** subfolder:</u>
 <br>
-The "src" subfolder contains everything related to the code of the seminar. Itself has two subfolders: "seminar_code" and "tests". The first one is the most important one, whereas itself holds all the main components for the seminar content: "data_processing", "model", "utils", "data_loading", "models", "data_graphing".
+The "src" subfolder contains everything related to the code of the seminar. Itself has the subfolder: "seminar_code". It holds all the main components for the seminar content: "data_processing", "model", "utils", "data_loading", "models", "data_graphing, etc..
 </br>
 
 ## Running the seminar code locally in a scripting file (.py)
@@ -482,7 +478,7 @@ pip3 list
 ```
 ### APA
 ```apa
-Fella, J.; Hennings, R. Seminar (Version 1.0.0) [Computer software]. https://github.com/RobertHennings/Seminar
+Fella, J.; Hennings, R. Seminar (Version 0.0.1) [Computer software]. https://github.com/RobertHennings/Seminar
 ```
 ## Contributing
 ### Commit Style
