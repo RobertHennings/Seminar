@@ -471,14 +471,13 @@ pip3 list
 ```bibtex
 @misc{FellaHenningsSeminar2025,
   author        = {Fella, Josef; Hennings, Robert},
-  title         = {Seminar},
+  title         = {Identifying (volatility-)regimes in the the EUR/USD spot exchange rate using clustering algorithms: An Oil and Gas Perspective on Parity Conditions.},
   year          = {2025},
   version       = {0.0.1},
-  author        = {Fella, Josef; Hennings, Robert},
   license       = {MIT},
-  title         = {Identifying (volatility-)regimes in the the EUR/USD spot exchange rate using clustering algorithms: An Oil and Gas Perspective on Parity Conditions.},
   url           = {https://github.com/RobertHennings/Seminar},
-  note          = {Submitted: 10.11.2025, Presentation held: 14.11.2025, Seminar project at the chair of economics, Prof. Dr. Stefan Reitz; QBER - Kiel}
+  note          = {Submitted: 10.11.2025, Presentation held: 14.11.2025, Seminar project at the chair of economics, Prof. Dr. Stefan Reitz; QBER - Kiel},
+  keywords     = {Seminar paper}
 }
 ```
 ### APA
