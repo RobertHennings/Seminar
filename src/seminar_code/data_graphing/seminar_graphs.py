@@ -724,14 +724,17 @@ with open("/Users/Robert_Hennings/Uni/Master/Seminar/data/raw/crisis_periods_dic
 
 custom_color_scale = data_graphing_instance.create_custom_diverging_colorscale(
     start_hex="#9b0a7d",
-    end_hex="black",
-    center_color="grey",
+    end_hex="grey",
+    center_color="black",
     steps=round((len(graphing_df.columns)+1)/2),
-    lightening_factor=0.8,
+    lightening_factor=0.9,
 )
 # Extract only the hex color codes from the created list
 custom_color_scale_codes = [color[1] for color in custom_color_scale]
 color_mapping = {var: custom_color_scale_codes[i % len(custom_color_scale_codes)] for i, var in enumerate(graphing_df.columns.tolist())}
+color_mapping["EUR/USD"] = "grey"
+color_mapping["WTI Oil"] = "black"
+color_mapping["Nat Gas"] = "#9b0a7d"
 
 for column in graphing_df.columns:
     if not column == "EUR/USD":
