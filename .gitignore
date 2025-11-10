@@ -5,6 +5,7 @@ credentials.json
 **/info # ignore everything in the info folder
 **/idea/ # ignore everything in the idea folder
 **/info/ # ignore everything in the info folder
+presentation_notes/
 idea/
 info/
 data/raw/
