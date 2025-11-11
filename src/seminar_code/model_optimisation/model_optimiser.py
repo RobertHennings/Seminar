@@ -15,6 +15,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ModelOptimiser:
+    """
+    A basic class performing GridSearch for a variety of given algorithms and datasets.
+    """
     def __init__(
         self,
         data_list: List[pd.DataFrame],
@@ -22,6 +25,19 @@ class ModelOptimiser:
         model_class_dict: Dict[str, Any],
         scoring_dict: Dict[str, Any],
         ) -> None:
+        """The class variables shared by all class methods.
+
+        Args:
+            data_list (List[pd.DataFrame]): The data-sets to be used for model optimisation.
+            param_grids_dict (Dict[str, Dict[str, List[Any]]]): Expects that the Dict Keys are
+                                                                exactly named as the model
+                                                                algorithm name class, i.e. "KMeans".
+                                                                The model algorithm value is then
+                                                                itself again a dict holding the value
+                                                                ranges that shall be tried out for GridSearch.
+            model_class_dict (Dict[str, Any]): The Dict matching the model class name to the bare model class instance.
+            scoring_dict (Dict[str, Any]): The Dict holding the scoring metrics to be used for model evaluation.
+        """
         self.data_list = data_list
         self.param_grids_dict = param_grids_dict
         self.model_class_dict = model_class_dict
@@ -63,6 +79,23 @@ class ModelOptimiser:
         grid_search_pre_dispatch: str | int = "2*n_jobs",
         grid_search_error_score: float | str = np.nan,
         ) -> List[Dict[str, Any]]:
+        """The main class method performing the GridSearchCV for all given algorithms,
+           for all given datasets, with the specified scoring metrics and cross-validation
+           strategy and the provided value ranges for each parameter of a model class.
+
+        Args:
+            grid_search_refit_scorer (str, optional): Dict key specifying what algorithm to use for refitting.
+                                                      Must be included as key in the class variable scoring_dict.
+                                                      Defaults to "silhouette".
+            grid_search_return_train_score (bool, optional): Whether to return the training score. Defaults to True.
+            grid_search_cv (int | BaseCrossValidator | Iterable | None, optional): The cross-validation strategy to use. Defaults to None.
+            grid_search_n_jobs (int | None, optional): The number of jobs to run in parallel. Defaults to None.
+            grid_search_pre_dispatch (str | int, optional): Controls the number of jobs that are dispatched during parallel execution. Defaults to "2*n_jobs".
+            grid_search_error_score (float | str, optional): The error score to assign to a failed fit. Defaults to np.nan.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries containing the results of the grid search.
+        """
         results = []
         for model_name, cls in self.model_class_dict.items():
             cls_instance = cls()
@@ -100,7 +133,13 @@ class ModelOptimiser:
         file_path: str=None,
         file_name: str=None,
         ) -> None:
-        """Save GridSearchCV results as JSON, converting numpy arrays to lists."""
+        """Save GridSearchCV results as JSON, converting numpy arrays to lists.
+
+        Args:
+            results (List[Dict[str, Any]]): The results of the grid search.
+            file_path (str, optional): The directory to save the JSON file. Defaults to None.
+            file_name (str, optional): The name of the JSON file. Defaults to None.
+        """
         self.__check_path_existence(path=file_path)
         full_path_save_json = f"{file_path}/{file_name}.json"
 
@@ -142,7 +181,15 @@ class ModelOptimiser:
         file_path: str=None,
         file_name: str=None,
         ) -> List[Dict[str, Any]]:
-        """Load GridSearchCV results from JSON."""
+        """Load GridSearchCV results from JSON.
+
+        Args:
+            file_path (str, optional): The file path to the results file. Defaults to None.
+            file_name (str, optional): The file name of the results file. Defaults to None.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries containing the results of the grid search.
+        """
         full_path_load_json = f"{file_path}/{file_name}.json"
         try:
             with open(file=full_path_load_json, mode="r") as f:
@@ -152,109 +199,3 @@ class ModelOptimiser:
         except Exception as e:
             logging.error(f"Error loading from .json: {e}")
             return []
-
-class PurgedTimeSeriesSplit(BaseCrossValidator):
-    def __init__(
-        self,
-        n_splits=5,
-        max_train_size=None,
-        test_size=None,
-        gap=0
-        ) -> None:
-        self.n_splits = n_splits
-        self.max_train_size = max_train_size
-        self.test_size = test_size
-        self.gap = gap
-
-    def split(
-        self,
-        X,
-        y=None,
-        groups=None
-        ) -> Iterable:
-        """Generate indices to split data into training and test set."""
-        n_samples = len(X)
-
-        # Calculate sizes
-        if self.test_size is None:
-            test_size = n_samples // (self.n_splits + 1)
-        else:
-            test_size = self.test_size
-
-        indices = np.arange(n_samples)
-
-        for i in range(self.n_splits):
-            # Calculate test indices
-            test_start = (i + 1) * test_size
-            test_end = test_start + test_size
-
-            if test_end > n_samples:
-                break
-
-            test_indices = indices[test_start:test_end]
-
-            # Calculate train indices (up to gap before test)
-            train_end = test_start - self.gap
-            if self.max_train_size is not None:
-                train_start = max(0, train_end - self.max_train_size)
-            else:
-                train_start = 0
-
-            if train_end <= train_start:
-                continue
-
-            train_indices = indices[train_start:train_end]
-
-            yield train_indices, test_indices
-
-    def get_n_splits(
-        self,
-        X=None,
-        y=None,
-        groups=None
-        ) -> int:
-        """Returns the number of splitting iterations in the cross-validator."""
-        return self.n_splits
-
-
-class SkfolioWrapper(BaseCrossValidator):
-    def __init__(
-        self,
-        n_folds: int=5,
-        n_test_folds: int=2,
-        embargo_size: int=30,
-        purged_size: float=0.05
-        ) -> None:
-        self.skfolio_cv = CombinatorialPurgedCV(
-            n_folds=n_folds,
-            n_test_folds=n_test_folds,
-            embargo_size=embargo_size,
-            purged_size=purged_size
-        )
-        self.n_folds = n_folds
-
-    def split(
-        self,
-        X,
-        y=None,
-        groups=None
-        ):
-        # Convert skfolio's output to sklearn format
-        try:
-            # This might need adjustment based on skfolio's actual API
-            for train_idx, test_idx in self.skfolio_cv.split(X):
-                yield train_idx, test_idx
-        except Exception as e:
-            # Fallback to simple time series split
-            from sklearn.model_selection import TimeSeriesSplit
-            tscv = TimeSeriesSplit(n_splits=self.n_folds)
-            for train_idx, test_idx in tscv.split(X):
-                yield train_idx, test_idx
-
-    def get_n_splits(
-        self,
-        X=None,
-        y=None,
-        groups=None
-        ):
-        return self.n_folds

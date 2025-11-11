@@ -1,6 +1,7 @@
 # ################## Project related stuff
 # config.py
 credentials.json
+.env
 **/idea # ignore everything in the idea folder
 **/info # ignore everything in the info folder
 **/idea/ # ignore everything in the idea folder

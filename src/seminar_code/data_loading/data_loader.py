@@ -106,7 +106,16 @@ class DataLoading(object):
 
     def __load_credentials(
         self
-        ):
+        ) -> Dict[str, str]:
+        """Utility method, trying to load the as yaml file saved credentials,
+           if a credential_path and credential_file_name have been provided.
+
+        Raises:
+            KeyError: If the credentials file is not found.
+
+        Returns:
+            Dict[str, str]: The loaded credentials. Accessible as a Dict style.
+        """
         # First check if a secrets file is already present at the provided path
         if self.credential_file_name is not None and self.credential_path is not None:
             self.__check_path_existence(path=self.credential_path)
@@ -432,7 +441,13 @@ class DataLoading(object):
             pd.DataFrame: A filtered DataFrame with only the specified columns.
         """
         logging.info("FUNCTION: filter_yahoo_data")
-        return yahoo_df[columns]
+        # First check if all given column names are actually present in the DataFrame
+        for column in columns:
+            if column not in yahoo_df.columns:
+                logging.warning(f"Column: {column} not found in Yahoo Finance DataFrame columns.")
+        present_columns = [col for col in columns if col in yahoo_df.columns]
+        filtered_yahoo_df = yahoo_df[present_columns]
+        return filtered_yahoo_df
 
 
     def get_ecb_data(

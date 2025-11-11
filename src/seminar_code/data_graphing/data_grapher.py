@@ -35,6 +35,10 @@ MARGIN=cfg.MARGIN
 FILE_PATH = cfg.FILE_PATH
 
 class DataGraphing(object):
+    """
+    Simple class holding all graphing methods, sharing class variables
+    like font-style, margins and other utilities.
+    """    
     def __init__(
         self,
         font: str=FONT,
@@ -42,7 +46,18 @@ class DataGraphing(object):
         paper_bgcolor: str=PAPER_BGCOLOR,
         margin: Dict[str, float]=MARGIN,
         file_path: str=FILE_PATH
-        ):
+        ) -> None:
+        """Class variables shared by all class methods.
+
+        Args:
+            font (str, optional): Define the default font-style. Defaults to FONT.
+            plot_bgcolor (str, optional): Define the default plot background color. Defaults to PLOT_BGCOLOR.
+            paper_bgcolor (str, optional): Define the default background-color. Defaults to PAPER_BGCOLOR.
+            margin (Dict[str, float], optional): Define the default margin. Defaults to MARGIN.
+            file_path (str, optional): Define the default file path where the graphs should be saved.
+                                       Currently saving as .pdf and as .html are supported.
+                                       Defaults to FILE_PATH.
+        """
         self.font = font
         self.plot_bgcolor = plot_bgcolor
         self.paper_bgcolor = paper_bgcolor
@@ -166,6 +181,8 @@ class DataGraphing(object):
         Args:
             hex_color (str): The color to be lightened up.
             factor (float): The factor by which the provided hex color should be lightened up.
+                            A low value near 0 will lighten the color significantly, while
+                            a value near 1 will have a smaller effect.
 
         Returns:
             str: Lightened color.

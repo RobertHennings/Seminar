@@ -24,15 +24,16 @@ git clone https://github.com/RobertHennings/Seminar
 The seminar paper deals with the question, if alternative regime identification methods, including additional explanatory variables in the framework of clustering algorithms, can help to better identify (volatility driven) market regimes in the EUR/USD spot exchange rate. Especially including different variations of energy commodity prices (and their rolling volatility) is tested for an improved regime identification performance, with variations of the Markov-Switching Model
 as benchmark. Finally, after having separated the Time-series of the EUR/USD spot exchange rate into different (volatility-) regimes, the standard UIP relationship is tested and compared among the regimes.
 
-Main considered energy commodity prices are (USA):
+Main considered variables are the following:
 
-1. [WTI Crue Oil - Cushing, Oklahoma - Spot Prices - Daily](https://fred.stlouisfed.org/series/DCOILWTICO)
-2. [Natural Gas - Henry Hub - Spot Prices - Daily](https://fred.stlouisfed.org/series/DHHNGSP)
+| Variable | Source | Frequency | Thematic area | Category | Data ID |
+| :--------- | :-------------: | :-------------: | :----------: | :---------- | :---------- |
+| EUR/USD spot exchange rate | [FRED](https://fred.stlouisfed.org/series/DEXUSEU) | Daily | FX theory | Spot exchange rate (NER) | DEXUSEU |
+| WTI Crue Oil - Cushing, Oklahoma - Spot Prices | [FRED](https://fred.stlouisfed.org/series/DCOILWTICO) | Daily | Energy commodity | Spot Price | DCOILWTICO |
+Natural Gas - Henry Hub - Spot Prices | [FRED](https://fred.stlouisfed.org/series/DHHNGSP) | Daily | Energy commodity | Spot Price | DHHNGSP |
+Central Bank Policy Rate (CBPR) - USA | [BIS](https://data.bis.org/topics/CBPOL/BIS,WS_CBPOL,1.0/D.US) | Daily | FX theory | Interest Rate | D.US |
+Central Bank Policy Rate (CBPR) - EU Area | [BIS](https://data.bis.org/topics/CBPOL/BIS,WS_CBPOL,1.0/D.XM) | Daily | FX theory | Interest Rate | D.XM |
 
-Main considered interest rate data (USA, EU Area):
-
-1. [Central Bank Policy Rate (CBPR) - Daily - USA - Bank for International Settlements](https://data.bis.org/topics/CBPOL/BIS,WS_CBPOL,1.0/D.US)
-2. [Central Bank Policy Rate (CBPR) - Daily - EU Area - Bank for International Settlements](https://data.bis.org/topics/CBPOL/BIS,WS_CBPOL,1.0/D.XM)
 
 Data sources are primarily:
 
@@ -44,27 +45,29 @@ Data sources are primarily:
 <br>
 <u>Main Research Hypothesis:</u>
 <br>
-1. “The standard UIP-equilibrium condition is time-dependent and primarily controlled by two main regimes, characterised by either high or low (market-) volatility.”
+1. “The standard UIP-equilibrium condition is time-dependent and primarily controlled by two main regimes, characterized by either high or low (market-) volatility.”
 <br>
-<u>Aditional Research Hypothesis I:</u>
+<u>Additional Research Hypothesis I:</u>
 2. “Monetary policy, i.e. interest rates are, partly driven by energy commodity prices that induce volatility through the inﬂationary pass-through channel, especially during phases of market distress in economies heavily relying on import/export of energy commodities.”
 <br>
-<u>Aditional Research Hypothesis II:</u>
+<u>Additional Research Hypothesis II:</u>
 <br>
 3. “Factoring in variables related to energy commodity prices in combination with using alternative clustering techniques improves the identiﬁcation of the regimes to better pinpoint the time-dependent testing of the standard UIP relation, compared to Markov-Switching benchmark models.”
 <br>
 <br>
-In order to test the research hypotheses a two stage procedure is folowed:
+In order to test the research hypotheses a three stage procedure is followed:
 <br>
 
-1. First, for various in Sci-Kit Learn implemented clustering algorithms, the optimal hyperparameter configuration is optimised using {}, and as evaluation metric the soilhouette score is considered, for every dataset variant.
+1. First, for various in Sci-Kit Learn implemented clustering algorithms, the optimal hyperparameter configuration is optimized using purged cross validation with embargoing (keeping the time-order), and as evaluation metric the silhouette score is considered, for every dataset variant.
 
-2. Then, with these optimised hyperparameters, the regimes are identified (0: low volatility, 1: high volatility), with the respective clustering algorithms and compared against Markov-Switching benchmark models. Within each identified regime, for each algorithm, the standard UIP relationship is tested for.
+2. Then, with these optimized hyperparameters, the regimes are identified (0: low volatility, 1: high volatility), with the respective clustering algorithms and compared against Markov-Switching benchmark models. Within each identified regime, for each algorithm, the standard UIP relationship is tested for.
+
+3. Conditional on the regime for each algorithm and dataset, the standard UIP-relationship from FX-market theory is tested: ${\Delta s_{t+1} = i_{t} - i^{*}_{t} + u_{t+1}}$ translated to the simple linear regression framework: ${\Delta s_{t+1} = \alpha + \beta \cdot (i_{t} - i^{*}_{t}) + u_{t+1}}$ where the constant term ${\alpha}$ is expected to be 0 and the coefficient for the interest rate differential ${(i_{t} - i^{*}_{t})}$ is expected to be 1.
 
 ## Organizational Information
 Tips for academic work at the QBER-Kiel: [Link](https://alexanderklos.github.io/py_dos_and_donts/index_py_dos_and_donts.html)
 
-### Fromalities
+### Formalities
 Formal guidelines for the $\LaTeX$ format offered by the CAU can be found [here](https://www.wiso.uni-kiel.de/de/studium/sonstiges/info-inst-vwl/abschlussarbeiten).
 
 
@@ -106,7 +109,7 @@ Seminar
 │       ├── chap_06_prices_oi_df.xlsx
 │       ├── chap_06_spot_exchange_rate_data_df.xlsx
 │       └── crisis_periods_dict.json
-├── docs
+├── docs <- folder containing the contents of the GitHub hosted webpage linking to each of the graphs in the presentation (.pdf)
 ├── literature <- folder containing all used literature
 ├── notebooks <- folder containing the final submission Notebooks
 │   ├── Seminar_Fella_Hennings_Graphs_Presentation.ipynb
@@ -397,10 +400,15 @@ The "reports" subfolder contains everything related to the final seminar present
 The "src" subfolder contains everything related to the code of the seminar. Itself has the subfolder: "seminar_code". It holds all the main components for the seminar content: "data_processing", "model", "utils", "data_loading", "models", "data_graphing, etc..
 </br>
 
-## Running the seminar code locally in a scripting file (.py)
-To run the seminar code locally (i.e. after cloning the repository), one can just simply create a virtual environment. See the dedetailed documentation [here](https://docs.python.org/3/library/venv.html)
+## Possible Extension/ToDo
+- [ ] Scale Model Fitting by using asyncio and ThreadPoolExecutor
+- [ ] Extract the cluster centers for a closer inspection
+- [ ] Wrap the Model Fitting for each provided dataset-benchmark
 
-Depending on your python version, open a terminal window, move to the desired loaction via `cd` and create a new virtual environment.
+## Running the seminar code locally in a scripting file (.py)
+To run the seminar code locally (i.e. after cloning the repository), one can just simply create a virtual environment. See the detailed documentation [here](https://docs.python.org/3/library/venv.html)
+
+Depending on your python version, open a terminal window, move to the desired location via `cd` and create a new virtual environment.
 
 If the interested user wants to reproduce the results of the seminar project, there are two main steps that need to be taken care of before trying to execute code:
 1. Installing the correct Python Version

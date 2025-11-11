@@ -4,6 +4,38 @@ import json
 import pandas as pd
 import numpy as np
 import yfinance as yf
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Prefer an explicit env override, otherwise try to locate the project root.
+def find_project_root(start: Path, markers=("src", ".git", "pyproject.toml", "setup.py", "requirements.txt")) -> Path:
+    start = start.resolve()
+    # walk up looking for any marker
+    for p in (start, *start.parents):
+        for m in markers:
+            if (p / m).exists():
+                return p
+    # fallback to a sensible parent if structure is known (this file is in src/.../data_graphing/)
+    try:
+        return start.parents[3]  # expected: .../Seminar/src/seminar_code/data_graphing/seminar_graphs.py
+    except Exception:
+        return start.parent
+
+env_path = find_project_root(Path(__file__)) / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+
+# Allow override via environment variable SEMINAR_ROOT
+ROOT = Path(os.getenv("SEMINAR_ROOT", "")) if os.getenv("SEMINAR_ROOT") else find_project_root(Path(__file__))
+
+SEMINAR_PATH = ROOT
+SEMINAR_CODE_PATH = (ROOT / "src" / "seminar_code").resolve()
+MODELS_PATH = (SEMINAR_CODE_PATH / "models").resolve()
+FIGURES_PATH = (ROOT / "reports" / "figures").resolve()
+TABLES_PATH = (ROOT / "reports" / "tables").resolve()
+DATA_PATH = (ROOT / "data").resolve()
+PRESENTATION_DATA = (ROOT / "reports" / "presentation_latex_version" / "data").resolve()
+
 
 SEMINAR_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar"
 SEMINAR_CODE_PATH = rf"{SEMINAR_PATH}/src/seminar_code"
@@ -19,7 +51,7 @@ CAU_COLOR_SCALE = ["#9b0a7d", "grey", "black", "darkgrey", "lightgrey"]
 print(os.getcwd())
 os.chdir(SEMINAR_CODE_PATH)
 print(os.getcwd())
-
+load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 # import config settings with static global variables

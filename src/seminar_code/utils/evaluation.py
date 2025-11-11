@@ -662,6 +662,24 @@ def extract_best_params(
     return best_params_list
 
 
+def results_list_to_df(results_list):
+    # ensure we only feed a list of dicts
+    rows = [r for r in results_list if isinstance(r, dict)]
+
+    # json_normalize flattens nested dicts (e.g. best_params.n_clusters -> best_params.n_clusters)
+    df = pd.json_normalize(rows)
+
+    # rename nested best_params.* to best_param_* (optional)
+    df.columns = [c.replace("best_params.", "best_param_") for c in df.columns]
+
+    # turn list-like columns into comma separated strings (feature names etc.)
+    for col in df.columns:
+        if df[col].apply(lambda x: isinstance(x, (list, tuple))).any():
+            df[col] = df[col].apply(lambda x: ",".join(map(str, x)) if isinstance(x, (list, tuple)) else x)
+
+    return df
+
+
 def parse_statsmodels_coef_table(summary_text: str) -> pd.DataFrame:
     """
     Extract coefficient table from a statsmodels OLS/GLM summary text.

@@ -17,20 +17,23 @@ from sklearn.cluster import MiniBatchKMeans
 # from sklearn.cluster import OPTICS
 # from sklearn.cluster import Birch
 
-MODELS_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/models"
-FIGURES_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar/reports/figures"
+SEMINAR_PATH = r"/Users/Robert_Hennings/Uni/Master/Seminar"
+SEMINAR_CODE_PATH = rf"{SEMINAR_PATH}/src/seminar_code"
+MODELS_PATH = rf"{SEMINAR_CODE_PATH}/models"
+FIGURES_PATH = rf"{SEMINAR_PATH}/reports/figures"
 
 print(os.getcwd())
-os.chdir(r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code")
+os.chdir(SEMINAR_CODE_PATH)
 print(os.getcwd())
 
 from data_loading.data_loader import DataLoading
-from model.architecture import ModelObject
 from model_optimisation import config as cfg
-from model_optimisation.model_optimiser import ModelOptimiser, PurgedTimeSeriesSplit, SkfolioWrapper
+from model_optimisation.model_optimiser import ModelOptimiser
+from grid_search.grid_searching_strategies import PurgedTimeSeriesSplit, SkfolioWrapper
+
 # Import custom written model evaluation scores
 from utils.evaluation_metrics import silhouette_scorer
-from utils.evaluation import extract_best_params
+from utils.evaluation import extract_best_params, results_list_to_df
 
 param_grids_dict = cfg.PARAM_GRIDS
 
@@ -133,8 +136,7 @@ results_list = model_optimiser_instance.run_grid_search_cv(
         grid_search_cv=purged_cv,
         grid_search_n_jobs=1,
         )
-len(results_list)
-results_list[0]
+
 # Extract best parameters for all results
 best_params_list = extract_best_params(
     results_list=results_list,
@@ -159,13 +161,20 @@ model_optimiser_instance.save_grid_search_results(
     file_name=f"grid_search_results_{timestamp_str}"
     )
 # Read in the optimised hyperparameters from the grid search
+model_optimiser_instance = ModelOptimiser(
+    data_list=[],
+    param_grids_dict={},
+    model_class_dict={},
+    scoring_dict={},
+)
 results_list_read_in = model_optimiser_instance.load_grid_search_results(
     file_path="/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/optimisation_results",
-    file_name=f"grid_search_results_{timestamp_str}"
+    file_name=f"grid_search_results_20251109_121829"
     )
-# Create the DataFrame again
-best_params_list = extract_best_params(
-    results_list=results_list_read_in,
-    score_name="silhouette"
-)
-best_params_df = pd.DataFrame(best_params_list)
+
+# usage
+df = results_list_to_df(results_list_read_in)
+df[["model_name", "best_score"]].sort_values(by="best_score", ascending=False)
+df[["feature_names_in", "model_name", "best_score"]].sort_values(by="best_score", ascending=False)
+
+best_params_df = pd.read_excel(r"/Users/Robert_Hennings/Uni/Master/Seminar/src/seminar_code/optimisation_results/best_params_df.xlsx")
