@@ -404,7 +404,8 @@ The "src" subfolder contains everything related to the code of the seminar. Itse
 - [ ] Scale Model Fitting by using asyncio and ThreadPoolExecutor
 - [ ] Extract the cluster centers for a closer inspection
 - [ ] Wrap the Model Fitting for each provided dataset-benchmark
-
+- [ ] Implement tests for structural breaks like: Chow-Test, Breakpoint-Chow Test
+- [ ] Plot/Analyze the Regression Errors from the standard UIP-relationship
 ## Running the seminar code locally in a scripting file (.py)
 To run the seminar code locally (i.e. after cloning the repository), one can just simply create a virtual environment. See the detailed documentation [here](https://docs.python.org/3/library/venv.html)
 
