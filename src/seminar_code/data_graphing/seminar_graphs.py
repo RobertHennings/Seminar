@@ -746,6 +746,40 @@ rolling_std_df = spot_exchange_rate_data_df_log_diff.rolling(window=window_size)
 # Normalize the rolling std to be between 0 and 1 for better visualization
 rolling_std_df = (rolling_std_df - rolling_std_df.min()) / (rolling_std_df.max() - rolling_std_df.min())
 
+all_models_comp_df = get_model_metadata_df(
+    full_model_info_path=MODELS_PATH,
+    )
+# Plot the model training results as a bar plot with the used features as index
+unique_df = all_models_comp_df.drop_duplicates(subset=["model_type", "silhouette_score", "feature_names_in"]).dropna(subset=["silhouette_score"])
+
+predicted_labels_df = extract_predicted_labels_from_metadata_df(
+    metadata_df=all_models_comp_df,
+)
+for column in predicted_labels_df.columns:
+    if predicted_labels_df[column].max() > 1 or predicted_labels_df[column].min() <0 or (predicted_labels_df[column].dropna() == 0.0).all():
+        print(f"Removing column: {column}")
+        predicted_labels_df = predicted_labels_df.drop(columns=[column])
+
+predicted_labels_df = get_recoded_predicted_labels_df(
+    predicted_labels_df=predicted_labels_df,
+    label_mapping_dict={0: 1, 1: 0},
+    column_names_list=[
+        "GaussianMixture_2025-10-15 17:12:06",
+        "GaussianMixture_2025-10-15 17:17:03",
+        "GaussianMixture_2025-10-15 17:20:23",
+        "Birch_2025-10-15 17:17:04",
+        "MiniBatchKMeans_2025-10-15 17:14:42",
+        "MiniBatchKMeans_2025-10-15 17:19:36",
+        "MiniBatchKMeans_2025-10-15 17:06:36",
+        "AgglomerativeClustering_2025-10-15 17:14:44",
+        "AgglomerativeClustering_2025-10-15 19:37:38",
+        "KMeans_2025-10-15 17:10:28",
+        "KMeans_2025-10-15 17:14:43",
+        "MarkovRegression_2025-10-15 17:07:35",
+        "MarkovRegression_2025-10-15 20:47:16",
+        ]
+    )
+
 graphing_df = pd.concat(
     [rolling_std_df, predicted_labels_df],
     axis=1
@@ -833,7 +867,21 @@ unique_df = unique_df[unique_df["model_file_name"].isin(keep_models)]
 predicted_labels_df = get_recoded_predicted_labels_df(
     predicted_labels_df=predicted_labels_df,
     label_mapping_dict={0: 1, 1: 0},
-    column_names_list=["AgglomerativeClustering", "MarkovRegression"]
+    column_names_list=[
+        "GaussianMixture_2025-10-15 17:12:06",
+        "GaussianMixture_2025-10-15 17:17:03",
+        "GaussianMixture_2025-10-15 17:20:23",
+        "Birch_2025-10-15 17:17:04",
+        "MiniBatchKMeans_2025-10-15 17:14:42",
+        "MiniBatchKMeans_2025-10-15 17:19:36",
+        "MiniBatchKMeans_2025-10-15 17:06:36",
+        "AgglomerativeClustering_2025-10-15 17:14:44",
+        "AgglomerativeClustering_2025-10-15 19:37:38",
+        "KMeans_2025-10-15 17:10:28",
+        "KMeans_2025-10-15 17:14:43",
+        "MarkovRegression_2025-10-15 17:07:35",
+        "MarkovRegression_2025-10-15 20:47:16",
+        ]
     )
 # Compare the fitted in sample regimes
 regime_counts_df = get_regime_counts_df(
