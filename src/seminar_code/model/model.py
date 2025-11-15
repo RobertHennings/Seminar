@@ -335,12 +335,12 @@ data_loading_instance.export_dataframe(
 )
 
 def run_uip_regression(
-        dep_var: str,
-        indep_var: str,
-        data: pd.DataFrame,
-        cov_type: str="nonrobust",
-        use_t: bool=True
-        ):
+    dep_var: str,
+    indep_var: str,
+    data: pd.DataFrame,
+    cov_type: str="nonrobust",
+    use_t: bool=True
+    ):
     import statsmodels.api as sm
     X = sm.add_constant(data[indep_var])
     y = data[dep_var]

@@ -3,7 +3,6 @@ import os
 import json
 import pandas as pd
 import numpy as np
-import yfinance as yf
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -687,6 +686,11 @@ exact_model = unique_df["model_type"] + "_" + unique_df["time_last_fitted"].str.
 unique_df["model_file_name"] = exact_model
 unique_df = unique_df[unique_df["model_file_name"].isin(keep_models)]
 
+unique_df = unique_df.sort_values("silhouette_score", ascending=False).drop_duplicates(
+    subset=['feature_names_in', 'model_type'],
+    keep='first'
+)
+
 title="Model comparison using the silhouette score (1 being best, 0 indicating overlapping clusters, -1 being worst) for various regime identification model configurations"
 fig_model_comp_bar_plot = data_graphing_instance.get_model_comparison_bar_plot(
     data=unique_df,
@@ -706,7 +710,7 @@ fig_model_comp_bar_plot = data_graphing_instance.get_model_comparison_bar_plot(
         "OPTICS": "olive",
         "MiniBatchKMeans": "#00677c"
     },
-    save_fig=True,
+    save_fig=False,
     file_name="chap_07_model_comparison_bar_plot",
     file_path=FIGURES_PATH,
     showlegend=False,
@@ -901,6 +905,14 @@ unique_df = regime_counts_df_transposed.merge(
     right_on="model_file_name_mapping",
     how="inner"
 )
+# Exclude the rolling_vola data configurations
+mask = ~unique_df["feature_names_in"].str.contains("rolling_vola")
+unique_df = unique_df[mask]
+# Exclude the rows where there are only 0 entries for both classes, 0 and 1
+unique_df = unique_df[~((unique_df[0] == 0) & (unique_df[1] == 0))]
+# Exclude the rows where there are only very few entries for both classes, 0 and 1
+# threshold = 100
+# unique_df = unique_df[~((unique_df[0] < threshold) & (unique_df[1] < threshold))]
 
 fig_model_regime_counts_bar_plot = data_graphing_instance.get_model_comparison_regime_counts_bar_plot(
         data=unique_df,
@@ -956,6 +968,7 @@ overlay_df = get_periods_overlaying_df(
     predicted_labels_df=predicted_labels_df,
     predicted_labels_df_column_names_list=predicted_labels_df.columns[1:].tolist(),
 )
+overlay_df["High Volatility Percentage"] = overlay_df["High Volatility Percentage"] / 100
 # overlay_df.sort_values(by=["High Volatility Percentage"], ascending=False)
 unique_df = overlay_df.merge(
     unique_df,

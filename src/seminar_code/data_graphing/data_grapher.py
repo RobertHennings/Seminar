@@ -1805,7 +1805,11 @@ class DataGraphing(object):
         # Prepare x-tick labels and sort by feature count
         data["feature_count"] = data["feature_names_in"].apply(lambda x: len(ast.literal_eval(x)) if isinstance(x, str) else len(x))
         data = data.sort_values("feature_count")
-        x_labels = data["feature_names_in"].unique().astype(str).tolist()
+        # Safely convert all x labels with ast.literal_eval and string
+        x_labels_raw = data["feature_names_in"].unique().tolist()
+        x_labels = [ast.literal_eval(x) for x in x_labels_raw]
+        x_labels_formatted = ["<br>".join(label) if isinstance(label, list) else str(label) for label in x_labels]
+
         group_boundaries = [i for i in range(1, len(x_labels)) if x_labels[i] != x_labels[i-1]]
 
         unique_models = list(data["model_type"].unique())
@@ -1813,19 +1817,40 @@ class DataGraphing(object):
         bar_width = 0.8 / n_models  # total bar width (default 0.8)
 
         fig = go.Figure()
-        for idx, model in enumerate(unique_models):
+        for m_idx, model in enumerate(unique_models):
             model_data = data[data["model_type"] == model]
-            fig.add_trace(go.Bar(
-                x=model_data["feature_names_in"].astype(str),
-                y=model_data[evaluation_score_col_name],
-                name=model,
-                text=model_data[evaluation_score_col_name].round(3),
-                textposition="outside",
-                textfont=dict(size=textfont_size),
-                showlegend=showlegend,
-                marker_color=color_mapping_dict.get(model, "grey"),
-                offsetgroup=model
-            ))
+            valid_x_positions = []
+            valid_y_values = []
+            valid_x_labels = []
+            for x_i, xl in enumerate(x_labels):
+                # Use string conversion to robustly compare
+                bar_rows = model_data[model_data["feature_names_in"] == str(xl)]
+                if not bar_rows.empty:
+                    valid_x_positions.append(x_i + (m_idx - (n_models - 1)/2) * bar_width)
+                    valid_y_values.append(bar_rows[evaluation_score_col_name].values[0])
+                    valid_x_labels.append(xl)
+            if valid_y_values:
+                fig.add_trace(go.Bar(
+                    x=valid_x_positions,
+                    y=valid_y_values,
+                    name=model,
+                    width=bar_width * 0.9,
+                    text=[round(v, 3) for v in valid_y_values],
+                    textposition="outside",
+                    showlegend=showlegend,
+                    marker_color=color_mapping_dict.get(model, "grey")
+                ))
+                # Add annotation only when data exists
+                for x_val, xl in zip(valid_x_positions, valid_x_labels):
+                    fig.add_annotation(
+                        x=x_val,
+                        y=0,
+                        text=model,
+                        showarrow=False,
+                        textangle=90,
+                        yshift=-80,
+                        font=dict(size=10)
+                    )
 
         # Add vertical dashed lines at group boundaries
         for boundary in group_boundaries:
@@ -1847,25 +1872,11 @@ class DataGraphing(object):
                 xref="x", yref="y"
             )
 
-        # Use offset calculation to place annotations correctly
-        for x_idx, x_val in enumerate(x_labels):
-            x_group_data = data[data["feature_names_in"].astype(str) == x_val]
-            for m_idx, model in enumerate(unique_models):
-                bar_data = x_group_data[x_group_data["model_type"] == model]
-                if not bar_data.empty:
-                    offset = (-0.4 + bar_width/2) + m_idx * bar_width  # default centers first bar at left of group
-                    # Place annotation under bar (model type)
-                    fig.add_annotation(
-                        x=x_idx + offset,
-                        y=0,
-                        text=model,
-                        showarrow=False,
-                        yshift=-120,
-                        textangle=90,
-                        font=dict(size=textfont_size),
-                        xref="x",
-                        yref="y"
-                    )
+        fig.update_xaxes(
+            tickvals=np.arange(len(x_labels)),
+            ticktext=x_labels_formatted
+        )
+
         fig.update_layout(
             title={
                 "text": title,
@@ -1949,149 +1960,149 @@ class DataGraphing(object):
             file_path_save = self.file_path
         else:
             file_path_save = r"/"
-
+    
         # Ensure feature count and sort
         data["feature_count"] = data["feature_names_in"].apply(lambda x: len(ast.literal_eval(x)) if isinstance(x, str) else len(x))
         data = data.sort_values("feature_count")
-
+    
         # detect count columns (accept int 0/1 or string '0'/'1')
         col0 = 0 if 0 in data.columns else ('0' if '0' in data.columns else None)
         col1 = 1 if 1 in data.columns else ('1' if '1' in data.columns else None)
-
+    
         if col0 is None or col1 is None:
             raise ValueError("Expected count columns named 0 and 1 (int or '0'/'1' strings) in the dataframe for stacked counts.")
+    
+        # Prepare x-tick labels and sort by feature count
+        x_labels_raw = data["feature_names_in"].unique().tolist()
+        x_labels = [ast.literal_eval(x) for x in x_labels_raw]
+        x_labels_formatted = ["<br>".join(label) if isinstance(label, list) else str(label) for label in x_labels]
 
-        # Category labels and models
-        x_labels = data["feature_names_in"].astype(str).unique().tolist()
+        group_boundaries = [i for i in range(1, len(x_labels)) if x_labels[i] != x_labels[i-1]]
+    
         unique_models = list(data["model_type"].unique())
         n_models = len(unique_models)
-        bar_group_total_width = 0.8
-        bar_width = bar_group_total_width / max(1, n_models)
-
+        bar_width = 0.8 / n_models
+    
         # aggregate counts per (feature_names_in, model_type)
         grouped = data.groupby(["feature_names_in", "model_type"]).agg({col0: "sum", col1: "sum", evaluation_score_col_name: "first"}).reset_index()
-
+    
         # numeric center positions for categories
-        x_idx_map = {label: idx for idx, label in enumerate(x_labels)}
-
+        x_idx_map = {str(label): idx for idx, label in enumerate(x_labels)}
+    
         fig = go.Figure()
-
+    
         # Build stacked bars per model (class 0 bottom, class 1 top)
         for m_idx, model in enumerate(unique_models):
-            offset = (-bar_group_total_width / 2) + (bar_width / 2) + m_idx * bar_width
-            x_positions = []
-            y0_values = []
-            y1_values = []
-            eval_texts = []
-            text0 = []
-            text1 = []
-
+            valid_x_positions = []
+            valid_y0_values = []
+            valid_y1_values = []
+            valid_eval_texts = []
+            valid_text0 = []
+            valid_text1 = []
+            valid_x_labels = []
+    
             for xl in x_labels:
                 row = grouped[(grouped["feature_names_in"].astype(str) == str(xl)) & (grouped["model_type"] == model)]
                 if not row.empty:
                     y0 = float(row.iloc[0][col0])
                     y1 = float(row.iloc[0][col1])
                     score = row.iloc[0][evaluation_score_col_name]
-                else:
-                    y0 = 0.0
-                    y1 = 0.0
-                    score = None
-
-                total = y0 + y1
-                if counts_display == "relative":
-                    # avoid division by zero
-                    y0_disp = (y0 / total) if total > 0 else 0.0
-                    y1_disp = (y1 / total) if total > 0 else 0.0
-                    text0.append(f"{round(y0_disp * 100, 1)}%")
-                    text1.append(f"{round(y1_disp * 100, 1)}%")
-                else:
-                    y0_disp = y0
-                    y1_disp = y1
-                    text0.append(f"{int(y0)}")
-                    text1.append(f"{int(y1)}")
-
-                x_positions.append(x_idx_map[xl] + offset)
-                y0_values.append(y0_disp)
-                y1_values.append(y1_disp)
-                eval_texts.append(score)
-
-            model_color = color_mapping_dict.get(model, "grey")
-
-            # bottom (class 0)
-            fig.add_trace(go.Bar(
-                x=x_positions,
-                y=y0_values,
-                name=f"{model} - 0",
-                marker_color=color_class_0,
-                opacity=0.6,
-                offsetgroup=model,
-                legendgroup=f"{model}_0",
-                showlegend=showlegend,
-                width=bar_width,
-                text=text0,
-                textposition="inside",
-                textfont=dict(size=textfont_size, color=text_color_class_0)
-            ))
-            # top (class 1)
-            fig.add_trace(go.Bar(
-                x=x_positions,
-                y=y1_values,
-                name=f"{model} - 1",
-                marker_color=color_class_1,
-                opacity=1.0,
-                offsetgroup=model,
-                legendgroup=f"{model}_1",
-                showlegend=showlegend,
-                width=bar_width,
-                text=text1,
-                textposition="inside",
-                textfont=dict(size=textfont_size, color=text_color_class_1)
-            ))
-
-            # evaluation score annotation above each stacked bar (always on displayed scale)
-            if show_score:
-                for xi, y0v, y1v, score in zip(x_positions, y0_values, y1_values, eval_texts):
-                    total_h = y0v + y1v
-                    if score is not None:
-                        fig.add_annotation(
-                            x=xi,
-                            y=total_h,
-                            text=str(round(float(score), 3)),
-                            showarrow=False,
-                            yanchor="bottom",
-                            font=dict(size=max(10, textfont_size-2)),
-                            xref="x",
-                            yref="y"
-                        )
-
-        # Add model-type annotations under each individual bar (replicates original snippet)
-        for x_idx, x_val in enumerate(x_labels):
-            x_group_data = data[data["feature_names_in"].astype(str) == x_val]
-            for m_idx, model in enumerate(unique_models):
-                bar_data = x_group_data[x_group_data["model_type"] == model]
-                if not bar_data.empty:
-                    offset = (-bar_group_total_width / 2) + (bar_width / 2) + m_idx * bar_width
+    
+                    total = y0 + y1
+                    if counts_display == "relative":
+                        y0_disp = (y0 / total) if total > 0 else 0.0
+                        y1_disp = (y1 / total) if total > 0 else 0.0
+                        valid_text0.append(f"{round(y0_disp * 100, 1)}%")
+                        valid_text1.append(f"{round(y1_disp * 100, 1)}%")
+                    else:
+                        y0_disp = y0
+                        y1_disp = y1
+                        valid_text0.append(f"{int(y0)}")
+                        valid_text1.append(f"{int(y1)}")
+    
+                    x_pos = x_idx_map[str(xl)] + (m_idx - (n_models - 1)/2) * bar_width
+                    valid_x_positions.append(x_pos)
+                    valid_y0_values.append(y0_disp)
+                    valid_y1_values.append(y1_disp)
+                    valid_eval_texts.append(score)
+                    valid_x_labels.append(xl)
+    
+            if valid_x_positions:
+                model_color = color_mapping_dict.get(model, "grey")
+    
+                # bottom (class 0)
+                fig.add_trace(go.Bar(
+                    x=valid_x_positions,
+                    y=valid_y0_values,
+                    name=f"{model} - 0",
+                    marker_color=color_class_0,
+                    opacity=0.6,
+                    offsetgroup=model,
+                    legendgroup=f"{model}_0",
+                    showlegend=showlegend,
+                    width=bar_width * 0.9,
+                    text=valid_text0,
+                    textposition="inside",
+                    textfont=dict(size=textfont_size, color=text_color_class_0)
+                ))
+                # top (class 1)
+                fig.add_trace(go.Bar(
+                    x=valid_x_positions,
+                    y=valid_y1_values,
+                    name=f"{model} - 1",
+                    marker_color=color_class_1,
+                    opacity=1.0,
+                    offsetgroup=model,
+                    legendgroup=f"{model}_1",
+                    showlegend=showlegend,
+                    width=bar_width * 0.9,
+                    text=valid_text1,
+                    textposition="inside",
+                    textfont=dict(size=textfont_size, color=text_color_class_1)
+                ))
+    
+                # evaluation score annotation above each stacked bar
+                if show_score:
+                    for xi, y0v, y1v, score in zip(valid_x_positions, valid_y0_values, valid_y1_values, valid_eval_texts):
+                        total_h = y0v + y1v
+                        if score is not None:
+                            fig.add_annotation(
+                                x=xi,
+                                y=total_h,
+                                text=str(round(float(score), 3)),
+                                showarrow=False,
+                                yanchor="bottom",
+                                font=dict(size=max(10, textfont_size-2)),
+                                xref="x",
+                                yref="y"
+                            )
+    
+                # Add model-type annotations under each individual bar
+                for x_val, xl in zip(valid_x_positions, valid_x_labels):
                     fig.add_annotation(
-                        x=x_idx + offset,
+                        x=x_val,
                         y=0,
                         text=model,
                         showarrow=False,
-                        yshift=-120,
                         textangle=90,
-                        font=dict(size=textfont_size),
-                        xref="x",
-                        yref="y"
+                        yshift=-80,
+                        font=dict(size=10)
                     )
-
+        # Add vertical dashed lines at group boundaries
+        for boundary in group_boundaries:
+            fig.add_shape(
+                type="line",
+                x0=boundary-0.5, x1=boundary-0.5,  # Place between bars
+                y0=0, y1=1.1,
+                line=dict(color="grey", dash="dash"),
+                xref="x", yref="y"
+            )
         # set x ticks to category centers
-        tickvals = list(range(len(x_labels)))
         fig.update_xaxes(
-            tickmode="array",
-            tickvals=tickvals,
-            ticktext=x_labels,
-            title=x_axis_title
+            tickvals=np.arange(len(x_labels)),
+            ticktext=x_labels_formatted
         )
-
+    
         fig.update_layout(
             title={
                 "text": title,
@@ -2100,7 +2111,7 @@ class DataGraphing(object):
                 "yanchor": "top",
                 "y": 0.95
             },
-            xaxis=dict(),
+            xaxis=dict(title=x_axis_title),
             yaxis=dict(
                 title=y_axis_title,
                 gridcolor="lightgrey"

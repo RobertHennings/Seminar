@@ -103,14 +103,14 @@ for i, data in enumerate(data_list):
 # Perform GridSearch like approach to find the best model and data combination
 model_class_dict = {
         "KMeans": KMeans,
-        "AgglomerativeClustering": AgglomerativeClustering,
-        # "DBSCAN": DBSCAN,
-        "MeanShift": MeanShift,
-        "GaussianMixture": GaussianMixture,
-        # "Birch": Birch,
-        "AffinityPropagation": AffinityPropagation,
-        # "OPTICS": OPTICS,
-        "MiniBatchKMeans": MiniBatchKMeans,
+        # "AgglomerativeClustering": AgglomerativeClustering,
+        # # "DBSCAN": DBSCAN,
+        # "MeanShift": MeanShift,
+        # "GaussianMixture": GaussianMixture,
+        # # "Birch": Birch,
+        # "AffinityPropagation": AffinityPropagation,
+        # # "OPTICS": OPTICS,
+        # "MiniBatchKMeans": MiniBatchKMeans,
     }
 scoring_dict = {
     "silhouette": silhouette_scorer
@@ -134,7 +134,7 @@ results_list = model_optimiser_instance.run_grid_search_cv(
         grid_search_refit_scorer="silhouette",
         grid_search_return_train_score=True,
         grid_search_cv=purged_cv,
-        grid_search_n_jobs=1,
+        # grid_search_n_jobs_outer=10,
         )
 
 # Extract best parameters for all results
