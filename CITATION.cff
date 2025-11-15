@@ -1,8 +1,10 @@
-title: "Seminar"
+title: "Identifying (volatility-)regimes in the the EUR/USD spot exchange rate using clustering algorithms: An Oil and Gas Perspective on Parity Conditions."
 keywords:
   - Seminar Paper
   - LaTeX
   - Research
+  - Ecnomics
+  - FX
 abstract: >
   This repository contains the materials and source code for Josef Fellas' and Robert Hennings' Seminar Paper.
   It includes the LaTeX seminar paper project, reports, and source code for related research.
@@ -15,14 +17,12 @@ authors:
     orcid: "https://orcid.org/0000-0000-0000-0000" # Replace with actual ORCID if available
 cff-version: 1.2.0
 message: "If you use this work, please cite it as below."
-date-released: 2026-MM-DD
+date-released: 2025-11-14
 identifiers:
   - type: url
     value: "https://github.com/RobertHennings/Seminar" # Replace with actual repository URL
     description: Latest version
 version: "1.0.0"
-doi: "10.1234/example-doi" # Replace with actual DOI if available
 url: "https://github.com/RobertHennings/Seminar" # Replace with actual repository URL
 license: "MIT" # Replace with the actual license
 repository-code: "https://github.com/RobertHennings/Seminar"
-
